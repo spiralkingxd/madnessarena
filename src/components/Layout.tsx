@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Anchor, Skull, Trophy, Calendar, Users, Swords, LogIn, LogOut, UserCircle, Settings } from 'lucide-react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Layout() {
