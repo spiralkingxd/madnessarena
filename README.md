@@ -75,14 +75,14 @@ Ainda na página **"OAuth2"** -> **"General"**:
 
 ## 👑 Configuração do Administrador Oficial
 
-O acesso ao Painel Admin é restrito por código (hardcoded) ao ID do Discord do administrador oficial.
+O acesso ao Painel Admin é restrito ao ID do Discord do administrador oficial, configurado via variável de ambiente.
 
-1. O ID configurado atualmente é: `717425697005502534`.
-2. Para alterar, abra o arquivo `src/context/AuthContext.tsx`.
-3. Modifique a constante `ADMIN_ID`:
-   ```typescript
-   const ADMIN_ID = '717425697005502534'; // Substitua pelo ID desejado
+1. Abra o arquivo `.env`.
+2. Modifique a variável `ADMIN_DISCORD_ID` com o seu ID do Discord:
+   ```env
+   ADMIN_DISCORD_ID="seu_discord_id_aqui"
    ```
+3. O Backend validará automaticamente se o usuário logado possui esse ID antes de permitir o acesso às rotas administrativas.
 
 ## 📁 Estrutura de Pastas
 
