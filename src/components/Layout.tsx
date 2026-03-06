@@ -16,7 +16,7 @@ export default function Layout() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-red-900">
+    <div className="min-h-screen flex flex-col relative">
       {/* Navbar */}
       <header className="glass-panel sticky top-0 z-50 border-b border-gold/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
