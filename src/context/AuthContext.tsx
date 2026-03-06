@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
+import { supabase } from '../lib/supabase';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -18,85 +19,93 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Segurança: Axios configurado para enviar cookies (Sessão HttpOnly) automaticamente
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',
-  withCredentials: true,
-});
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUser = async () => {
+  // Função para mapear o usuário do Supabase para o nosso formato
+  const mapSupabaseUser = (sbUser: SupabaseUser | null): User | null => {
+    if (!sbUser) return null;
+    
+    // Extrai os dados do metadata do Discord
+    const metadata = sbUser.user_metadata;
+    return {
+      id: metadata.provider_id || sbUser.id,
+      username: metadata.custom_claims?.global_name || metadata.full_name || 'Usuário',
+      avatar: metadata.avatar_url || '',
+      email: sbUser.email || '',
+    };
+  };
+
+  const checkAdminStatus = async (userId: string) => {
     try {
-      const response = await api.get('/api/auth/me');
-      setUser(response.data.user);
-      
-      // Segurança: A verificação de admin real acontece no backend.
-      // Aqui no frontend, apenas checamos se a rota protegida de admin retorna sucesso
-      // para exibir ou ocultar botões.
-      try {
-        await api.get('/api/admin/stats');
-        setIsAdmin(true);
-      } catch (adminError) {
-        setIsAdmin(false);
-      }
+      // Verifica no banco se o usuário tem a role 'admin'
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      setIsAdmin(data?.role === 'admin');
     } catch (error) {
-      // Segurança: Não logar stack traces no cliente
-      setUser(null);
+      console.error('Erro ao verificar status de admin:', error);
       setIsAdmin(false);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUser();
-
-    // Listen for OAuth success message from popup
-    const handleMessage = (event: MessageEvent) => {
-      const origin = event.origin;
-      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
-        return;
+    // 1. Pega a sessão inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const mappedUser = mapSupabaseUser(session?.user ?? null);
+      setUser(mappedUser);
+      if (session?.user) {
+        checkAdminStatus(session.user.id);
       }
-      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
-        fetchUser();
-      }
-    };
+      setIsLoading(false);
+    });
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    // 2. Escuta mudanças na autenticação (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const mappedUser = mapSupabaseUser(session?.user ?? null);
+      setUser(mappedUser);
+      if (session?.user) {
+        checkAdminStatus(session.user.id);
+      } else {
+        setIsAdmin(false);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async () => {
     try {
-      const response = await api.get('/api/auth/url');
-      const { url } = response.data;
+      // O Supabase redireciona automaticamente para a página atual após o login
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
 
-      const authWindow = window.open(
-        url,
-        'oauth_popup',
-        'width=600,height=700'
-      );
-
-      if (!authWindow) {
-        alert('Por favor, permita popups para este site para conectar sua conta.');
-      }
+      if (error) throw error;
     } catch (error) {
-      console.error('Erro ao iniciar login:', error);
-      alert('Erro ao iniciar login. Verifique as configurações e se o servidor backend está rodando.');
+      console.error('Erro ao iniciar login com Supabase:', error);
+      alert('Erro ao iniciar login. Verifique as configurações do Supabase.');
     }
   };
 
   const logout = async () => {
     try {
-      await api.post('/api/auth/logout');
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       setUser(null);
       setIsAdmin(false);
     } catch (error) {
-      console.error('Erro ao fazer logout.');
+      console.error('Erro ao fazer logout:', error);
     }
   };
 
