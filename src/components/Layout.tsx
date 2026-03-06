@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Anchor, Skull, Trophy, Calendar, Users, Swords, LogIn, LogOut, UserCircle, Settings } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'motion';
 import { useAuth } from '../context/AuthContext';
 
 export default function Layout() {
@@ -16,7 +16,7 @@ export default function Layout() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden">
+    <div className="min-h-screen flex flex-col relative bg-red-900">
       {/* Navbar */}
       <header className="glass-panel sticky top-0 z-50 border-b border-gold/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -102,7 +102,7 @@ export default function Layout() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-ocean/50">
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0, y: 20 }}

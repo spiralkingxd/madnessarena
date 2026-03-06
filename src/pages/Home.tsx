@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion } from 'motion';
 import { Anchor, Trophy, Swords, Skull, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
