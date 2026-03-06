@@ -36,6 +36,36 @@ function ProtectedRoute({ children, adminOnly = false }: { children: ReactNode, 
 
 export default function App() {
   return (
-    <div className="text-white">Hello World</div>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="teams" element={<Teams />} />
+            <Route path="events" element={<Events />} />
+            <Route path="brackets" element={<Brackets />} />
+            <Route path="leaderboard" element={<Leaderboard />} />
+            
+            {/* Protected Routes */}
+            <Route 
+              path="dashboard" 
+              element={
+                <ProtectedRoute>
+                  <UserDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="admin" 
+              element={
+                <ProtectedRoute adminOnly={true}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

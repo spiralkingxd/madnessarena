@@ -1,14 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-// No Vite, as variáveis de ambiente públicas começam com VITE_
-// No Next.js, elas começam com NEXT_PUBLIC_
-// Para manter a compatibilidade com o pedido do usuário (Next.js) e o ambiente atual (Vite),
-// vamos tentar ler ambas.
+// Helper to safely access process.env
+const getProcessEnv = (key: string) => {
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key];
+  }
+  return undefined;
+};
 
-const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || getProcessEnv('NEXT_PUBLIC_SUPABASE_URL') || 'https://placeholder.supabase.co';
+const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || getProcessEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') || 'placeholder-key';
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (supabaseUrl === 'https://placeholder.supabase.co' || supabaseAnonKey === 'placeholder-key') {
   console.warn('Supabase URL ou Anon Key não configurados. Verifique suas variáveis de ambiente.');
 }
 
