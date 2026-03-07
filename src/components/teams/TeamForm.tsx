@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { teamService } from '../../services/teams';
+import { teamService, Team } from '../../services/teams';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
@@ -15,10 +15,15 @@ const teamSchema = z.object({
 
 type TeamFormData = z.infer<typeof teamSchema>;
 
-export const TeamForm: React.FC = () => {
+interface TeamFormProps {
+  team?: Team;
+  onClose: () => void;
+}
+
+export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(team?.logo_url || null);
   const navigate = useNavigate();
 
   const {
@@ -28,6 +33,12 @@ export const TeamForm: React.FC = () => {
     formState: { errors },
   } = useForm<TeamFormData>({
     resolver: zodResolver(teamSchema),
+    defaultValues: team ? {
+      name: team.name,
+      ship_name: team.ship_name,
+      logo_url: team.logo_url || '',
+      gamertag: team.members?.find(m => m.role === 'captain')?.gamertag || '',
+    } : {},
   });
 
   const logoUrl = watch('logo_url');
@@ -44,13 +55,18 @@ export const TeamForm: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      await teamService.createTeam(data);
-      navigate('/dashboard/teams');
+      if (team) {
+        await teamService.updateTeam(team.id, data);
+      } else {
+        await teamService.createTeam(data);
+      }
+      onClose();
+      window.location.reload(); // Refresh to update list
     } catch (err: any) {
       if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else {
-        setError('Erro ao criar equipe. Tente novamente.');
+        setError(`Erro ao ${team ? 'atualizar' : 'criar'} equipe. Tente novamente.`);
       }
     } finally {
       setLoading(false);

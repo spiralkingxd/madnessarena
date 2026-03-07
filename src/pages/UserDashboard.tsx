@@ -1,10 +1,11 @@
 import { useAuth } from '../context/AuthContext';
-import { Shield, Swords, Calendar, Edit3, Bell, Loader2 } from 'lucide-react';
+import { Shield, Swords, Calendar, Edit3, Bell, Loader2, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { teamService } from '../services/teams';
 import { Modal } from '../components/Modal';
 import { TeamForm } from '../components/teams/TeamForm';
 
@@ -20,6 +21,24 @@ export default function UserDashboard() {
   const [myTeams, setMyTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+
+  const handleEdit = (team: Team) => {
+    setEditingTeam(team);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (teamId: string) => {
+    if (confirm('Tem certeza que deseja deletar esta equipe? Esta ação não pode ser desfeita.')) {
+      try {
+        await teamService.deleteTeam(teamId);
+        fetchMyTeams();
+      } catch (error) {
+        console.error('Erro ao deletar equipe:', error);
+        alert('Erro ao deletar equipe.');
+      }
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -62,8 +81,8 @@ export default function UserDashboard() {
 
   return (
     <div className="space-y-8">
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Registrar Equipe">
-        <TeamForm />
+      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingTeam(null); }} title={editingTeam ? "Editar Equipe" : "Registrar Equipe"}>
+        <TeamForm team={editingTeam || undefined} onClose={() => { setIsModalOpen(false); setEditingTeam(null); }} />
       </Modal>
       {/* Header Profile */}
       <div className="glass-panel rounded-2xl p-8 border border-gold/20 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden">
@@ -102,7 +121,7 @@ export default function UserDashboard() {
               Minhas Equipes
             </h2>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => { setEditingTeam(null); setIsModalOpen(true); }}
               className="px-4 py-2 bg-gold text-ocean font-bold rounded-lg text-sm hover:bg-gold-light transition-colors"
             >
               Registrar Equipe
@@ -115,9 +134,25 @@ export default function UserDashboard() {
                 <div key={team.id} className="p-4 bg-ocean-lighter/50 rounded-xl border border-ocean-light hover:border-gold/30 transition-colors">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="font-serif font-bold text-lg text-parchment">{team.name}</h3>
-                    <span className="px-2 py-1 bg-emerald-light/20 text-emerald-light text-xs font-bold rounded uppercase tracking-wider">
-                      Capitão
-                    </span>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleEdit(team)}
+                        className="p-1 hover:text-gold transition-colors"
+                        title="Editar Equipe"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(team.id)}
+                        className="p-1 hover:text-red-500 transition-colors"
+                        title="Deletar Equipe"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <span className="px-2 py-1 bg-emerald-light/20 text-emerald-light text-xs font-bold rounded uppercase tracking-wider">
+                        Capitão
+                      </span>
+                    </div>
                   </div>
                   <p className="text-sm text-parchment-muted font-mono">Navio: {team.ship_name}</p>
                 </div>

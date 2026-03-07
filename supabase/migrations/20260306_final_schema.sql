@@ -121,9 +121,10 @@ ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Usuários podem ler seu próprio perfil" ON profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Usuários podem atualizar seu próprio perfil" ON profiles FOR UPDATE USING (auth.uid() = id);
 
--- Teams: Everyone can read, only captain can update
+-- Teams: Everyone can read, only captain can update/delete
 CREATE POLICY "Qualquer um pode ler equipes" ON teams FOR SELECT USING (true);
 CREATE POLICY "Capitão pode atualizar sua equipe" ON teams FOR UPDATE USING (auth.uid() = captain_id);
+CREATE POLICY "Capitão pode deletar sua equipe" ON teams FOR DELETE USING (auth.uid() = captain_id);
 CREATE POLICY "Usuários podem criar equipes" ON teams FOR INSERT WITH CHECK (auth.uid() = captain_id);
 
 -- Events: Everyone can read
