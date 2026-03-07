@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
@@ -29,10 +29,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!sbUser) return null;
     
     // Extrai os dados do metadata do Discord
-    const metadata = sbUser.user_metadata;
+    const metadata = sbUser.user_metadata || {};
     return {
-      id: metadata.provider_id || sbUser.id,
-      username: metadata.custom_claims?.global_name || metadata.full_name || 'Usuário',
+      id: sbUser.id,
+      username: metadata.custom_claims?.global_name || metadata.full_name || metadata.name || 'Usuário',
       avatar: metadata.avatar_url || '',
       email: sbUser.email || '',
     };
@@ -56,32 +56,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // 1. Pega a sessão inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initAuth = async () => {
+      // Modo Real: Supabase
+      const { data: { session } } = await supabase.auth.getSession();
       const mappedUser = mapSupabaseUser(session?.user ?? null);
       setUser(mappedUser);
       if (session?.user) {
         checkAdminStatus(session.user.id);
       }
       setIsLoading(false);
-    });
 
-    // 2. Escuta mudanças na autenticação (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const mappedUser = mapSupabaseUser(session?.user ?? null);
-      setUser(mappedUser);
-      if (session?.user) {
-        checkAdminStatus(session.user.id);
-      } else {
-        setIsAdmin(false);
-      }
-      setIsLoading(false);
-    });
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const mappedUser = mapSupabaseUser(session?.user ?? null);
+        setUser(mappedUser);
+        if (session?.user) {
+          checkAdminStatus(session.user.id);
+        } else {
+          setIsAdmin(false);
+        }
+        setIsLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+    };
+
+    initAuth();
   }, []);
 
   const login = async () => {
+    if (!isSupabaseConfigured()) {
+      alert('Supabase não configurado. Por favor, configure as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.');
+      return;
+    }
+
     try {
       // O Supabase redireciona automaticamente para a página atual após o login
       const { error } = await supabase.auth.signInWithOAuth({
