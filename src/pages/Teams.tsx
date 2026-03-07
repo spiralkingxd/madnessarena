@@ -25,7 +25,6 @@ export default function Teams() {
   // Form State
   const [teamName, setTeamName] = useState('');
   const [shipName, setShipName] = useState('');
-  const [discordLink, setDiscordLink] = useState('');
   const [members, setMembers] = useState(['', '', '', '']);
 
   // Data State
@@ -75,7 +74,6 @@ export default function Teams() {
           {
             name: teamName,
             ship_name: shipName,
-            discord_link: discordLink,
             captain_id: user.id,
             members: activeMembers,
             stats: { wins: 0, losses: 0 }
@@ -88,7 +86,6 @@ export default function Teams() {
       // Reset form and refresh list
       setTeamName('');
       setShipName('');
-      setDiscordLink('');
       setMembers(['', '', '', '']);
       setIsRegistering(false);
       fetchTeams();
@@ -184,20 +181,6 @@ export default function Teams() {
                   <option value="Galeão">Galeão (3-4 Jogadores)</option>
                 </select>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-parchment-muted uppercase tracking-wider mb-2">
-                Link do Discord (Convite)
-              </label>
-              <input
-                type="url"
-                required
-                value={discordLink}
-                onChange={(e) => setDiscordLink(e.target.value)}
-                className="w-full bg-ocean-light border border-ocean-lighter rounded-lg px-4 py-3 text-parchment focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/50 transition-all font-mono"
-                placeholder="https://discord.gg/..."
-              />
             </div>
 
             <div>
