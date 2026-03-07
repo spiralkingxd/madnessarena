@@ -106,25 +106,6 @@ export default function Teams() {
             Gerencie sua tripulação ou explore as lendas dos mares.
           </p>
         </div>
-        
-        {user && (
-          <button
-            onClick={() => setIsRegistering(!isRegistering)}
-            className="flex items-center px-6 py-3 bg-ocean-lighter border border-gold/40 text-gold rounded-lg font-serif font-bold uppercase tracking-wider hover:bg-gold/10 hover:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all"
-          >
-            {isRegistering ? (
-              <>
-                <X className="w-5 h-5 mr-2" />
-                Cancelar
-              </>
-            ) : (
-              <>
-                <Plus className="w-5 h-5 mr-2" />
-                Nova Equipe
-              </>
-            )}
-          </button>
-        )}
       </div>
 
       {isRegistering && (
