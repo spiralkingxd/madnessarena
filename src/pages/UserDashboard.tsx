@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { Shield, Swords, Calendar, Edit3, Bell, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -94,6 +95,12 @@ export default function UserDashboard() {
               <Shield className="w-5 h-5 mr-2" />
               Minhas Equipes
             </h2>
+            <Link
+              to="/teams"
+              className="px-4 py-2 bg-gold text-ocean font-bold rounded-lg text-sm hover:bg-gold-light transition-colors"
+            >
+              Registrar Equipe
+            </Link>
           </div>
           
           {myTeams.length > 0 ? (
