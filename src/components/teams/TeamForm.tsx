@@ -75,7 +75,7 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose }) => {
 
   return (
     <div className="max-w-2xl mx-auto bg-ocean-lighter border border-gold/20 rounded-2xl p-8">
-      <h2 className="text-2xl font-serif font-bold text-gold mb-6 uppercase tracking-wider">Criar Nova Equipe</h2>
+      <h2 className="text-2xl font-serif font-bold text-gold mb-6 uppercase tracking-wider">{team ? 'Editar Equipe' : 'Criar Nova Equipe'}</h2>
       
       {error && (
         <div className="bg-red-900/20 border border-red-800 text-red-300 p-4 rounded-lg mb-6">
@@ -127,6 +127,7 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose }) => {
               {...register('gamertag')}
               className="w-full bg-ocean-light border border-ocean-lighter rounded-lg px-4 py-2 text-parchment focus:outline-none focus:ring-2 focus:ring-gold/50"
               placeholder="Ex: CaptainJack"
+              disabled={!!team}
             />
             {errors.gamertag && (
               <p className="text-red-400 text-sm mt-1">{errors.gamertag.message}</p>
@@ -165,7 +166,7 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose }) => {
         <div className="flex justify-end pt-4">
           <button
             type="button"
-            onClick={() => navigate('/dashboard/teams')}
+            onClick={onClose}
             className="px-4 py-2 text-parchment-muted hover:text-parchment mr-4 transition-colors"
           >
             Cancelar
@@ -176,7 +177,7 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose }) => {
             className="px-6 py-2 bg-gold hover:bg-gold-light text-ocean rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Criar Equipe
+            {team ? 'Atualizar Equipe' : 'Criar Equipe'}
           </button>
         </div>
       </form>

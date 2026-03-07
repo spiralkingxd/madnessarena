@@ -52,30 +52,30 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({ team, currentUser, onU
 
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-      <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+      <h3 className="text-xl font-serif font-bold text-gold mb-4 flex items-center uppercase tracking-wider">
         <User className="w-5 h-5 mr-2" />
-        Membros ({team.members?.length || 0}/4)
+        Membros ({team.members?.length || 0}/10)
       </h3>
 
       <div className="space-y-4 mb-8">
         {team.members?.map((member) => (
-          <div key={member.id} className="flex items-center justify-between bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+          <div key={member.id} className="flex items-center justify-between bg-ocean-light p-4 rounded-xl border border-ocean-lighter">
             <div className="flex items-center">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${
-                member.role === 'captain' ? 'bg-yellow-900/50 text-yellow-500' : 'bg-blue-900/50 text-blue-500'
+                member.role === 'captain' ? 'bg-gold/20 text-gold' : 'bg-ocean-lighter text-parchment-muted'
               }`}>
                 {member.role === 'captain' ? <Shield className="w-5 h-5" /> : <User className="w-5 h-5" />}
               </div>
               <div>
-                <p className="text-white font-medium">{member.gamertag}</p>
-                <p className="text-gray-500 text-xs">Discord ID: {member.discord_id}</p>
+                <p className="text-parchment font-medium">{member.gamertag}</p>
+                <p className="text-parchment-muted text-xs font-mono">ID: {member.discord_id}</p>
               </div>
             </div>
             
-            {canManage && member.user_id !== team.captain_id && (
+            {canManage && member.role !== 'captain' && (
               <button
                 onClick={() => handleRemove(member.user_id)}
-                className="text-red-400 hover:text-red-300 p-2 hover:bg-red-900/20 rounded transition-colors"
+                className="text-red-400 hover:text-red-300 p-2 hover:bg-red-900/20 rounded-lg transition-colors"
                 title="Remover membro"
               >
                 <Trash2 className="w-4 h-4" />
@@ -85,9 +85,9 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({ team, currentUser, onU
         ))}
       </div>
 
-      {canManage && (team.members?.length || 0) < 4 && (
-        <div className="border-t border-gray-700 pt-6">
-          <h4 className="text-lg font-medium text-white mb-4">Adicionar Membro</h4>
+      {canManage && (team.members?.length || 0) < 10 ? (
+        <div className="border-t border-ocean-lighter pt-6">
+          <h4 className="text-lg font-serif font-bold text-parchment mb-4 uppercase tracking-wider">Adicionar Membro</h4>
           {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
           
           <form onSubmit={handleInvite} className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -96,7 +96,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({ team, currentUser, onU
               value={inviteGamertag}
               onChange={(e) => setInviteGamertag(e.target.value)}
               placeholder="Gamertag"
-              className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="bg-ocean-light border border-ocean-lighter rounded-lg px-4 py-2 text-parchment text-sm focus:outline-none focus:ring-2 focus:ring-gold/50"
               required
             />
             <input
@@ -104,21 +104,22 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({ team, currentUser, onU
               value={inviteDiscordId}
               onChange={(e) => setInviteDiscordId(e.target.value)}
               placeholder="Discord ID"
-              className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="bg-ocean-light border border-ocean-lighter rounded-lg px-4 py-2 text-parchment text-sm focus:outline-none focus:ring-2 focus:ring-gold/50"
               required
             />
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+              className="bg-gold hover:bg-gold-light text-ocean rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-50"
             >
               {loading ? 'Adicionando...' : 'Adicionar'}
             </button>
           </form>
-          <p className="text-gray-500 text-xs mt-2">
-            * Para este MVP, adicionar membro requer o Discord ID manualmente. Em produção, seria um convite.
-          </p>
         </div>
+      ) : (
+        (team.members?.length || 0) >= 10 && (
+          <p className="text-red-400 text-sm mt-4 text-center">Limite de 10 membros atingido.</p>
+        )
       )}
     </div>
   );

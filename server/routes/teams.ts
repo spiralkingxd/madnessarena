@@ -321,8 +321,8 @@ router.post('/:id/members', isAuthenticated, async (req, res) => {
       .eq('team_id', teamId);
 
     if (countError) throw countError;
-    if (count !== null && count >= 4) {
-      return res.status(400).json({ error: 'A equipe já está cheia (máx 4 membros).' });
+    if (count !== null && count >= 10) {
+      return res.status(400).json({ error: 'A equipe já está cheia (máx 10 membros).' });
     }
 
     // Verificar se gamertag já existe na equipe
