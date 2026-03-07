@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { Shield, Swords, Calendar, Edit3, Bell } from 'lucide-react';
 import { motion } from 'motion/react';
+import Avatar from '../components/Avatar';
 
 export default function UserDashboard() {
   const { user } = useAuth();
@@ -21,17 +22,11 @@ export default function UserDashboard() {
       <div className="glass-panel rounded-2xl p-8 border border-gold/20 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gold/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
         
-        {user?.avatar ? (
-          <img 
-            src={`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`} 
-            alt={user.username} 
-            className="w-24 h-24 rounded-full border-2 border-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] z-10"
-          />
-        ) : (
-          <div className="w-24 h-24 rounded-full border-2 border-gold bg-ocean-lighter flex items-center justify-center z-10">
-            <span className="text-3xl font-serif text-gold">{user?.username.charAt(0).toUpperCase()}</span>
-          </div>
-        )}
+        <Avatar 
+          user={user} 
+          className="w-24 h-24 border-2 border-gold shadow-[0_0_20px_rgba(212,175,55,0.3)] z-10" 
+          size={256}
+        />
         
         <div className="text-center md:text-left z-10">
           <h1 className="text-3xl font-serif font-bold text-parchment mb-2">{user?.username}</h1>
