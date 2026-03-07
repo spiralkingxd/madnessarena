@@ -98,7 +98,6 @@ async function startServer() {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: 'spa',
     });
     app.use(vite.middlewares);
     
@@ -114,6 +113,7 @@ async function startServer() {
         res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
       } catch (e) {
         vite.ssrFixStacktrace(e as Error);
+        console.error('Vite SSR Error:', e);
         next(e);
       }
     });
