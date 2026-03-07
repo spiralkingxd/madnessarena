@@ -15,6 +15,11 @@ import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
+import TeamsPage from './pages/dashboard/teams';
+import CreateTeamPage from './pages/dashboard/teams/create';
+import TeamDetailsPage from './pages/dashboard/teams/details';
+import AdminTeamsPage from './pages/admin/teams';
+
 // Protected Route Component
 function ProtectedRoute({ children, adminOnly = false }: { children: ReactNode, adminOnly?: boolean }) {
   const { user, isLoading, isAdmin } = useAuth();
@@ -56,10 +61,42 @@ export default function App() {
               } 
             />
             <Route 
+              path="dashboard/teams" 
+              element={
+                <ProtectedRoute>
+                  <TeamsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="dashboard/teams/create" 
+              element={
+                <ProtectedRoute>
+                  <CreateTeamPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="dashboard/teams/:id" 
+              element={
+                <ProtectedRoute>
+                  <TeamDetailsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="admin" 
               element={
                 <ProtectedRoute adminOnly={true}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="admin/teams" 
+              element={
+                <ProtectedRoute adminOnly={true}>
+                  <AdminTeamsPage />
                 </ProtectedRoute>
               } 
             />
