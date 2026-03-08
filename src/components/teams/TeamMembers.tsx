@@ -15,7 +15,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({ team, currentUser, onU
   const [error, setError] = useState<string | null>(null);
 
   const isCaptain = team.captain_id === currentUser.id;
-  const isAdmin = currentUser.id === process.env.NEXT_PUBLIC_ADMIN_DISCORD_ID; // Or check role
+  const isAdmin = currentUser.id === (import.meta.env.VITE_ADMIN_DISCORD_ID || ''); // Or check role
   const canManage = isCaptain || isAdmin;
 
   const handleInvite = async (e: React.FormEvent) => {

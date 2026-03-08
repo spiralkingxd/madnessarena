@@ -20,9 +20,10 @@ type TeamFormData = z.infer<typeof teamSchema>;
 interface TeamFormProps {
   team?: Team;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose }) => {
+export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(team?.logo_url || null);
@@ -70,8 +71,13 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose }) => {
       } else {
         await teamService.createTeam(data);
       }
-      onClose();
-      window.location.reload(); // Refresh to update list
+      
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        onClose();
+        window.location.reload(); // Fallback if no onSuccess provided
+      }
     } catch (err: any) {
       if (err.response?.data?.error) {
         setError(err.response.data.error);

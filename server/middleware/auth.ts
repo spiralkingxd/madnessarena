@@ -9,6 +9,7 @@ declare module 'express-serve-static-core' {
       username: string;
       avatar: string;
       email: string;
+      isAdmin?: boolean;
     };
   }
 }
@@ -18,14 +19,56 @@ declare module 'express-serve-static-core' {
  * Segurança: Verifica se o token de sessão (cookie HttpOnly) é válido no Backend.
  * Previne que rotas protegidas sejam acessadas sem autenticação real.
  */
-export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.session && req.session.user) {
-    req.user = req.session.user;
+export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Não autorizado. Token ausente.' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({ error: 'Não autorizado. Token inválido.' });
+    }
+
+    // Check admin status
+    let isAdminUser = false;
+    const adminId = process.env.NEXT_PUBLIC_ADMIN_DISCORD_ID || process.env.VITE_ADMIN_DISCORD_ID;
+    
+    if (adminId) {
+      const discordId = user.user_metadata?.provider_id || user.user_metadata?.sub;
+      if (discordId === adminId) {
+        isAdminUser = true;
+      }
+    }
+
+    if (!isAdminUser) {
+      const { data: roleData } = await supabaseAdmin
+        .from('admin_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (roleData && ['super_admin', 'admin', 'moderator'].includes(roleData.role)) {
+        isAdminUser = true;
+      }
+    }
+
+    req.user = {
+      id: user.id,
+      username: user.user_metadata?.preferred_username || user.user_metadata?.name || '',
+      avatar: user.user_metadata?.avatar_url || '',
+      email: user.email || '',
+      isAdmin: isAdminUser,
+    };
+
     return next();
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    return res.status(500).json({ error: 'Erro interno de autenticação.' });
   }
-  
-  // Segurança: Mensagem genérica e status 401 para evitar enumeração de estado
-  res.status(401).json({ error: 'Não autorizado. Faça login para continuar.' });
 };
 
 /**
@@ -38,51 +81,8 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
     return res.status(401).json({ error: 'Não autorizado.' });
   }
 
-  const adminId = process.env.NEXT_PUBLIC_ADMIN_DISCORD_ID;
-  
-  // 1. Check Env Var (Super Admin)
-  if (adminId && req.user.id === adminId) {
+  if (req.user.isAdmin) {
     return next();
-  }
-
-  // 2. Check Database Roles
-  try {
-    // We need to find the user by their Discord ID (provider_id)
-    // But our users table uses UUID.
-    // Wait, req.user.id from session is likely the Discord ID if using custom auth flow, 
-    // OR the Supabase UUID if using Supabase Auth.
-    // The server.ts shows: req.session.user = { id: string ... }
-    // If we are using Supabase Auth on client but custom session on server, we need to be careful.
-    // However, the prompt says "Discord OAuth2 via Supabase Auth".
-    // If using Supabase Auth, the session usually contains the Access Token.
-    // But server.ts uses `cookie-session` and seems to store user info manually.
-    
-    // Let's assume req.user.id is the Discord ID for now based on `NEXT_PUBLIC_ADMIN_DISCORD_ID` check.
-    // If so, we need to find the user in `profiles` table by `id` (assuming it matches the auth.users id).
-    // Actually, if req.user.id is the Discord ID, we need to find the user in `profiles` table.
-    // But `profiles` table uses `auth.users.id`.
-    
-    // Let's check if req.user.id is the UUID.
-    const { data: user } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('id', req.user.id)
-      .single();
-
-    if (user) {
-      const { data: roleData } = await supabaseAdmin
-        .from('admin_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
-
-      if (roleData && ['super_admin', 'admin', 'moderator'].includes(roleData.role)) {
-        return next();
-      }
-    }
-
-  } catch (error) {
-    console.error('Error checking admin role:', error);
   }
 
   // Segurança: Retorna 403 Forbidden. O usuário está logado, mas não tem permissão.

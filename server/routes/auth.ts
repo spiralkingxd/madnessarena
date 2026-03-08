@@ -78,22 +78,7 @@ router.get('/profile/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     const isOwnProfile = req.user?.id === id;
-    
-    // Check if user is admin
-    let isUserAdmin = false;
-    if (!isOwnProfile) {
-      const { data: adminData } = await supabaseAdmin
-        .from('admin_roles')
-        .select('role')
-        .eq('user_id', req.user?.id)
-        .single();
-      
-      const sessionUser = await supabaseAdmin.auth.admin.getUserById(req.user?.id as string);
-      const discordId = sessionUser.data.user?.user_metadata?.provider_id || sessionUser.data.user?.user_metadata?.sub;
-      const envAdminId = process.env.VITE_ADMIN_DISCORD_ID || process.env.NEXT_PUBLIC_ADMIN_DISCORD_ID;
-      
-      isUserAdmin = !!adminData || (envAdminId && discordId === envAdminId);
-    }
+    const isUserAdmin = req.user?.isAdmin || false;
 
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')

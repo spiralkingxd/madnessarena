@@ -40,7 +40,7 @@ const AddMemberSchema = z.object({
  */
 router.get('/', isAuthenticated, async (req, res) => {
   try {
-    const isAdminUser = req.user!.id === process.env.ADMIN_DISCORD_ID;
+    const isAdminUser = req.user!.isAdmin;
 
     if (isAdminUser && req.query.all === 'true') {
       const { data: allTeams, error: allError } = await supabaseAdmin
@@ -93,7 +93,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
       .eq('user_id', req.user!.id)
       .single();
 
-    const isAdminUser = req.user!.id === process.env.ADMIN_DISCORD_ID;
+    const isAdminUser = req.user!.isAdmin;
 
     if (memberError && !isAdminUser) {
       return res.status(403).json({ error: 'Acesso negado. Você não é membro desta equipe.' });
@@ -211,7 +211,7 @@ router.put('/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Equipe não encontrada' });
     }
 
-    const isAdminUser = req.user!.id === process.env.ADMIN_DISCORD_ID;
+    const isAdminUser = req.user!.isAdmin;
 
     // Segurança: Prevenção de IDOR
     if (team.captain_id !== req.user!.id && !isAdminUser) {
@@ -260,7 +260,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Equipe não encontrada' });
     }
 
-    const isAdminUser = req.user!.id === process.env.ADMIN_DISCORD_ID;
+    const isAdminUser = req.user!.isAdmin;
 
     if (team.captain_id !== req.user!.id && !isAdminUser) {
       console.warn(`[SECURITY] Tentativa de IDOR detectada. Usuário ${req.user!.id} tentou deletar equipe ${teamId}`);
@@ -303,7 +303,7 @@ router.post('/:id/members', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Equipe não encontrada' });
     }
 
-    const isAdminUser = req.user!.id === process.env.ADMIN_DISCORD_ID;
+    const isAdminUser = req.user!.isAdmin;
 
     if (team.captain_id !== req.user!.id && !isAdminUser) {
       return res.status(403).json({ error: 'Apenas o capitão pode adicionar membros.' });
@@ -392,7 +392,7 @@ router.delete('/:id/members/:memberId', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Equipe não encontrada' });
     }
 
-    const isAdminUser = req.user!.id === process.env.ADMIN_DISCORD_ID;
+    const isAdminUser = req.user!.isAdmin;
     const isCaptain = team.captain_id === req.user!.id;
     const isSelf = req.user!.id === memberIdToRemove;
 
@@ -425,7 +425,7 @@ router.delete('/:id/members/:memberId', isAuthenticated, async (req, res) => {
 /**
  * Rota: Banir Equipe (Admin apenas)
  */
-router.post('/:id/ban', isAdmin, async (req, res) => {
+router.post('/:id/ban', isAuthenticated, isAdmin, async (req, res) => {
   const teamId = req.params.id;
   const { reason } = req.body;
 
@@ -463,7 +463,7 @@ router.post('/:id/transfer', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Equipe não encontrada' });
     }
 
-    const isAdminUser = req.user!.id === process.env.ADMIN_DISCORD_ID;
+    const isAdminUser = req.user!.isAdmin;
 
     if (team.captain_id !== req.user!.id && !isAdminUser) {
       return res.status(403).json({ error: 'Apenas o capitão pode transferir a liderança.' });

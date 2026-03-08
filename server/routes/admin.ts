@@ -1,11 +1,11 @@
 import express from 'express';
 import { supabaseAdmin } from '../lib/supabase';
-import { isAdmin } from '../middleware/auth';
+import { isAuthenticated, isAdmin } from '../middleware/auth';
 
 const router = express.Router();
 
 // Middleware to ensure all routes are protected
-router.use(isAdmin);
+router.use(isAuthenticated, isAdmin);
 
 // --- DASHBOARD STATS ---
 router.get('/stats', async (req, res) => {

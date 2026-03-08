@@ -39,14 +39,21 @@ export default function UserDashboard() {
       
       const [profileData, teamsData] = await Promise.all([
         profileService.getUserProfile(user.id),
-        supabase.from('teams').select('*').eq('captain_id', user.id)
+        supabase.from('teams').select('*, team_members(*)').eq('captain_id', user.id)
       ]);
 
       setProfile(profileData);
-      setMyTeams(teamsData.data || []);
+      
+      // Map team_members to members for compatibility
+      const teamsWithMembers = (teamsData.data || []).map(team => ({
+        ...team,
+        members: team.team_members
+      }));
+      
+      setMyTeams(teamsWithMembers);
       
       if (editingTeam) {
-        const updatedTeam = teamsData.data?.find(t => t.id === editingTeam.id);
+        const updatedTeam = teamsWithMembers.find(t => t.id === editingTeam.id);
         if (updatedTeam) setEditingTeam(updatedTeam);
       }
     } catch (error) {
@@ -61,11 +68,17 @@ export default function UserDashboard() {
       if (!user) return;
       const { data, error } = await supabase
         .from('teams')
-        .select('*')
+        .select('*, team_members(*)')
         .eq('captain_id', user.id);
 
       if (error) throw error;
-      setMyTeams(data || []);
+      
+      const teamsWithMembers = (data || []).map(team => ({
+        ...team,
+        members: team.team_members
+      }));
+      
+      setMyTeams(teamsWithMembers);
     } catch (error) {
       console.error('Erro ao buscar minhas equipes:', error);
     }
@@ -105,7 +118,15 @@ export default function UserDashboard() {
   return (
     <div className="space-y-8">
       <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingTeam(null); }} title={editingTeam ? "Editar Equipe" : "Registrar Equipe"}>
-        <TeamForm team={editingTeam || undefined} onClose={() => { setIsModalOpen(false); setEditingTeam(null); }} />
+        <TeamForm 
+          team={editingTeam || undefined} 
+          onClose={() => { setIsModalOpen(false); setEditingTeam(null); }} 
+          onSuccess={() => {
+            setIsModalOpen(false);
+            setEditingTeam(null);
+            fetchMyTeams();
+          }}
+        />
         {editingTeam && (
           <div className="mt-6 border-t border-ocean-lighter pt-6">
             <TeamMembers team={editingTeam} currentUser={user} onUpdate={fetchMyTeams} />

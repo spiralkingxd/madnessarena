@@ -13,6 +13,7 @@ interface Team {
   created_at: string;
   logo_url?: string;
   members?: any[];
+  team_members?: any[];
 }
 
 export default function Teams() {
@@ -49,7 +50,13 @@ export default function Teams() {
   return (
     <div className="space-y-8">
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Registrar Equipe">
-        <TeamForm onClose={() => setIsModalOpen(false)} />
+        <TeamForm 
+          onClose={() => setIsModalOpen(false)} 
+          onSuccess={() => {
+            setIsModalOpen(false);
+            fetchTeams();
+          }}
+        />
       </Modal>
 
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -96,7 +103,7 @@ export default function Teams() {
               <div className="grid grid-cols-1 gap-4 border-t border-ocean-lighter pt-4">
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-parchment-muted">Membros</p>
-                  <p className="font-mono text-lg text-gold font-bold">{team.members?.length || 0}/10</p>
+                  <p className="font-mono text-lg text-gold font-bold">{team.team_members?.length || 0}/10</p>
                 </div>
               </div>
             </div>
