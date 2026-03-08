@@ -30,7 +30,14 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({ team, currentUser, onU
       setInviteDiscordId('');
       onUpdate();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao convidar membro.');
+      const errorMessage = err.response?.data?.error;
+      if (typeof errorMessage === 'string') {
+        setError(errorMessage);
+      } else if (errorMessage && typeof errorMessage === 'object') {
+        setError(JSON.stringify(errorMessage));
+      } else {
+        setError('Erro ao convidar membro.');
+      }
     } finally {
       setLoading(false);
     }

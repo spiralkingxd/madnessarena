@@ -66,10 +66,11 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose, onSuccess }) 
     setLoading(true);
     setError(null);
     try {
+      const { members, ...teamData } = data;
       if (team) {
-        await teamService.updateTeam(team.id, data);
+        await teamService.updateTeam(team.id, teamData);
       } else {
-        await teamService.createTeam(data);
+        await teamService.createTeam(teamData);
       }
       
       if (onSuccess) {
@@ -79,8 +80,11 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose, onSuccess }) 
         window.location.reload(); // Fallback if no onSuccess provided
       }
     } catch (err: any) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
+      const errorMessage = err.response?.data?.error;
+      if (typeof errorMessage === 'string') {
+        setError(errorMessage);
+      } else if (errorMessage && typeof errorMessage === 'object') {
+        setError(JSON.stringify(errorMessage));
       } else {
         setError(`Erro ao ${team ? 'atualizar' : 'criar'} equipe. Tente novamente.`);
       }
