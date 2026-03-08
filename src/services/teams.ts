@@ -35,10 +35,39 @@ export interface UpdateTeamData {
   logo_url?: string;
 }
 
+export interface TeamInvitation {
+  id: string;
+  team_id: string;
+  invited_by: string;
+  discord_id: string;
+  status: 'pending' | 'accepted' | 'declined';
+  created_at: string;
+  team?: {
+    name: string;
+    logo_url?: string;
+  };
+  inviter?: {
+    username: string;
+  };
+}
+
 export const teamService = {
   getMyTeams: async (): Promise<Team[]> => {
     const response = await api.get(API_URL);
     return response.data;
+  },
+
+  getInvitations: async (): Promise<TeamInvitation[]> => {
+    const response = await api.get(`${API_URL}/invitations`);
+    return response.data;
+  },
+
+  acceptInvitation: async (id: string): Promise<void> => {
+    await api.post(`${API_URL}/invitations/${id}/accept`);
+  },
+
+  declineInvitation: async (id: string): Promise<void> => {
+    await api.post(`${API_URL}/invitations/${id}/decline`);
   },
 
   getTeamDetails: async (id: string): Promise<Team> => {

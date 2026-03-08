@@ -33,7 +33,6 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose, onSuccess }) 
     register,
     handleSubmit,
     watch,
-    control,
     formState: { errors },
   } = useForm<TeamFormData>({
     resolver: zodResolver(teamSchema),
@@ -41,15 +40,11 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose, onSuccess }) 
       name: team.name,
       logo_url: team.logo_url || '',
       gamertag: team.members?.find(m => m.role === 'captain')?.gamertag || '',
-      members: team.members?.map(m => ({ gamertag: m.gamertag })) || [],
     } : {
-      members: [{ gamertag: '' }],
+      name: '',
+      gamertag: '',
+      logo_url: '',
     },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "members"
   });
 
   const logoUrl = watch('logo_url');
@@ -66,10 +61,11 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose, onSuccess }) 
     setLoading(true);
     setError(null);
     try {
-      const { members, ...teamData } = data;
       if (team) {
-        await teamService.updateTeam(team.id, teamData);
+        await teamService.updateTeam(team.id, data);
       } else {
+        // Remove members from data if it exists (though we removed the field)
+        const { members, ...teamData } = data as any;
         await teamService.createTeam(teamData);
       }
       
@@ -77,7 +73,6 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose, onSuccess }) 
         onSuccess();
       } else {
         onClose();
-        window.location.reload(); // Fallback if no onSuccess provided
       }
     } catch (err: any) {
       const errorMessage = err.response?.data?.error;
@@ -141,71 +136,32 @@ export const TeamForm: React.FC<TeamFormProps> = ({ team, onClose, onSuccess }) 
           )}
           
           <div>
-            <label className="block text-sm font-medium text-parchment-muted mb-2">
-              Membros ({fields.length}/10)
+            <label htmlFor="logo_url" className="block text-sm font-medium text-parchment-muted mb-2">
+              URL da Logo (Opcional)
             </label>
-            <div className="space-y-2">
-              {fields.map((field, index) => (
-                <div key={field.id} className="flex gap-2">
-                  <input
-                    {...register(`members.${index}.gamertag`)}
-                    className="flex-1 bg-ocean-light border border-ocean-lighter rounded-lg px-4 py-2 text-parchment focus:outline-none focus:ring-2 focus:ring-gold/50"
-                    placeholder="Gamertag do membro"
+            <div className="flex gap-4">
+              <input
+                id="logo_url"
+                type="text"
+                {...register('logo_url')}
+                className="flex-1 bg-ocean-light border border-ocean-lighter rounded-lg px-4 py-2 text-parchment focus:outline-none focus:ring-2 focus:ring-gold/50"
+                placeholder="https://exemplo.com/logo.png"
+              />
+              {logoPreview && (
+                <div className="w-12 h-12 rounded-lg overflow-hidden border border-gold/20">
+                  <img 
+                    src={logoPreview} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                    onError={() => setLogoPreview(null)}
                   />
-                  {fields.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => remove(index)}
-                      className="p-2 text-red-400 hover:text-red-300 transition-colors"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  )}
                 </div>
-              ))}
-              {fields.length < 10 && (
-                <button
-                  type="button"
-                  onClick={() => append({ gamertag: '' })}
-                  className="w-full py-2 border border-dashed border-ocean-lighter rounded-lg text-parchment-muted hover:text-gold hover:border-gold/50 transition-all flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  Adicionar Membro
-                </button>
               )}
             </div>
-            {errors.members && (
-              <p className="text-red-400 text-sm mt-1">{errors.members.message}</p>
+            {errors.logo_url && (
+              <p className="text-red-400 text-sm mt-1">{errors.logo_url.message}</p>
             )}
           </div>
-        </div>
-
-        <div>
-          <label htmlFor="logo_url" className="block text-sm font-medium text-parchment-muted mb-2">
-            URL da Logo (Opcional)
-          </label>
-          <div className="flex gap-4">
-            <input
-              id="logo_url"
-              type="text"
-              {...register('logo_url')}
-              className="flex-1 bg-ocean-light border border-ocean-lighter rounded-lg px-4 py-2 text-parchment focus:outline-none focus:ring-2 focus:ring-gold/50"
-              placeholder="https://exemplo.com/logo.png"
-            />
-            {logoPreview && (
-              <div className="w-12 h-12 rounded-lg overflow-hidden border border-gold/20">
-                <img 
-                  src={logoPreview} 
-                  alt="Preview" 
-                  className="w-full h-full object-cover"
-                  onError={() => setLogoPreview(null)}
-                />
-              </div>
-            )}
-          </div>
-          {errors.logo_url && (
-            <p className="text-red-400 text-sm mt-1">{errors.logo_url.message}</p>
-          )}
         </div>
 
         <div className="flex justify-end pt-4">

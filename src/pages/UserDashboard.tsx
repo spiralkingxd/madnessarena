@@ -8,6 +8,7 @@ import { teamService } from '../services/teams';
 import { Modal } from '../components/Modal';
 import { TeamForm } from '../components/teams/TeamForm';
 import { TeamMembers } from '../components/teams/TeamMembers';
+import { TeamInvitations } from '../components/teams/TeamInvitations';
 import { ProfileCard } from '../components/profile/ProfileCard';
 import { XboxStatus } from '../components/profile/XboxStatus';
 import { profileService, Profile } from '../services/profile';
@@ -104,11 +105,8 @@ export default function UserDashboard() {
     }
   };
 
-  // Mock history for now as 'matches' table logic is complex to join without a view
-  // In a real app, we would fetch matches where team_id is in myTeams
-  const history = [
-    { id: 1, event: 'Batalha de The Wilds', result: '1º Lugar', date: '15 Mar, 2026' },
-  ];
+  // TODO: Implement match history fetch from backend
+  const history: any[] = [];
 
   if (isLoading) {
     return (
@@ -146,6 +144,8 @@ export default function UserDashboard() {
           </div>
         </div>
       )}
+
+      <TeamInvitations />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Minhas Equipes */}

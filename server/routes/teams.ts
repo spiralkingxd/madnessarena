@@ -80,6 +80,129 @@ router.get('/', isAuthenticated, async (req, res) => {
 });
 
 /**
+ * Rota: Listar Convites Pendentes
+ */
+router.get('/invitations', isAuthenticated, async (req, res) => {
+  try {
+    const discordId = req.user!.discordId;
+    if (!discordId) {
+      return res.json([]); // Se não tiver discord ID, não tem convites baseados nele
+    }
+
+    const { data: invitations, error } = await supabaseAdmin
+      .from('team_invitations')
+      .select('*, team:teams(name, logo_url), inviter:profiles!invited_by(username)')
+      .eq('discord_id', discordId)
+      .eq('status', 'pending');
+
+    if (error) throw error;
+
+    res.json(invitations);
+  } catch (error) {
+    console.error('Erro ao listar convites:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+/**
+ * Rota: Aceitar Convite
+ */
+router.post('/invitations/:id/accept', isAuthenticated, async (req, res) => {
+  const invitationId = req.params.id;
+  try {
+    // 1. Buscar convite
+    const { data: invitation, error: fetchError } = await supabaseAdmin
+      .from('team_invitations')
+      .select('*')
+      .eq('id', invitationId)
+      .single();
+
+    if (fetchError || !invitation) {
+      return res.status(404).json({ error: 'Convite não encontrado.' });
+    }
+
+    // 2. Verificar se pertence ao usuário
+    if (invitation.discord_id !== req.user!.discordId) {
+      return res.status(403).json({ error: 'Este convite não é para você.' });
+    }
+
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ error: 'Convite já processado.' });
+    }
+
+    // 3. Verificar se já é membro
+    const { data: existingMember } = await supabaseAdmin
+      .from('team_members')
+      .select('id')
+      .eq('team_id', invitation.team_id)
+      .eq('user_id', req.user!.id)
+      .single();
+
+    if (existingMember) {
+      // Já é membro, apenas deleta o convite
+      await supabaseAdmin.from('team_invitations').delete().eq('id', invitationId);
+      return res.json({ message: 'Você já é membro desta equipe.' });
+    }
+
+    // 4. Adicionar membro
+    const { error: insertError } = await supabaseAdmin
+      .from('team_members')
+      .insert({
+        team_id: invitation.team_id,
+        user_id: req.user!.id,
+        gamertag: req.user!.username, // Usa username como gamertag inicial
+        discord_id: req.user!.discordId,
+        role: 'member'
+      });
+
+    if (insertError) throw insertError;
+
+    // 5. Atualizar convite para aceito (ou deletar)
+    await supabaseAdmin
+      .from('team_invitations')
+      .update({ status: 'accepted' })
+      .eq('id', invitationId);
+
+    res.json({ message: 'Convite aceito com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao aceitar convite:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+/**
+ * Rota: Recusar Convite
+ */
+router.post('/invitations/:id/decline', isAuthenticated, async (req, res) => {
+  const invitationId = req.params.id;
+  try {
+    const { data: invitation, error: fetchError } = await supabaseAdmin
+      .from('team_invitations')
+      .select('*')
+      .eq('id', invitationId)
+      .single();
+
+    if (fetchError || !invitation) {
+      return res.status(404).json({ error: 'Convite não encontrado.' });
+    }
+
+    if (invitation.discord_id !== req.user!.discordId) {
+      return res.status(403).json({ error: 'Este convite não é para você.' });
+    }
+
+    await supabaseAdmin
+      .from('team_invitations')
+      .update({ status: 'declined' })
+      .eq('id', invitationId);
+
+    res.json({ message: 'Convite recusado.' });
+  } catch (error) {
+    console.error('Erro ao recusar convite:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+/**
  * Rota: Detalhes da Equipe
  */
 router.get('/:id', isAuthenticated, async (req, res) => {
@@ -170,7 +293,7 @@ router.post('/', isAuthenticated, teamCreationLimiter, async (req, res) => {
         user_id: req.user!.id,
         gamertag: validatedData.gamertag,
         role: 'captain',
-        discord_id: req.user!.id, // Assumindo que user.id é o Discord ID ou mapeado
+        discord_id: req.user!.discordId,
       });
 
     if (memberError) {

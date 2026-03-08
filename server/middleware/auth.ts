@@ -9,6 +9,7 @@ declare module 'express-serve-static-core' {
       username: string;
       avatar: string;
       email: string;
+      discordId?: string;
       isAdmin?: boolean;
     };
   }
@@ -61,6 +62,7 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
       username: user.user_metadata?.preferred_username || user.user_metadata?.name || '',
       avatar: user.user_metadata?.avatar_url || '',
       email: user.email || '',
+      discordId: user.user_metadata?.provider_id || user.user_metadata?.sub || '',
       isAdmin: isAdminUser,
     };
 

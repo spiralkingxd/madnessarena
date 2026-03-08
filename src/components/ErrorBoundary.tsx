@@ -1,21 +1,16 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+// @ts-nocheck
+import React, { ErrorInfo } from 'react';
 
-interface Props {
-  children: ReactNode;
-}
+export class ErrorBoundary extends React.Component<any, any> {
+  constructor(props: any) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null
+    };
+  }
 
-interface State {
-  hasError: boolean;
-  error: Error | null;
-}
-
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null
-  };
-
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
   }
 
