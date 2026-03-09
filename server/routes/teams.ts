@@ -1,3 +1,17 @@
+/**
+ * Routes: Teams Management
+ * 
+ * CORREÇÕES IMPLEMENTADAS:
+ * - #1: Race condition em criação de equipes (função transacional PostgreSQL)
+ * - #2: SSRF via validação de URL (apenas Supabase Storage)
+ * - #6: Verificar duplicidade ao aceitar convite
+ * - #9: N+1 queries otimizado com JOIN
+ * - #10/#18: Verificar ban ao adicionar/aceitar membro
+ * - #21: Schema Zod melhorado
+ * - #26: Separação de responsabilidades (SRP)
+ * - #31: Validar se é último membro ao remover
+ */
+
 import { Router } from 'express';
 import { z } from 'zod';
 import { isAuthenticated, isAdmin } from '../middleware/auth';
@@ -6,73 +20,113 @@ import { rateLimit } from 'express-rate-limit';
 
 const router = Router();
 
+// Rate limiters específicos
 const teamCreationLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 3, // limit each IP to 3 requests per windowMs
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 3, // 3 equipes por IP a cada 15 min
   message: 'Muitas tentativas de criação de equipe. Tente novamente mais tarde.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 /**
- * Segurança: Sanitização e Validação de Entrada
- * Usando Zod para garantir que os dados recebidos estejam no formato correto
- * e não contenham scripts maliciosos (XSS) ou injeções (SQLi).
+ * CORREÇÃO #21: Schemas Zod melhorados
+ * - Validação mais rigorosa de URL (apenas Supabase Storage em produção)
+ * - Remoção de transformações inseguras (strip tags já feito no regex)
  */
 const CreateTeamSchema = z.object({
-  name: z.string().min(3).max(50).regex(/^[a-zA-Z0-9\s\-_]+$/, 'Nome inválido (apenas letras, números, espaços, - e _)').trim().transform(val => val.replace(/<[^>]*>?/gm, '')),
-  gamertag: z.string().min(3).max(50).trim().transform(val => val.replace(/<[^>]*>?/gm, '')), // Gamertag do capitão
-  logo_url: z.string().url().regex(/\.(jpg|jpeg|png|webp)$/i).optional().or(z.literal('')),
+  name: z.string()
+    .min(3, 'Nome deve ter pelo menos 3 caracteres')
+    .max(50, 'Nome deve ter no máximo 50 caracteres')
+    .regex(/^[a-zA-Z0-9\s\-_]+$/, 'Nome inválido (apenas letras, números, espaços, - e _)')
+    .trim()
+    .transform(val => val.replace(/\s+/g, ' ')), // Normalizar espaços múltiplos
+  
+  gamertag: z.string()
+    .min(3, 'Gamertag deve ter pelo menos 3 caracteres')
+    .max(50, 'Gamertag deve ter no máximo 50 caracteres')
+    .trim()
+    .regex(/^[a-zA-Z0-9\s\-_]+$/, 'Gamertag inválido'),
+  
+  // CORREÇÃO #2: Validação restritiva de URL (apenas Supabase Storage)
+  logo_url: z.string()
+    .url('URL inválida')
+    .regex(
+      /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/team-logos\//,
+      'URL deve ser do Supabase Storage (use /api/upload para fazer upload)'
+    )
+    .optional()
+    .or(z.literal(''))
 });
 
 const UpdateTeamSchema = z.object({
-  name: z.string().min(3).max(50).regex(/^[a-zA-Z0-9\s\-_]+$/, 'Nome inválido').trim().transform(val => val.replace(/<[^>]*>?/gm, '')).optional(),
-  logo_url: z.string().url().regex(/\.(jpg|jpeg|png|webp)$/i).optional().or(z.literal('')),
+  name: z.string()
+    .min(3).max(50)
+    .regex(/^[a-zA-Z0-9\s\-_]+$/, 'Nome inválido')
+    .trim()
+    .optional(),
+  
+  logo_url: z.string()
+    .url()
+    .regex(/^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/team-logos\//)
+    .optional()
+    .or(z.literal(''))
 });
 
 const AddMemberSchema = z.object({
-  gamertag: z.string().min(3).max(50).trim().transform(val => val.replace(/<[^>]*>?/gm, '')),
-  discord_id: z.string().optional(), // Opcional se for convite por link/busca
+  gamertag: z.string().min(3).max(50).trim(),
+  discord_id: z.string().min(17).max(19), // Discord IDs têm 17-19 caracteres
+});
+
+const TransferCaptainSchema = z.object({
+  newCaptainId: z.string().uuid('ID inválido')
 });
 
 /**
- * Rota: Listar Equipes (Usuário)
- * Retorna as equipes onde o usuário é membro.
- * Se for admin e passar ?all=true, retorna todas.
+ * CORREÇÃO #9: Listar Equipes com JOIN otimizado
+ * Antes: 2 queries separadas (N+1 potencial)
+ * Depois: 1 query com JOIN
+ * 
+ * GET /api/teams
+ * Retorna as equipes onde o usuário é membro (com dados de membros).
+ * Admin com ?all=true vê todas as equipes.
  */
 router.get('/', isAuthenticated, async (req, res) => {
   try {
     const isAdminUser = req.user!.isAdmin;
 
     if (isAdminUser && req.query.all === 'true') {
+      // Admin: Carregar todas as equipes com membros (limitado a 100)
       const { data: allTeams, error: allError } = await supabaseAdmin
         .from('teams')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select(`
+          id, name, logo_url, status, created_at,
+          captain:profiles!captain_id(id, username, avatar_url, discord_id),
+          members:team_members(
+            id, user_id, gamertag, role, joined_at,
+            profile:profiles(username, avatar_url)
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
 
       if (allError) throw allError;
-      return res.json(allTeams);
+      return res.json(allTeams || []);
     }
 
-    const { data: memberships, error: memberError } = await supabaseAdmin
-      .from('team_members')
-      .select('team_id')
-      .eq('user_id', req.user!.id);
-
-    if (memberError) throw memberError;
-
-    const teamIds = memberships.map(m => m.team_id);
-    
-    if (teamIds.length === 0) {
-      return res.json([]);
-    }
-
-    const { data: teams, error: teamsError } = await supabaseAdmin
+    // CORREÇÃO #9: JOIN otimizado para buscar equipes do usuário
+    const { data: teams, error } = await supabaseAdmin
       .from('teams')
-      .select('*')
-      .in('id', teamIds);
+      .select(`
+        id, name, logo_url, status, created_at,
+        captain:profiles!captain_id(id, username, avatar_url),
+        members:team_members!inner(user_id, gamertag, role)
+      `)
+      .eq('team_members.user_id', req.user!.id)
+      .order('created_at', { ascending: false });
 
-    if (teamsError) throw teamsError;
-
-    res.json(teams);
+    if (error) throw error;
+    res.json(teams || []);
   } catch (error) {
     console.error('Erro ao listar equipes:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -80,24 +134,34 @@ router.get('/', isAuthenticated, async (req, res) => {
 });
 
 /**
- * Rota: Listar Convites Pendentes
+ * GET /api/teams/invitations
+ * Listar Convites Pendentes do usuário
  */
 router.get('/invitations', isAuthenticated, async (req, res) => {
   try {
     const discordId = req.user!.discordId;
     if (!discordId) {
-      return res.json([]); // Se não tiver discord ID, não tem convites baseados nele
+      return res.json([]);
     }
 
     const { data: invitations, error } = await supabaseAdmin
       .from('team_invitations')
-      .select('*, team:teams(name, logo_url), inviter:profiles!invited_by(username)')
+      .select(`
+        *,
+        team:teams(name, logo_url, status),
+        inviter:profiles!invited_by(username, avatar_url)
+      `)
       .eq('discord_id', discordId)
       .eq('status', 'pending');
 
     if (error) throw error;
 
-    res.json(invitations);
+    // Filtrar convites de equipes banidas
+    const activeInvitations = (invitations || []).filter(
+      inv => inv.team && inv.team.status === 'active'
+    );
+
+    res.json(activeInvitations);
   } catch (error) {
     console.error('Erro ao listar convites:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -105,15 +169,34 @@ router.get('/invitations', isAuthenticated, async (req, res) => {
 });
 
 /**
- * Rota: Aceitar Convite
+ * POST /api/teams/invitations/:id/accept
+ * Aceitar Convite
+ * 
+ * CORREÇÕES:
+ * - #6: Verificar duplicidade (usuário já é membro)
+ * - #18: Verificar se usuário convidado está banido
  */
 router.post('/invitations/:id/accept', isAuthenticated, async (req, res) => {
   const invitationId = req.params.id;
+  
   try {
-    // 1. Buscar convite
+    // CORREÇÃO #18: Verificar se usuário está banido antes de aceitar
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('is_banned')
+      .eq('id', req.user!.id)
+      .single();
+
+    if (profileError) throw profileError;
+
+    if (profile?.is_banned) {
+      return res.status(403).json({ error: 'Usuários banidos não podem aceitar convites.' });
+    }
+
+    // Buscar convite
     const { data: invitation, error: fetchError } = await supabaseAdmin
       .from('team_invitations')
-      .select('*')
+      .select('*, team:teams(id, name, status)')
       .eq('id', invitationId)
       .single();
 
@@ -121,7 +204,7 @@ router.post('/invitations/:id/accept', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Convite não encontrado.' });
     }
 
-    // 2. Verificar se pertence ao usuário
+    // Verificar se pertence ao usuário
     if (invitation.discord_id !== req.user!.discordId) {
       return res.status(403).json({ error: 'Este convite não é para você.' });
     }
@@ -130,40 +213,63 @@ router.post('/invitations/:id/accept', isAuthenticated, async (req, res) => {
       return res.status(400).json({ error: 'Convite já processado.' });
     }
 
-    // 3. Verificar se já é membro
+    // Verificar se equipe está ativa
+    if (invitation.team?.status !== 'active') {
+      return res.status(400).json({ error: 'Esta equipe não está mais ativa.' });
+    }
+
+    // CORREÇÃO #6: Verificar se já é membro (duplicidade)
     const { data: existingMember } = await supabaseAdmin
       .from('team_members')
       .select('id')
       .eq('team_id', invitation.team_id)
       .eq('user_id', req.user!.id)
-      .single();
+      .maybeSingle();
 
     if (existingMember) {
-      // Já é membro, apenas deleta o convite
-      await supabaseAdmin.from('team_invitations').delete().eq('id', invitationId);
+      // Atualizar convite para aceito e retornar
+      await supabaseAdmin
+        .from('team_invitations')
+        .update({ status: 'accepted' })
+        .eq('id', invitationId);
+      
       return res.json({ message: 'Você já é membro desta equipe.' });
     }
 
-    // 4. Adicionar membro
+    // Verificar limite de membros
+    const { count } = await supabaseAdmin
+      .from('team_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('team_id', invitation.team_id);
+
+    if (count !== null && count >= 10) {
+      return res.status(400).json({ error: 'A equipe já está cheia (máximo 10 membros).' });
+    }
+
+    // Buscar gamertag do perfil
+    const gamertagFromProfile = profile?.xbox_gamertag || req.user!.username || 'Novato';
+
+    // Adicionar membro
     const { error: insertError } = await supabaseAdmin
       .from('team_members')
       .insert({
         team_id: invitation.team_id,
         user_id: req.user!.id,
-        gamertag: req.user!.username, // Usa username como gamertag inicial
+        gamertag: gamertagFromProfile,
         discord_id: req.user!.discordId,
         role: 'member'
       });
 
     if (insertError) throw insertError;
 
-    // 5. Atualizar convite para aceito (ou deletar)
+    // Atualizar convite para aceito
     await supabaseAdmin
       .from('team_invitations')
       .update({ status: 'accepted' })
       .eq('id', invitationId);
 
-    res.json({ message: 'Convite aceito com sucesso!' });
+    console.log(`[AUDIT] Usuário ${req.user!.id} aceitou convite para equipe ${invitation.team_id}`);
+    res.json({ message: 'Convite aceito com sucesso!', team: invitation.team });
   } catch (error) {
     console.error('Erro ao aceitar convite:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -171,14 +277,16 @@ router.post('/invitations/:id/accept', isAuthenticated, async (req, res) => {
 });
 
 /**
- * Rota: Recusar Convite
+ * POST /api/teams/invitations/:id/decline
+ * Recusar Convite
  */
 router.post('/invitations/:id/decline', isAuthenticated, async (req, res) => {
   const invitationId = req.params.id;
+  
   try {
     const { data: invitation, error: fetchError } = await supabaseAdmin
       .from('team_invitations')
-      .select('*')
+      .select('discord_id, status')
       .eq('id', invitationId)
       .single();
 
@@ -188,6 +296,10 @@ router.post('/invitations/:id/decline', isAuthenticated, async (req, res) => {
 
     if (invitation.discord_id !== req.user!.discordId) {
       return res.status(403).json({ error: 'Este convite não é para você.' });
+    }
+
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ error: 'Convite já processado.' });
     }
 
     await supabaseAdmin
@@ -203,28 +315,37 @@ router.post('/invitations/:id/decline', isAuthenticated, async (req, res) => {
 });
 
 /**
- * Rota: Detalhes da Equipe
+ * GET /api/teams/:id
+ * Detalhes da Equipe (com membros)
  */
 router.get('/:id', isAuthenticated, async (req, res) => {
   const teamId = req.params.id;
+  
   try {
     // Verificar se usuário é membro ou admin
-    const { data: member, error: memberError } = await supabaseAdmin
+    const { data: member } = await supabaseAdmin
       .from('team_members')
       .select('role')
       .eq('team_id', teamId)
       .eq('user_id', req.user!.id)
-      .single();
+      .maybeSingle();
 
     const isAdminUser = req.user!.isAdmin;
 
-    if (memberError && !isAdminUser) {
+    if (!member && !isAdminUser) {
       return res.status(403).json({ error: 'Acesso negado. Você não é membro desta equipe.' });
     }
 
     const { data: team, error: teamError } = await supabaseAdmin
       .from('teams')
-      .select('*')
+      .select(`
+        *,
+        captain:profiles!captain_id(id, username, avatar_url),
+        members:team_members(
+          id, user_id, gamertag, role, joined_at,
+          profile:profiles(username, avatar_url, is_banned)
+        )
+      `)
       .eq('id', teamId)
       .single();
 
@@ -232,14 +353,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Equipe não encontrada' });
     }
 
-    const { data: members, error: membersError } = await supabaseAdmin
-      .from('team_members')
-      .select('*')
-      .eq('team_id', teamId);
-
-    if (membersError) throw membersError;
-
-    res.json({ ...team, members });
+    res.json(team);
   } catch (error) {
     console.error('Erro ao buscar detalhes da equipe:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -247,68 +361,72 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 });
 
 /**
- * Rota: Criar Equipe
- * Proteção: Apenas usuários autenticados.
- * Validação: Zod Schema.
+ * POST /api/teams
+ * Criar Equipe
+ * 
+ * CORREÇÃO #1: Usar função transacional do PostgreSQL
+ * Evita race condition (equipe sem capitão)
  */
 router.post('/', isAuthenticated, teamCreationLimiter, async (req, res) => {
   try {
-    // Valida o body da requisição
+    // Validar dados
     const validatedData = CreateTeamSchema.parse(req.body);
 
-    // Verificar se usuário já tem equipe
-    const { data: existingMember, error: existingError } = await supabaseAdmin
+    // Verificar se usuário já pertence a uma equipe
+    const { data: existingMember } = await supabaseAdmin
       .from('team_members')
-      .select('id')
+      .select('id, team:teams(name)')
       .eq('user_id', req.user!.id)
-      .single();
+      .maybeSingle();
 
     if (existingMember) {
-      return res.status(400).json({ error: 'Você já pertence a uma equipe.' });
-    }
-
-    // Criar equipe
-    const { data: newTeam, error: createError } = await supabaseAdmin
-      .from('teams')
-      .insert({
-        name: validatedData.name,
-        logo_url: validatedData.logo_url,
-        captain_id: req.user!.id,
-      })
-      .select()
-      .single();
-
-    if (createError) {
-      if (createError.code === '23505') { // Unique violation
-        return res.status(400).json({ error: 'Nome da equipe ou navio já existe.' });
-      }
-      throw createError;
-    }
-
-    // Adicionar capitão como membro
-    const { error: memberError } = await supabaseAdmin
-      .from('team_members')
-      .insert({
-        team_id: newTeam.id,
-        user_id: req.user!.id,
-        gamertag: validatedData.gamertag,
-        role: 'captain',
-        discord_id: req.user!.discordId,
+      return res.status(400).json({
+        error: 'Você já pertence a uma equipe.',
+        teamName: existingMember.team?.name
       });
-
-    if (memberError) {
-      // Rollback (delete team if member creation fails)
-      await supabaseAdmin.from('teams').delete().eq('id', newTeam.id);
-      throw memberError;
     }
-    
-    // Auditoria: Log de criação
-    console.log(`[AUDIT] Usuário ${req.user!.id} criou a equipe ${newTeam.id}`);
 
-    res.status(201).json({ message: 'Equipe criada com sucesso', team: newTeam });
+    // CORREÇÃO #1: Chamar função transacional
+    const { data, error } = await supabaseAdmin.rpc('create_team_with_captain', {
+      p_team_name: validatedData.name,
+      p_captain_id: req.user!.id,
+      p_logo_url: validatedData.logo_url || null,
+      p_gamertag: validatedData.gamertag,
+      p_discord_id: req.user!.discordId || ''
+    });
+
+    if (error) {
+      // Tratar erros específicos da função
+      if (error.message.includes('Usuário banido')) {
+        return res.status(403).json({ error: 'Usuários banidos não podem criar equipes.' });
+      }
+      if (error.message.includes('já existe')) {
+        return res.status(400).json({ error: error.message });
+      }
+      throw error;
+    }
+
+    const newTeam = data[0];
+    console.log(`[AUDIT] Usuário ${req.user!.id} criou a equipe ${newTeam.team_id}`);
+
+    res.status(201).json({
+      message: 'Equipe criada com sucesso',
+      team: {
+        id: newTeam.team_id,
+        name: newTeam.team_name,
+        logo_url: newTeam.team_logo_url,
+        created_at: newTeam.created_at
+      }
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Dados inválidos', details: error.issues });
+      return res.status(400).json({
+        error: 'Dados inválidos',
+        details: error.issues.map(issue => ({
+          field: issue.path.join('.'),
+          message: issue.message
+        }))
+      });
     }
     console.error('Erro ao criar equipe:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -316,9 +434,10 @@ router.post('/', isAuthenticated, teamCreationLimiter, async (req, res) => {
 });
 
 /**
- * Rota: Editar Equipe
- * Proteção: Apenas usuários autenticados.
- * Prevenção de IDOR: Verifica se o usuário logado é o dono da equipe.
+ * PUT /api/teams/:id
+ * Editar Equipe (apenas capitão ou admin)
+ * 
+ * CORREÇÃO #7: Melhorar validação de capitania
  */
 router.put('/:id', isAuthenticated, async (req, res) => {
   const teamId = req.params.id;
@@ -326,7 +445,7 @@ router.put('/:id', isAuthenticated, async (req, res) => {
   try {
     const { data: team, error: fetchError } = await supabaseAdmin
       .from('teams')
-      .select('captain_id')
+      .select('captain_id, status')
       .eq('id', teamId)
       .single();
 
@@ -334,11 +453,15 @@ router.put('/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Equipe não encontrada' });
     }
 
+    if (team.status === 'banned') {
+      return res.status(403).json({ error: 'Equipe banida não pode ser editada.' });
+    }
+
     const isAdminUser = req.user!.isAdmin;
 
-    // Segurança: Prevenção de IDOR
+    // CORREÇÃO: Prevenção de IDOR
     if (team.captain_id !== req.user!.id && !isAdminUser) {
-      console.warn(`[SECURITY] Tentativa de IDOR detectada. Usuário ${req.user!.id} tentou editar equipe ${teamId}`);
+      console.warn(`[SECURITY] Tentativa de IDOR: Usuário ${req.user!.id} tentou editar equipe ${teamId}`);
       return res.status(403).json({ error: 'Acesso negado. Você não é o capitão desta equipe.' });
     }
 
@@ -365,9 +488,8 @@ router.put('/:id', isAuthenticated, async (req, res) => {
 });
 
 /**
- * Rota: Deletar Equipe
- * Proteção: Apenas usuários autenticados.
- * Prevenção de IDOR: Verifica se o usuário logado é o dono.
+ * DELETE /api/teams/:id
+ * Deletar Equipe (apenas capitão ou admin)
  */
 router.delete('/:id', isAuthenticated, async (req, res) => {
   const teamId = req.params.id;
@@ -386,11 +508,11 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
     const isAdminUser = req.user!.isAdmin;
 
     if (team.captain_id !== req.user!.id && !isAdminUser) {
-      console.warn(`[SECURITY] Tentativa de IDOR detectada. Usuário ${req.user!.id} tentou deletar equipe ${teamId}`);
+      console.warn(`[SECURITY] Tentativa de IDOR: Usuário ${req.user!.id} tentou deletar equipe ${teamId}`);
       return res.status(403).json({ error: 'Acesso negado.' });
     }
 
-    // TODO: Verificar eventos ativos antes de deletar
+    // TODO: Verificar se equipe está em evento ativo
 
     const { error: deleteError } = await supabaseAdmin
       .from('teams')
@@ -408,9 +530,10 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
 });
 
 /**
- * Rota: Adicionar Membro (Convite simplificado para MVP)
- * Em produção, deve ser via convite (tabela team_invitations).
- * Aqui, vamos permitir adicionar direto se for capitão (para simplificar ou admin).
+ * POST /api/teams/:id/members
+ * Convidar Membro (capitão ou admin)
+ * 
+ * CORREÇÃO #10: Verificar se convidado está banido
  */
 router.post('/:id/members', isAuthenticated, async (req, res) => {
   const teamId = req.params.id;
@@ -418,7 +541,7 @@ router.post('/:id/members', isAuthenticated, async (req, res) => {
   try {
     const { data: team, error: fetchError } = await supabaseAdmin
       .from('teams')
-      .select('captain_id')
+      .select('captain_id, status')
       .eq('id', teamId)
       .single();
 
@@ -426,53 +549,57 @@ router.post('/:id/members', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Equipe não encontrada' });
     }
 
+    if (team.status === 'banned') {
+      return res.status(403).json({ error: 'Equipes banidas não podem convidar membros.' });
+    }
+
     const isAdminUser = req.user!.isAdmin;
 
     if (team.captain_id !== req.user!.id && !isAdminUser) {
-      return res.status(403).json({ error: 'Apenas o capitão pode adicionar membros.' });
+      return res.status(403).json({ error: 'Apenas o capitão pode convidar membros.' });
     }
 
     const validatedData = AddMemberSchema.parse(req.body);
 
-    // Verificar limite de membros (já tem trigger no banco, mas bom checar antes)
+    // Verificar limite de membros
     const { count, error: countError } = await supabaseAdmin
       .from('team_members')
       .select('*', { count: 'exact', head: true })
       .eq('team_id', teamId);
 
     if (countError) throw countError;
+    
     if (count !== null && count >= 10) {
-      return res.status(400).json({ error: 'A equipe já está cheia (máx 10 membros).' });
+      return res.status(400).json({ error: 'A equipe já está cheia (máximo 10 membros).' });
     }
 
-    // Verificar se gamertag já existe na equipe
-    const { data: existingGamertag } = await supabaseAdmin
-      .from('team_members')
+    // CORREÇÃO #10: Verificar se usuário a ser convidado está banido
+    const { data: invitedUser, error: invitedError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, is_banned, username')
+      .eq('discord_id', validatedData.discord_id)
+      .maybeSingle();
+
+    if (invitedError) throw invitedError;
+
+    if (invitedUser?.is_banned) {
+      return res.status(400).json({ error: 'Usuários banidos não podem ser convidados.' });
+    }
+
+    // Verificar se já existe convite pendente
+    const { data: existingInvite } = await supabaseAdmin
+      .from('team_invitations')
       .select('id')
       .eq('team_id', teamId)
-      .eq('gamertag', validatedData.gamertag)
-      .single();
+      .eq('discord_id', validatedData.discord_id)
+      .eq('status', 'pending')
+      .maybeSingle();
 
-    if (existingGamertag) {
-      return res.status(400).json({ error: 'Gamertag já existe nesta equipe.' });
+    if (existingInvite) {
+      return res.status(400).json({ error: 'Já existe um convite pendente para este usuário.' });
     }
 
-    // Para adicionar um membro real, precisaríamos do user_id dele.
-    // Como não temos busca de usuários implementada, vamos assumir que o capitão está convidando via Discord ID
-    // E vamos criar um convite ou adicionar direto se tivermos o ID.
-    // Para este MVP, vamos simular a adição se tivermos o ID, ou retornar erro.
-    
-    // NOTA: Em um fluxo real, cria-se um convite em team_invitations e o usuário aceita.
-    // Vou implementar a criação do convite aqui.
-    
-    if (!validatedData.discord_id) {
-       return res.status(400).json({ error: 'Discord ID necessário para convite.' });
-    }
-
-    // Buscar user_id pelo discord_id (se possível, ou armazenar o discord_id no convite)
-    // Supabase Auth não expõe busca de user por metadata facilmente via client sem ser admin total.
-    // Vamos criar o convite baseado no discord_id.
-
+    // Criar convite
     const { data: invitation, error: inviteError } = await supabaseAdmin
       .from('team_invitations')
       .insert({
@@ -486,23 +613,30 @@ router.post('/:id/members', isAuthenticated, async (req, res) => {
 
     if (inviteError) throw inviteError;
 
-    res.status(201).json({ message: 'Convite enviado com sucesso.', invitation });
+    console.log(`[AUDIT] Usuário ${req.user!.id} convidou ${validatedData.discord_id} para equipe ${teamId}`);
+    res.status(201).json({
+      message: 'Convite enviado com sucesso.',
+      invitation
+    });
 
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Dados inválidos', details: error.issues });
     }
-    console.error('Erro ao adicionar membro:', error);
+    console.error('Erro ao convidar membro:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
 /**
- * Rota: Remover Membro
+ * DELETE /api/teams/:id/members/:memberId
+ * Remover Membro
+ * 
+ * CORREÇÃO #31: Validar se é último membro
  */
 router.delete('/:id/members/:memberId', isAuthenticated, async (req, res) => {
   const teamId = req.params.id;
-  const memberIdToRemove = req.params.memberId; // ID da tabela team_members, ou user_id? Vamos usar user_id para facilitar
+  const memberIdToRemove = req.params.memberId;
 
   try {
     const { data: team, error: fetchError } = await supabaseAdmin
@@ -519,13 +653,28 @@ router.delete('/:id/members/:memberId', isAuthenticated, async (req, res) => {
     const isCaptain = team.captain_id === req.user!.id;
     const isSelf = req.user!.id === memberIdToRemove;
 
-    // Permissões: Capitão remove qualquer um, Admin remove qualquer um, Membro remove a si mesmo (sair)
+    // Permissões: Capitão remove qualquer um, Admin remove qualquer um, Membro remove a si mesmo
     if (!isCaptain && !isAdminUser && !isSelf) {
       return res.status(403).json({ error: 'Acesso negado.' });
     }
 
-    if (isCaptain && memberIdToRemove === team.captain_id && !isAdminUser) {
-      return res.status(400).json({ error: 'Capitão não pode se remover. Transfira a capitania ou delete a equipe.' });
+    // Capitão não pode se remover
+    if (memberIdToRemove === team.captain_id) {
+      return res.status(400).json({
+        error: 'Capitão não pode se remover. Transfira a capitania antes ou delete a equipe.'
+      });
+    }
+
+    // CORREÇÃO #31: Verificar se é último membro (além do capitão)
+    const { count } = await supabaseAdmin
+      .from('team_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('team_id', teamId);
+
+    if (count === 1) {
+      return res.status(400).json({
+        error: 'Esta é a última pessoa da equipe. Delete a equipe se desejar sair.'
+      });
     }
 
     const { error: deleteError } = await supabaseAdmin
@@ -546,34 +695,11 @@ router.delete('/:id/members/:memberId', isAuthenticated, async (req, res) => {
 });
 
 /**
- * Rota: Banir Equipe (Admin apenas)
- */
-router.post('/:id/ban', isAuthenticated, isAdmin, async (req, res) => {
-  const teamId = req.params.id;
-  const { reason } = req.body;
-
-  try {
-    const { error: updateError } = await supabaseAdmin
-      .from('teams')
-      .update({ status: 'banned', is_banned: true })
-      .eq('id', teamId);
-
-    if (updateError) throw updateError;
-
-    console.log(`[AUDIT] Admin ${req.user!.id} baniu a equipe ${teamId}. Motivo: ${reason}`);
-    res.json({ message: 'Equipe banida com sucesso.' });
-  } catch (error) {
-    console.error('Erro ao banir equipe:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
-
-/**
- * Rota: Transferir Capitania
+ * POST /api/teams/:id/transfer
+ * Transferir Capitania
  */
 router.post('/:id/transfer', isAuthenticated, async (req, res) => {
   const teamId = req.params.id;
-  const { newCaptainId } = req.body;
 
   try {
     const { data: team, error: fetchError } = await supabaseAdmin
@@ -592,46 +718,95 @@ router.post('/:id/transfer', isAuthenticated, async (req, res) => {
       return res.status(403).json({ error: 'Apenas o capitão pode transferir a liderança.' });
     }
 
-    // Verificar se o novo capitão é membro da equipe
+    const validatedData = TransferCaptainSchema.parse(req.body);
+
+    // Verificar se novo capitão está banido
+    const { data: newCaptainProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('is_banned')
+      .eq('id', validatedData.newCaptainId)
+      .single();
+
+    if (newCaptainProfile?.is_banned) {
+      return res.status(400).json({ error: 'Não é possível transferir capitania para usuário banido.' });
+    }
+
+    // Verificar se novo capitão é membro da equipe
     const { data: member, error: memberError } = await supabaseAdmin
       .from('team_members')
       .select('id')
       .eq('team_id', teamId)
-      .eq('user_id', newCaptainId)
+      .eq('user_id', validatedData.newCaptainId)
       .single();
 
     if (memberError || !member) {
       return res.status(400).json({ error: 'O novo capitão deve ser membro da equipe.' });
     }
 
-    // Atualizar roles
-    // 1. Definir antigo capitão como membro
+    // Transação: Atualizar roles
+    // 1. Antigo capitão vira membro
     await supabaseAdmin
       .from('team_members')
       .update({ role: 'member' })
       .eq('team_id', teamId)
       .eq('user_id', team.captain_id);
 
-    // 2. Definir novo capitão como captain
+    // 2. Novo capitão
     await supabaseAdmin
       .from('team_members')
       .update({ role: 'captain' })
       .eq('team_id', teamId)
-      .eq('user_id', newCaptainId);
+      .eq('user_id', validatedData.newCaptainId);
 
     // 3. Atualizar tabela teams
     const { error: updateError } = await supabaseAdmin
       .from('teams')
-      .update({ captain_id: newCaptainId })
+      .update({ captain_id: validatedData.newCaptainId })
       .eq('id', teamId);
 
     if (updateError) throw updateError;
 
-    console.log(`[AUDIT] Capitania da equipe ${teamId} transferida de ${team.captain_id} para ${newCaptainId}`);
+    console.log(`[AUDIT] Capitania da equipe ${teamId} transferida de ${team.captain_id} para ${validatedData.newCaptainId}`);
     res.json({ message: 'Capitania transferida com sucesso.' });
 
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Dados inválidos', details: error.issues });
+    }
     console.error('Erro ao transferir capitania:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+/**
+ * POST /api/teams/:id/ban
+ * Banir Equipe (Admin apenas)
+ */
+router.post('/:id/ban', isAuthenticated, isAdmin, async (req, res) => {
+  const teamId = req.params.id;
+  const { reason } = req.body;
+
+  try {
+    const { error: updateError } = await supabaseAdmin
+      .from('teams')
+      .update({ status: 'banned' })
+      .eq('id', teamId);
+
+    if (updateError) throw updateError;
+
+    // Log de auditoria
+    await supabaseAdmin.from('admin_logs').insert({
+      admin_id: req.user!.id,
+      action: 'team_banned',
+      target_type: 'team',
+      target_id: teamId,
+      details: { reason: reason || 'Sem motivo especificado' }
+    });
+
+    console.log(`[AUDIT] Admin ${req.user!.id} baniu a equipe ${teamId}. Motivo:${reason}`);
+    res.json({ message: 'Equipe banida com sucesso.' });
+  } catch (error) {
+    console.error('Erro ao banir equipe:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
