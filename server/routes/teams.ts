@@ -146,22 +146,55 @@ router.get('/invitations', isAuthenticated, async (req, res) => {
 
     const { data: invitations, error } = await supabaseAdmin
       .from('team_invitations')
-      .select(`
-        *,
-        team:teams(name, logo_url, status),
-        inviter:profiles!invited_by(username, avatar_url)
-      `)
+      .select('id, team_id, invited_by, discord_id, status, created_at')
       .eq('discord_id', discordId)
       .eq('status', 'pending');
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro ao buscar convites pendentes:', error);
+      return res.json([]);
+    }
 
-    // Filtrar convites de equipes banidas
-    const activeInvitations = (invitations || []).filter(
-      inv => inv.team && inv.team.status === 'active'
-    );
+    if (!invitations || invitations.length === 0) {
+      return res.json([]);
+    }
 
-    res.json(activeInvitations);
+    const teamIds = Array.from(new Set(invitations.map(inv => inv.team_id).filter(Boolean)));
+    const inviterIds = Array.from(new Set(invitations.map(inv => inv.invited_by).filter(Boolean)));
+
+    // Busca dados de equipes separadamente para evitar falha de embedding por FK em produção.
+    const { data: teamsData, error: teamsError } = await supabaseAdmin
+      .from('teams')
+      .select('id, name, logo_url, status')
+      .in('id', teamIds);
+
+    if (teamsError) {
+      console.error('Erro ao buscar equipes dos convites:', teamsError);
+      return res.json([]);
+    }
+
+    const { data: invitersData, error: invitersError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .in('id', inviterIds);
+
+    if (invitersError) {
+      console.error('Erro ao buscar perfis dos convites:', invitersError);
+      return res.json([]);
+    }
+
+    const teamsMap = new Map((teamsData || []).map(team => [team.id, team]));
+    const invitersMap = new Map((invitersData || []).map(inviter => [inviter.id, inviter]));
+
+    const enrichedInvitations = invitations
+      .map(inv => ({
+        ...inv,
+        team: teamsMap.get(inv.team_id) || null,
+        inviter: invitersMap.get(inv.invited_by) || null
+      }))
+      .filter(inv => inv.team && inv.team.status === 'active');
+
+    res.json(enrichedInvitations);
   } catch (error) {
     console.error('Erro ao listar convites:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -183,7 +216,7 @@ router.post('/invitations/:id/accept', isAuthenticated, async (req, res) => {
     // CORREÇÃO #18: Verificar se usuário está banido antes de aceitar
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('is_banned')
+      .select('is_banned, xbox_gamertag')
       .eq('id', req.user!.id)
       .single();
 
