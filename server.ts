@@ -79,9 +79,41 @@ const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
 const REDIRECT_URI = `${APP_URL}/auth/callback`;
 
-// API Routes
+// Diagnostic Health Endpoint
+// Validates all critical environment variables and returns detailed status
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const sessionSecret = process.env.SESSION_SECRET;
+  const appUrl = process.env.APP_URL;
+  
+  const checks = {
+    supabase_url: !!supabaseUrl,
+    service_role_key: !!serviceKey,
+    session_secret: !!sessionSecret,
+    app_url: !!appUrl,
+    discord_client_id: !!process.env.DISCORD_CLIENT_ID,
+    discord_client_secret: !!process.env.DISCORD_CLIENT_SECRET,
+  };
+
+  const allOk = Object.values(checks).every(Boolean);
+  
+  // If any critical var is missing, return 503 with diagnostic info
+  if (!allOk) {
+    const missing = Object.entries(checks)
+      .filter(([_, ok]) => !ok)
+      .map(([key, _]) => key);
+    
+    return res.status(503).json({
+      status: 'degraded',
+      message: 'Missing required environment variables',
+      missing_vars: missing,
+      hint: 'Configure these in Vercel Project Settings > Environment Variables',
+      docs_url: 'https://github.com/spiralkingxd/madnessarena/blob/main/.env.example'
+    });
+  }
+
+  res.json({ status: 'ok', checks });
 });
 
 // Rotas Modulares
@@ -89,6 +121,28 @@ app.get('/api/health', (req, res) => {
 app.use('/api/teams', teamRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
+
+// Global Error Handler for API Routes
+// Catches Supabase initialization errors and returns diagnostic response
+app.use('/api', (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const message = err?.message || 'Internal Server Error';
+  
+  // Check if error is related to missing Supabase config
+  if (message.includes('Missing required environment variables') || message.includes('Supabase')) {
+    console.error('Supabase config error:', message);
+    return res.status(503).json({
+      error: 'Service Unavailable - Configuration Error',
+      message: message,
+      hint: 'The API server is waiting for environment variables to be configured. Check /api/health for details.'
+    });
+  }
+
+  console.error('API Error:', err);
+  res.status(500).json({ 
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'production' ? 'An error occurred' : message
+  });
+});
 
 // Vite Middleware for Development
 async function startServer() {
