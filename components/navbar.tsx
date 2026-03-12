@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { logout } from "@/app/auth/login/actions";
 import { createClient } from "@/lib/supabase/server";
+import { NavLinks } from "@/components/nav-links";
 
 type ProfileNavbarRow = {
   display_name: string;
@@ -33,43 +34,52 @@ export async function Navbar() {
   const nickname = profile?.display_name ?? profile?.username ?? user?.email ?? "Jogador";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050b12]/85 backdrop-blur">
-      <div className="mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between px-6 lg:px-10">
-        <Link href="/" className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-200">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050b12]/90 backdrop-blur">
+      <div className="relative mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between gap-4 px-6 lg:px-10">
+
+        {/* Logo */}
+        <Link
+          href="/"
+          className="shrink-0 text-sm font-bold uppercase tracking-[0.3em] text-cyan-200 transition hover:text-cyan-100"
+        >
           MadnessArena
         </Link>
 
+        {/* Nav links — desktop inline / mobile toggle */}
+        <NavLinks />
+
+        {/* Auth area */}
         {!user ? (
           <Link
             href="/auth/login"
-            className="inline-flex items-center rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+            className="shrink-0 inline-flex items-center rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
           >
             Login com Discord
           </Link>
         ) : (
-          <div className="flex items-center gap-3">
-            {profile?.role === "admin" ? (
+          <div className="flex shrink-0 items-center gap-2">
+            {profile?.role === "admin" && (
               <Link
                 href="/admin/dashboard"
-                className="rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm font-semibold text-amber-200 transition hover:bg-amber-300/20"
+                className="hidden rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm font-semibold text-amber-200 transition hover:bg-amber-300/20 sm:inline-flex"
               >
                 Painel Admin
               </Link>
-            ) : null}
+            )}
             <Link
               href="/profile/me"
-              className="inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 transition hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 transition hover:bg-white/10"
             >
-              <span className="relative h-8 w-8 overflow-hidden rounded-full border border-white/10 bg-white/10">
+              <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-white/10 bg-white/10">
                 {avatarUrl ? (
-                  <Image src={avatarUrl} alt={nickname} fill sizes="32px" className="object-cover" />
+                  <Image src={avatarUrl} alt={nickname} fill sizes="28px" className="object-cover" />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center text-xs font-bold text-cyan-200">
                     {nickname.slice(0, 1).toUpperCase()}
                   </span>
                 )}
               </span>
-              <span className="max-w-[170px] truncate">{nickname}</span>
+              <span className="hidden max-w-[130px] truncate sm:inline">{nickname}</span>
             </Link>
             <form action={logout}>
               <button
