@@ -53,6 +53,37 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
+    if (user && (isPrivatePath || isAdminPath)) {
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        const metadata = user.user_metadata ?? {};
+        const displayName =
+          metadata.full_name ?? metadata.name ?? metadata.global_name ?? user.email?.split("@")[0] ?? "Pirata";
+        const username = metadata.user_name ?? metadata.preferred_username ?? metadata.name ?? displayName;
+        const avatarUrl = metadata.avatar_url ?? null;
+
+        await supabase.from("profiles").upsert(
+          {
+            id: user.id,
+            discord_id: user.id,
+            display_name: displayName,
+            username,
+            email: user.email ?? null,
+            avatar_url: avatarUrl,
+            xbox_gamertag: null,
+            role: "user",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" },
+        );
+      }
+    }
+
     if (user && isAdminPath) {
       const { data: profile } = await supabase
         .from("profiles")

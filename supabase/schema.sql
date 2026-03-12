@@ -5,44 +5,135 @@ grant create on schema public to service_role;
 
 create extension if not exists "pgcrypto";
 
-create type public.app_role as enum ('user', 'admin');
-create type public.event_status as enum ('draft', 'active', 'finished');
-create type public.registration_status as enum ('pending', 'approved', 'rejected', 'cancelled');
-
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
+do $$
 begin
-  insert into public.profiles (
-    id,
-    discord_id,
-    display_name,
-    username,
-    email,
-    avatar_url
-  )
-  values (
-    new.id,
-    new.raw_user_meta_data ->> 'provider_id',
-    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', split_part(new.email, '@', 1)),
-    coalesce(new.raw_user_meta_data ->> 'user_name', new.raw_user_meta_data ->> 'preferred_username', split_part(new.email, '@', 1)),
-    new.email,
-    new.raw_user_meta_data ->> 'avatar_url'
-  )
-  on conflict (id) do update
-  set
-    discord_id = excluded.discord_id,
-    display_name = excluded.display_name,
-    username = excluded.username,
-    email = excluded.email,
-    avatar_url = excluded.avatar_url;
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public'
+      and t.typname = 'event_status'
+  ) then
+    create type public.event_status as enum ('draft', 'active', 'finished');
+  end if;
 
-  return new;
-end;
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public'
+      and t.typname = 'registration_status'
+  ) then
+    create type public.registration_status as enum ('pending', 'approved', 'rejected', 'cancelled');
+  end if;
+end
 $$;
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  discord_id text unique,
+  display_name text,
+  username text,
+  email text,
+  xbox_gamertag text,
+  avatar_url text,
+  role text not null default 'user',
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+alter table public.profiles add column if not exists discord_id text;
+alter table public.profiles add column if not exists display_name text;
+alter table public.profiles add column if not exists username text;
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists xbox_gamertag text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists role text;
+alter table public.profiles add column if not exists created_at timestamptz;
+alter table public.profiles add column if not exists updated_at timestamptz;
+
+-- Atualizacao de schema existente: removendo campo legado bio.
+alter table public.profiles drop column if exists bio;
+
+update public.profiles p
+set discord_id = coalesce(u.raw_user_meta_data ->> 'provider_id', u.raw_user_meta_data ->> 'sub', p.id::text)
+from auth.users u
+where u.id = p.id
+  and p.discord_id is null;
+
+update public.profiles
+set discord_id = id::text
+where discord_id is null;
+
+alter table public.profiles
+  alter column role set default 'user';
+
+update public.profiles
+set role = 'user'
+where role is null;
+
+do $$
+begin
+  begin
+    alter table public.profiles
+      alter column role type text using role::text;
+  exception
+    when others then
+      null;
+  end;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'profiles_role_check'
+      and conrelid = 'public.profiles'::regclass
+  ) then
+    alter table public.profiles
+      add constraint profiles_role_check check (role in ('user', 'admin'));
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'profiles_discord_id_key'
+      and conrelid = 'public.profiles'::regclass
+  ) then
+    alter table public.profiles
+      add constraint profiles_discord_id_key unique (discord_id);
+  end if;
+end
+$$;
+
+alter table public.profiles
+  alter column discord_id set not null;
+
+alter table public.profiles
+  alter column created_at set default timezone('utc', now());
+
+alter table public.profiles
+  alter column updated_at set default timezone('utc', now());
+
+update public.profiles
+set created_at = timezone('utc', now())
+where created_at is null;
+
+update public.profiles
+set updated_at = timezone('utc', now())
+where updated_at is null;
+
+alter table public.profiles
+  alter column created_at set not null;
+
+alter table public.profiles
+  alter column updated_at set not null;
 
 create or replace function public.is_admin()
 returns boolean
@@ -59,21 +150,6 @@ as $$
   );
 $$;
 
-create table if not exists public.profiles (
-  id uuid primary key references auth.users (id) on delete cascade,
-  discord_id text unique,
-  display_name text not null,
-  username text not null,
-  email text,
-  bio text,
-  xbox_gamertag text,
-  avatar_url text,
-  role public.app_role not null default 'user',
-  created_at timestamptz not null default timezone('utc', now())
-);
-
-alter table public.profiles add column if not exists bio text;
-
 create table if not exists public.teams (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
@@ -82,6 +158,8 @@ create table if not exists public.teams (
   logo_url text,
   created_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.teams add column if not exists members jsonb not null default '[]'::jsonb;
 
 create table if not exists public.team_members (
   team_id uuid not null references public.teams (id) on delete cascade,
@@ -322,17 +400,77 @@ to authenticated
 using (public.is_admin())
 with check (public.is_admin());
 
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (
+    id,
+    discord_id,
+    display_name,
+    username,
+    email,
+    xbox_gamertag,
+    avatar_url,
+    role,
+    updated_at
+  )
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'provider_id', new.raw_user_meta_data ->> 'sub', new.id::text),
+    coalesce(
+      new.raw_user_meta_data ->> 'full_name',
+      new.raw_user_meta_data ->> 'name',
+      split_part(new.email, '@', 1)
+    ),
+    coalesce(
+      new.raw_user_meta_data ->> 'user_name',
+      new.raw_user_meta_data ->> 'preferred_username',
+      new.raw_user_meta_data ->> 'name',
+      split_part(new.email, '@', 1)
+    ),
+    new.email,
+    null,
+    new.raw_user_meta_data ->> 'avatar_url',
+    'user',
+    timezone('utc', now())
+  )
+  on conflict (id) do update
+  set
+    discord_id = excluded.discord_id,
+    display_name = excluded.display_name,
+    username = excluded.username,
+    email = excluded.email,
+    avatar_url = excluded.avatar_url,
+    updated_at = timezone('utc', now());
+
+  return new;
+end;
+$$;
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row
 execute procedure public.handle_new_user();
 
-insert into public.profiles (id, display_name, username, email, role)
-select id,
-       coalesce(raw_user_meta_data ->> 'full_name', split_part(email, '@', 1)),
-       coalesce(raw_user_meta_data ->> 'user_name', split_part(email, '@', 1)),
-       email,
-       'user'
+insert into public.profiles (id, discord_id, display_name, username, email, role, updated_at)
+select
+  id,
+  coalesce(raw_user_meta_data ->> 'provider_id', raw_user_meta_data ->> 'sub', id::text),
+  coalesce(raw_user_meta_data ->> 'full_name', split_part(email, '@', 1)),
+  coalesce(raw_user_meta_data ->> 'user_name', split_part(email, '@', 1)),
+  email,
+  'user',
+  timezone('utc', now())
 from auth.users
-on conflict (id) do nothing;
+on conflict (id) do update
+set
+  discord_id = coalesce(public.profiles.discord_id, excluded.discord_id),
+  display_name = coalesce(public.profiles.display_name, excluded.display_name),
+  username = coalesce(public.profiles.username, excluded.username),
+  email = coalesce(public.profiles.email, excluded.email),
+  updated_at = timezone('utc', now());

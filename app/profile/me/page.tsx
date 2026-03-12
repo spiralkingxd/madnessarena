@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
-import { updateMyProfile } from "@/app/profile/me/actions";
+import { upsertProfileFromOAuth } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 
 type ProfileRow = {
@@ -9,7 +10,6 @@ type ProfileRow = {
   display_name: string;
   username: string;
   email: string | null;
-  bio: string | null;
   xbox_gamertag: string | null;
   avatar_url: string | null;
   created_at: string;
@@ -25,20 +25,26 @@ export default async function MyProfilePage() {
     redirect("/auth/login?next=/profile/me");
   }
 
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from("profiles")
-    .select("id, discord_id, display_name, username, email, bio, xbox_gamertag, avatar_url, created_at")
+    .select("id, discord_id, display_name, username, email, xbox_gamertag, avatar_url, created_at")
     .eq("id", user.id)
-    .single<ProfileRow>();
+    .maybeSingle<ProfileRow>();
 
   if (!profile) {
-    redirect("/auth/login?error=profile_not_found");
+    await upsertProfileFromOAuth();
+
+    const { data: recoveredProfile } = await supabase
+      .from("profiles")
+      .select("id, discord_id, display_name, username, email, xbox_gamertag, avatar_url, created_at")
+      .eq("id", user.id)
+      .maybeSingle<ProfileRow>();
+
+    profile = recoveredProfile;
   }
 
-  // Wrapper inline para que o <form action> receba uma função com retorno void.
-  async function handleUpdate(formData: FormData): Promise<void> {
-    "use server";
-    await updateMyProfile(formData);
+  if (!profile) {
+    redirect("/");
   }
 
   return (
@@ -50,36 +56,27 @@ export default async function MyProfilePage() {
           Dados sincronizados do Discord e integração de Xbox no momento do login.
         </p>
 
-        <form action={handleUpdate} className="mt-8 space-y-6">
-          <ReadOnlyField label="Nome de exibição" value={profile.display_name} />
-          <ReadOnlyField label="Username" value={profile.username} />
-          <ReadOnlyField label="Discord ID" value={profile.discord_id ?? "-"} />
-          <ReadOnlyField label="Email" value={profile.email ?? "-"} />
-          <ReadOnlyField label="Xbox Gamertag" value={profile.xbox_gamertag ?? "Sem conexão Xbox no Discord"} />
-          <ReadOnlyField label="Avatar URL" value={profile.avatar_url ?? "-"} />
-
+        <div className="mt-8 space-y-6">
           <div>
-            <label htmlFor="bio" className="mb-2 block text-sm font-medium text-slate-200">
-              Bio (editável)
-            </label>
-            <textarea
-              id="bio"
-              name="bio"
-              defaultValue={profile.bio ?? ""}
-              maxLength={240}
-              rows={4}
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-100 outline-none ring-cyan-300/40 transition focus:ring"
-              placeholder="Conte um pouco sobre sua tripulação..."
-            />
+            <p className="mb-2 text-sm font-medium text-slate-200">Avatar</p>
+            <div className="relative h-24 w-24 overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+              {profile.avatar_url ? (
+                <Image src={profile.avatar_url} alt={profile.display_name} fill sizes="96px" className="object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-xl font-semibold text-cyan-200">
+                  {(profile.display_name ?? "J").slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </div>
           </div>
 
-          <button
-            type="submit"
-            className="inline-flex rounded-xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
-          >
-            Salvar perfil
-          </button>
-        </form>
+          <ReadOnlyField label="Nome de exibição" value={profile.display_name} />
+          <ReadOnlyField label="Username" value={profile.username} />
+          <ReadOnlyField label="Email" value={profile.email ?? "-"} />
+          <ReadOnlyField label="Discord ID" value={profile.discord_id ?? "-"} />
+          <ReadOnlyField label="Xbox Gamertag" value={profile.xbox_gamertag ?? "Sem conexão Xbox no Discord"} />
+          <ReadOnlyField label="Avatar URL" value={profile.avatar_url ?? "-"} />
+        </div>
       </section>
     </main>
   );

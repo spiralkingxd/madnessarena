@@ -4,6 +4,7 @@ import Link from "next/link";
 import { logout } from "@/app/auth/login/actions";
 import { createClient } from "@/lib/supabase/server";
 import { NavLinks } from "@/components/nav-links";
+import { upsertProfileFromOAuth } from "@/lib/auth/profile";
 
 type ProfileNavbarRow = {
   display_name: string;
@@ -28,6 +29,18 @@ export async function Navbar() {
       .maybeSingle();
 
     profile = data;
+
+    if (!profile) {
+      await upsertProfileFromOAuth();
+
+      const { data: syncedProfile } = await supabase
+        .from("profiles")
+        .select("display_name, username, avatar_url, role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      profile = syncedProfile;
+    }
   }
 
   const avatarUrl = profile?.avatar_url ?? user?.user_metadata?.avatar_url ?? null;

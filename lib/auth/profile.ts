@@ -1,25 +1,28 @@
-import type { User } from "@supabase/supabase-js";
-
 import { fetchXboxGamertag } from "@/lib/auth/discord";
 import { getOwnerDiscordId } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-function getDiscordId(user: User) {
-  const providerId = user.user_metadata?.provider_id;
-  const sub = user.user_metadata?.sub;
+type UpsertProfileOptions = {
+  providerAccessToken?: string | null;
+};
 
-  if (typeof providerId === "string" && providerId.length > 0) {
-    return providerId;
+function resolveUsername(metadata: Record<string, unknown>, displayName: string) {
+  const base =
+    (typeof metadata.user_name === "string" && metadata.user_name) ||
+    (typeof metadata.preferred_username === "string" && metadata.preferred_username) ||
+    (typeof metadata.name === "string" && metadata.name) ||
+    displayName;
+  const discriminator =
+    typeof metadata.discriminator === "string" ? metadata.discriminator : null;
+
+  if (discriminator && discriminator !== "0" && !base.includes("#")) {
+    return `${base}#${discriminator}`;
   }
 
-  if (typeof sub === "string" && sub.length > 0) {
-    return sub;
-  }
-
-  return null;
+  return base;
 }
 
-export async function upsertProfileFromOAuth() {
+export async function upsertProfileFromOAuth(options?: UpsertProfileOptions) {
   const supabase = await createClient();
   const {
     data: { session },
@@ -31,26 +34,42 @@ export async function upsertProfileFromOAuth() {
 
   const user = session.user;
   const metadata = user.user_metadata ?? {};
-  const discordId = getDiscordId(user);
+  const discordId = user.id;
   const displayName =
     metadata.full_name ?? metadata.name ?? metadata.global_name ?? user.email?.split("@")[0] ?? "Pirata";
-  const username = metadata.user_name ?? metadata.preferred_username ?? metadata.name ?? displayName;
+  const username = resolveUsername(metadata, displayName);
   const avatarUrl = metadata.avatar_url ?? null;
-  const xboxGamertag =
-    typeof session.provider_token === "string" && session.provider_token.length > 0
-      ? await fetchXboxGamertag(session.provider_token)
+
+  const tokenFromOption =
+    typeof options?.providerAccessToken === "string" && options.providerAccessToken.length > 0
+      ? options.providerAccessToken
       : null;
+  const tokenFromSession =
+    typeof session.provider_token === "string" && session.provider_token.length > 0
+      ? session.provider_token
+      : null;
+  const providerAccessToken = tokenFromOption ?? tokenFromSession;
+
+  let xboxUpdate: { xbox_gamertag: string | null } | {} = {};
+  if (providerAccessToken) {
+    const { xboxGamertag, synced } = await fetchXboxGamertag(providerAccessToken);
+    if (synced) {
+      xboxUpdate = { xbox_gamertag: xboxGamertag };
+    }
+  }
+
   const ownerDiscordId = getOwnerDiscordId();
   const isOwner = Boolean(discordId && ownerDiscordId && discordId === ownerDiscordId);
 
   const profilePayload: {
     id: string;
-    discord_id: string | null;
+    discord_id: string;
     display_name: string;
     username: string;
     email: string | null;
     avatar_url: string | null;
-    xbox_gamertag: string | null;
+    xbox_gamertag?: string | null;
+    updated_at: string;
     role?: "admin";
   } = {
     id: user.id,
@@ -59,7 +78,8 @@ export async function upsertProfileFromOAuth() {
     username,
     email: user.email ?? null,
     avatar_url: avatarUrl,
-    xbox_gamertag: xboxGamertag,
+    updated_at: new Date().toISOString(),
+    ...xboxUpdate,
   };
 
   if (isOwner) {
