@@ -370,9 +370,9 @@ Arquivos:
 
 ## Sobre vercel.json
 
-Neste projeto, um arquivo `vercel.json` não é obrigatório.
+Este projeto inclui um arquivo `vercel.json` para fixar `framework: nextjs` e o comando de build.
 
-Como a aplicação usa Next.js App Router e rotas padrão, a Vercel resolve build, SSR e roteamento automaticamente. Adicione `vercel.json` apenas se futuramente você precisar de headers customizados, rewrites ou configurações avançadas.
+Isso ajuda a evitar configurações incorretas no painel (como `Output Directory = dist`) e garante que a Vercel trate o deploy como aplicação Next.js com SSR corretamente.
 
 ## Checklist final antes da publicação
 
