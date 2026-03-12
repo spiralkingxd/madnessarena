@@ -1,415 +1,316 @@
 # MadnessArena
 
-MadnessArena é uma plataforma de gerenciamento competitivo para torneios de Sea of Thieves, construída com Next.js, Supabase e autenticação via Discord.
+Plataforma competitiva para torneios de Sea of Thieves, com autenticação via Discord, backend Supabase e painel administrativo para operação de eventos.
 
-O projeto cobre:
+## Sumário
 
-- autenticação OAuth com Discord via Supabase Auth
-- sincronização automática de perfil e Xbox Gamertag
-- páginas públicas de eventos, equipes, chaveamento e ranking
-- área autenticada de perfil
-- painel administrativo protegido por papel de acesso
-- ranking competitivo recalculado a partir dos resultados das partidas
+- [Visão geral](#visão-geral)
+- [Stack](#stack)
+- [Funcionalidades](#funcionalidades)
+- [Pré-requisitos](#pré-requisitos)
+- [Configuração rápida](#configuração-rápida)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Configuração do Supabase](#configuração-do-supabase)
+- [Configuração do Discord](#configuração-do-discord)
+- [Fluxo de autenticação e permissões](#fluxo-de-autenticação-e-permissões)
+- [Rotas principais](#rotas-principais)
+- [Scripts](#scripts)
+- [Deploy na Vercel](#deploy-na-vercel)
+- [Segurança](#segurança)
+- [Solução de problemas](#solução-de-problemas)
+- [Checklist de publicação](#checklist-de-publicação)
+- [Estrutura do projeto](#estrutura-do-projeto)
 
-## Tecnologias
+## Visão geral
 
-- Next.js 16 App Router
+O MadnessArena oferece um fluxo completo para gestão de campeonatos:
+
+- login com Discord (OAuth) usando Supabase Auth
+- sincronização de perfil e gamertag Xbox quando disponível
+- páginas públicas para eventos, times, chaveamento e ranking
+- perfil autenticado para o usuário
+- painel administrativo com operações de evento, partidas e permissões
+- ranking recalculado com base nos resultados das partidas
+
+## Stack
+
+- Next.js 16 (App Router)
 - React 19
 - TypeScript
 - Tailwind CSS 4
-- Supabase Auth, Postgres, RLS e Realtime
-- Publicação recomendada na Vercel
+- Supabase (Auth, Postgres, RLS, Realtime)
+- Vercel (deploy recomendado)
+
+## Funcionalidades
+
+### Área pública
+
+- listagem de eventos
+- detalhes de evento
+- chaveamento por evento
+- ranking geral
+- listagem e detalhes de times
+
+### Área autenticada
+
+- login/logout com Discord
+- página de perfil em /profile/me
+- inscrição de time em eventos
+
+### Área administrativa
+
+- criação, edição e exclusão de eventos
+- atualização de resultados de partidas
+- gerenciamento de times
+- promoção de usuários para admin
 
 ## Pré-requisitos
 
-Antes de rodar ou publicar o projeto, você precisa ter:
+Antes de começar:
 
-- Node.js 20 ou superior
-- npm 10 ou superior
-- uma conta na Vercel
-- um projeto no Supabase
-- uma aplicação OAuth criada no Discord Developer Portal
+- Node.js 20+
+- npm 10+
+- projeto no Supabase
+- app OAuth2 no Discord Developer Portal
+- conta na Vercel (para deploy)
 
-## Variáveis de ambiente
+## Configuração rápida
 
-Copie [.env.example](.env.example) para `.env.local`.
+1. Instale dependências:
+
+```bash
+npm install
+```
+
+2. Crie o arquivo local de ambiente:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Preencha as variáveis abaixo:
+3. Configure as variáveis obrigatórias no .env.local.
 
-### Aplicação
+4. Aplique o schema SQL em [supabase/schema.sql](supabase/schema.sql).
 
-- `NEXT_PUBLIC_APP_URL`
-	URL pública da aplicação.
-	Exemplo local: `http://localhost:3000`
-	Exemplo produção: `https://seu-projeto.vercel.app`
-
-- `OWNER_DISCORD_ID`
-	Discord ID numérico do proprietário principal do sistema.
-	Quando esse usuário faz login, o backend promove automaticamente o perfil para `role = 'admin'`.
-	Essa validação acontece apenas no servidor.
-
-### Supabase
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-	URL do projeto Supabase.
-
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-	Chave pública `anon` do Supabase usada pelo app.
-
-- `SUPABASE_SERVICE_ROLE_KEY`
-	Chave administrativa do Supabase.
-	Não deve ser exposta no cliente.
-	O projeto atual não a utiliza diretamente nas rotas públicas, mas ela pode ser útil em futuras automações seguras.
-
-### Discord
-
-- `DISCORD_CLIENT_ID`
-	Client ID da aplicação OAuth no Discord.
-
-- `DISCORD_CLIENT_SECRET`
-	Client Secret da aplicação OAuth no Discord.
-
-- `DISCORD_REDIRECT_URI`
-	URL de retorno usada pelo OAuth do Discord.
-	Em desenvolvimento: `http://localhost:3000/auth/callback`
-	Em produção: `https://seu-dominio/auth/callback`
-
-- `DISCORD_BOT_USER_ID`
-- `DISCORD_GUILD_ID`
-- `DISCORD_BOT_TOKEN`
-	Reservadas para integrações futuras com bot/servidor Discord.
-
-### Xbox e ranking
-
-- `XBOX_TITLE_ID`
-	Reservada para integrações futuras com Xbox.
-
-- `MATCH_POINTS_WIN`
-	Pontos por vitória. Padrão do projeto: `3`
-
-- `MATCH_POINTS_DRAW`
-	Pontos por empate. Padrão do projeto: `1`
-
-- `MATCH_POINTS_LOSS`
-	Pontos por derrota. Padrão do projeto: `0`
-
-### Vercel
-
-- `VERCEL_PROJECT_PRODUCTION_URL`
-	URL primária de produção na Vercel, sem `https://`.
-	Exemplo: `madnessarena.vercel.app`
-
-## Configuração do Supabase
-
-### 1. Criar o projeto
-
-1. Acesse o painel do Supabase.
-2. Crie um novo projeto.
-3. Aguarde a finalização do banco.
-4. Copie a `Project URL` e a `anon public key` em `Project Settings > API`.
-
-### 2. Aplicar o schema
-
-1. Abra o SQL Editor do Supabase.
-2. Copie todo o conteúdo de [supabase/schema.sql](supabase/schema.sql).
-3. Execute o script por completo.
-
-Esse arquivo cria:
-
-- tipos customizados de role, status de evento e status de inscrição
-- tabelas `profiles`, `teams`, `team_members`, `events`, `registrations`, `matches` e `rankings`
-- índices de performance
-- trigger de sincronização inicial de perfil
-- policies de Row Level Security
-
-### 3. Configurar o provider Discord no Supabase Auth
-
-1. No painel do Supabase, abra `Authentication > Providers`.
-2. Ative o provider `Discord`.
-3. Informe:
-	 - Client ID
-	 - Client Secret
-4. Salve.
-
-### 4. Configurar as URLs de redirecionamento no Supabase
-
-No Supabase Auth, configure pelo menos:
-
-- `http://localhost:3000/auth/callback`
-- `https://seu-dominio-de-producao/auth/callback`
-
-### 5. Coletar as chaves corretas
-
-No Supabase, você vai usar:
-
-- `Project URL` -> `NEXT_PUBLIC_SUPABASE_URL`
-- `anon public key` -> `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `service_role key` -> `SUPABASE_SERVICE_ROLE_KEY`
-
-## Configuração do Discord
-
-### 1. Criar a aplicação OAuth2
-
-1. Acesse o Discord Developer Portal.
-2. Clique em `New Application`.
-3. Defina um nome para a aplicação.
-4. Em `OAuth2 > General`, copie:
-	 - Client ID
-	 - Client Secret
-
-### 2. Configurar Redirect URI
-
-Em `OAuth2 > Redirects`, adicione:
-
-- `http://localhost:3000/auth/callback`
-- `https://seu-dominio/auth/callback`
-
-Esses valores devem bater com:
-
-- `DISCORD_REDIRECT_URI`
-- configuração do provider Discord no Supabase
-
-### 3. Escopos necessários
-
-O fluxo deste projeto depende dos escopos:
-
-- `identify`
-- `email`
-- `connections`
-
-O escopo `connections` é necessário para buscar `GET /users/@me/connections` e tentar sincronizar a conexão Xbox do usuário.
-
-## Fluxo de proprietário e administração
-
-O projeto possui dois caminhos para obter papel de admin:
-
-### Proprietário automático
-
-Durante o login com Discord:
-
-1. o backend resolve o `discord_id` do usuário
-2. compara com `OWNER_DISCORD_ID`
-3. se houver correspondência, faz `upsert` do perfil com `role = 'admin'`
-
-Arquivo responsável:
-
-- [lib/auth/profile.ts](lib/auth/profile.ts)
-
-### Promoção manual
-
-No painel administrativo, um admin existente pode promover outro usuário para admin.
-
-## Como rodar localmente
-
-1. Instale as dependências:
-
-```bash
-npm install
-```
-
-2. Configure o `.env.local`.
-
-3. Rode o projeto:
+5. Execute a aplicação:
 
 ```bash
 npm run dev
 ```
 
-4. Acesse:
+6. Acesse:
 
 ```text
 http://localhost:3000
 ```
 
+## Variáveis de ambiente
+
+Use [.env.example](.env.example) como referência.
+
+### Aplicação
+
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| NEXT_PUBLIC_APP_URL | Sim | URL pública da aplicação. Ex.: http://localhost:3000 ou https://seu-projeto.vercel.app |
+| OWNER_DISCORD_ID | Sim | Discord ID do proprietário. Esse usuário é promovido automaticamente para role admin no login |
+
+### Supabase
+
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| NEXT_PUBLIC_SUPABASE_URL | Sim | URL do projeto Supabase |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | Sim | Chave pública anon utilizada pelo frontend |
+| SUPABASE_SERVICE_ROLE_KEY | Recomendado | Chave administrativa, deve ficar apenas no servidor |
+
+### Discord
+
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| DISCORD_CLIENT_ID | Sim | Client ID da aplicação OAuth |
+| DISCORD_CLIENT_SECRET | Sim | Client Secret da aplicação OAuth |
+| DISCORD_REDIRECT_URI | Sim | URI de callback (dev/prod) |
+| DISCORD_BOT_USER_ID | Não | Reserva para integração futura com bot |
+| DISCORD_GUILD_ID | Não | Reserva para integração futura com guild |
+| DISCORD_BOT_TOKEN | Não | Reserva para integração futura com bot |
+
+### Ranking
+
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| MATCH_POINTS_WIN | Sim | Pontos por vitória (padrão: 3) |
+| MATCH_POINTS_DRAW | Sim | Pontos por empate (padrão: 1) |
+| MATCH_POINTS_LOSS | Sim | Pontos por derrota (padrão: 0) |
+
+### Vercel
+
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| VERCEL_PROJECT_PRODUCTION_URL | Não | Domínio principal sem https (ex.: madnessarena.vercel.app) |
+
+## Configuração do Supabase
+
+1. Crie o projeto no painel do Supabase.
+2. Em Project Settings > API, copie Project URL e anon public key.
+3. No SQL Editor, execute integralmente [supabase/schema.sql](supabase/schema.sql).
+4. Em Authentication > Providers, habilite Discord e configure Client ID/Client Secret.
+5. Em Authentication > URL Configuration, registre callbacks:
+
+- http://localhost:3000/auth/callback
+- https://seu-dominio/auth/callback
+
+## Configuração do Discord
+
+1. No Discord Developer Portal, crie uma aplicação OAuth2.
+2. Copie Client ID e Client Secret.
+3. Em OAuth2 > Redirects, cadastre:
+
+- http://localhost:3000/auth/callback
+- https://seu-dominio/auth/callback
+
+4. Garanta os escopos:
+
+- identify
+- email
+- connections
+
+O escopo connections é necessário para tentar sincronizar Xbox via endpoint /users/@me/connections.
+
+## Fluxo de autenticação e permissões
+
+### Login e perfil
+
+1. Usuário autentica com Discord.
+2. Callback troca código por sessão no Supabase.
+3. Sistema faz upsert de profile e tenta sincronizar gamertag Xbox.
+
+Referências:
+
+- [app/auth/callback/route.ts](app/auth/callback/route.ts)
+- [lib/auth/profile.ts](lib/auth/profile.ts)
+- [lib/auth/discord.ts](lib/auth/discord.ts)
+
+### Papel de admin
+
+- Promoção automática: se discord_id for igual a OWNER_DISCORD_ID.
+- Promoção manual: por ação administrativa no painel.
+
 ## Rotas principais
 
 ### Públicas
 
-- `/`
-- `/teams`
-- `/teams/[id]`
-- `/events`
-- `/events/[id]`
-- `/events/[id]/bracket`
-- `/ranking`
+- /
+- /teams
+- /teams/[id]
+- /events
+- /events/[id]
+- /events/[id]/bracket
+- /ranking
 
 ### Autenticadas
 
-- `/auth/login`
-- `/auth/callback`
-- `/profile/me`
+- /auth/login
+- /auth/callback
+- /profile/me
 
 ### Administrativas
 
-- `/admin/dashboard`
+- /admin/dashboard
 
-## Scripts disponíveis
+## Scripts
 
-- `npm run dev`
-	Inicia o ambiente de desenvolvimento local.
+| Comando | Descrição |
+| --- | --- |
+| npm run dev | Inicia ambiente local |
+| npm run build | Gera build de produção |
+| npm run start | Inicia app em produção (após build) |
+| npm run lint | Executa lint com ESLint |
+| npx tsc --noEmit | Valida tipagem TypeScript |
 
-- `npm run build`
-	Gera a build de produção da aplicação Next.js.
+## Deploy na Vercel
 
-- `npm run start`
-	Inicia a aplicação em modo produção (após `npm run build`).
+### Configuração recomendada
 
-- `npm run lint`
-	Executa o lint com ESLint.
+Este projeto inclui [vercel.json](vercel.json) com framework nextjs para evitar configuração incorreta de output.
 
-- `npx tsc --noEmit`
-	Valida a tipagem TypeScript sem emitir arquivos.
+### Passo a passo
 
-## Publicação na Vercel
+1. Conecte o repositório na Vercel.
+2. Em Settings > Environment Variables, replique o .env.example.
+3. Verifique em Build and Output Settings:
 
-### 1. Conectar o repositório
+- Framework Preset: Next.js
+- Build Command: npm run build
+- Output Directory: vazio
 
-1. Suba o código para GitHub, GitLab ou Bitbucket.
-2. No painel da Vercel, clique em `Add New Project`.
-3. Importe o repositório.
-4. A Vercel deve detectar automaticamente que o projeto é Next.js.
+4. Execute o deploy.
 
-### 2. Configurar as variáveis de ambiente
+### Se aparecer erro de dist
 
-No painel do projeto na Vercel, abra `Settings > Environment Variables` e cadastre todas as variáveis do `.env.example`.
+Erro comum:
 
-As mais importantes para a primeira publicação são:
+No Output Directory named dist found after the Build completed.
 
-- `NEXT_PUBLIC_APP_URL`
-- `OWNER_DISCORD_ID`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `DISCORD_CLIENT_ID`
-- `DISCORD_CLIENT_SECRET`
-- `DISCORD_REDIRECT_URI`
-- `MATCH_POINTS_WIN`
-- `MATCH_POINTS_DRAW`
-- `MATCH_POINTS_LOSS`
+Correção:
 
-### 3. Ajustar URLs de produção
-
-Depois de saber a URL final da Vercel:
-
-1. atualize `NEXT_PUBLIC_APP_URL`
-2. atualize `DISCORD_REDIRECT_URI`
-3. adicione a URL final no Discord Developer Portal
-4. adicione a URL final em `Authentication > URL Configuration` no Supabase
-
-### 4. Fazer a publicação
-
-Depois disso:
-
-1. rode `git push`
-2. aguarde o build na Vercel
-3. teste login, retorno OAuth, perfil, eventos, ranking e painel admin
-
-## Imagens e URLs válidas
-
-O projeto está configurado para aceitar imagens remotas de:
-
-- `cdn.discordapp.com`
-- `images-ext-1.discordapp.net`
-- `images-ext-2.discordapp.net`
-- `**.supabase.co`
-
-Arquivo responsável:
-
-- [next.config.ts](next.config.ts)
-
-Isso cobre:
-
-- avatares vindos do Discord
-- arquivos servidos via Supabase Storage
+- remova dist do campo Output Directory
+- mantenha framework Next.js
+- faça novo deploy
 
 ## Segurança
 
-### Console e dados sensíveis
+### Banco de dados
 
-Foi feita revisão do código e não há `console.log`, `console.error`, `console.warn`, `console.info` ou `debugger` expostos nas áreas principais do app.
-
-### RLS
-
-As policies do schema limitam escrita administrativa em tabelas sensíveis como:
-
-- `events`
-- `matches`
-- `rankings`
-
-As validações de frontend não substituem as policies do banco. O bloqueio real continua no Supabase.
+- RLS habilitado com policies para operações sensíveis
+- escrita administrativa protegida em tabelas como events, matches e rankings
 
 ### Middleware
 
-O middleware protege:
+- proteção de rotas privadas
+- proteção de /admin para usuários com role admin
 
-- rotas privadas de usuário
-- rotas `/admin` para admins apenas
-
-Arquivos principais:
+Referências:
 
 - [middleware.ts](middleware.ts)
 - [lib/supabase/middleware.ts](lib/supabase/middleware.ts)
 
-## Painel Admin
+### Imagens remotas permitidas
 
-O painel administrativo permite:
+Definidas em [next.config.ts](next.config.ts):
 
-- criar, editar e excluir eventos
-- gerenciar times
-- atualizar resultados de partidas
-- promover usuários a admin
+- cdn.discordapp.com
+- images-ext-1.discordapp.net
+- images-ext-2.discordapp.net
+- **.supabase.co
 
-Arquivos:
+## Solução de problemas
 
-- [app/admin/dashboard/page.tsx](app/admin/dashboard/page.tsx)
-- [app/admin/actions.ts](app/admin/actions.ts)
+### Login redireciona e não autentica
 
-## Sobre vercel.json
+Valide se DISCORD_REDIRECT_URI está idêntico no Discord e no Supabase.
 
-Este projeto inclui um arquivo `vercel.json` para fixar `framework: nextjs` e o comando de build.
+### Sessão não persiste
 
-Isso ajuda a evitar configurações incorretas no painel (como `Output Directory = dist`) e garante que a Vercel trate o deploy como aplicação Next.js com SSR corretamente.
+Revise NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY e domínio/cookies.
 
-## Checklist final antes da publicação
+### Acesso negado ao painel admin
 
-- [ ] `.env.local` preenchido corretamente
-- [ ] `OWNER_DISCORD_ID` definido com o Discord ID do proprietário
-- [ ] schema de [supabase/schema.sql](supabase/schema.sql) aplicado no projeto Supabase correto
+Confirme role admin no profile ou correspondência com OWNER_DISCORD_ID.
+
+## Checklist de publicação
+
+- [ ] .env.local preenchido
+- [ ] OWNER_DISCORD_ID definido
+- [ ] schema aplicado em [supabase/schema.sql](supabase/schema.sql)
 - [ ] provider Discord habilitado no Supabase
-- [ ] Redirect URI configurado no Discord e no Supabase
-- [ ] variáveis de ambiente replicadas no painel da Vercel
-- [ ] login com Discord funcionando
-- [ ] retorno `/auth/callback` funcionando em produção
-- [ ] proprietário promovido automaticamente para admin
-- [ ] acesso a `/admin/dashboard` validado
-- [ ] imagens externas carregando corretamente
-- [ ] `npm run dev` funcionando localmente
-- [ ] `npx tsc --noEmit` sem erros
+- [ ] callback OAuth cadastrado em Discord e Supabase
+- [ ] variáveis replicadas na Vercel
+- [ ] login com Discord validado
+- [ ] fluxo de callback em produção validado
+- [ ] acesso ao painel admin validado
+- [ ] npx tsc --noEmit sem erros
 
-## Problemas comuns
-
-- Login redireciona, mas não autentica:
-	Confira se `DISCORD_REDIRECT_URI` está exatamente igual no Discord Developer Portal e no provider do Supabase.
-
-- Erro de sessão em páginas privadas:
-	Verifique `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e se os cookies estão sendo aceitos no domínio.
-
-- Acesso negado ao painel admin:
-	Garanta que o usuário tenha `role = 'admin'` em `profiles`, ou que o Discord ID dele seja igual a `OWNER_DISCORD_ID`.
-
-## Comandos úteis
-
-```bash
-npm install
-npm run dev
-npx tsc --noEmit
-```
-
-## Estrutura relevante do projeto
+## Estrutura do projeto
 
 - [app](app)
 - [components](components)
@@ -417,3 +318,5 @@ npx tsc --noEmit
 - [supabase/schema.sql](supabase/schema.sql)
 - [.env.example](.env.example)
 - [next.config.ts](next.config.ts)
+- [vercel.json](vercel.json)
+- [vercel.json](vercel.json)
