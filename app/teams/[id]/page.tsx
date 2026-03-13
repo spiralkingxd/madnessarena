@@ -18,6 +18,12 @@ type TeamDetailRow = {
   created_at: string;
 };
 
+type TeamMemberLinkRow = {
+  user_id: string;
+  role: "captain" | "member";
+  joined_at: string;
+};
+
 type MemberRow = {
   user_id: string;
   role: "captain" | "member";
@@ -85,11 +91,23 @@ export default async function TeamDetailPage({ params }: Props) {
 
   if (!team) notFound();
 
-  const { data: members } = await supabase
+  const { data: memberLinks } = await supabase
     .from("team_members")
-    .select("user_id, role, joined_at, profiles(display_name, username, avatar_url, xbox_gamertag)")
+    .select("user_id, role, joined_at")
     .eq("team_id", id)
-    .order("joined_at", { ascending: true });
+    .order("joined_at", { ascending: true })
+    .returns<TeamMemberLinkRow[]>();
+
+  const memberUserIds = Array.from(
+    new Set([...(memberLinks ?? []).map((member) => member.user_id), team.captain_id]),
+  );
+
+  const { data: memberProfiles } = memberUserIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id, display_name, username, avatar_url, xbox_gamertag")
+        .in("id", memberUserIds)
+    : { data: [] as never[] };
 
   // Busca o histórico de inscrições desta equipe em eventos.
   const { data: registrationsRaw } = await supabase
@@ -110,32 +128,65 @@ export default async function TeamDetailPage({ params }: Props) {
     };
   });
 
-  const memberList: MemberRow[] = (members ?? []).map((member) => {
-    const profileData = Array.isArray(member.profiles)
-      ? member.profiles[0]
-      : member.profiles;
+  const profileMap = new Map<
+    string,
+    {
+      display_name: string;
+      username: string;
+      avatar_url: string | null;
+      xbox_gamertag: string | null;
+    }
+  >();
+
+  for (const profile of memberProfiles ?? []) {
+    profileMap.set(profile.id as string, {
+      display_name: (profile.display_name as string) ?? "Usuário",
+      username: (profile.username as string) ?? "desconhecido",
+      avatar_url: (profile.avatar_url as string | null) ?? null,
+      xbox_gamertag: (profile.xbox_gamertag as string | null) ?? null,
+    });
+  }
+
+  let memberList: MemberRow[] = (memberLinks ?? []).map((member) => {
+    const profileData = profileMap.get(member.user_id);
 
     return {
-      user_id: member.user_id as string,
-      role: member.role as "captain" | "member",
-      joined_at: member.joined_at as string,
-      display_name:
-        (profileData as { display_name?: string } | null)?.display_name ?? "Usuário",
-      username:
-        (profileData as { username?: string } | null)?.username ?? "desconhecido",
-      avatar_url:
-        ((profileData as { avatar_url?: string | null } | null)?.avatar_url as string | null) ??
-        null,
-      xbox_gamertag:
-        ((profileData as { xbox_gamertag?: string | null } | null)?.xbox_gamertag as
-          | string
-          | null) ?? null,
+      user_id: member.user_id,
+      role: member.user_id === team.captain_id ? "captain" : member.role,
+      joined_at: member.joined_at,
+      display_name: profileData?.display_name ?? "Usuário",
+      username: profileData?.username ?? "desconhecido",
+      avatar_url: profileData?.avatar_url ?? null,
+      xbox_gamertag: profileData?.xbox_gamertag ?? null,
     };
+  });
+
+  if (!memberList.some((member) => member.user_id === team.captain_id)) {
+    const captainProfile = profileMap.get(team.captain_id);
+    memberList = [
+      {
+        user_id: team.captain_id,
+        role: "captain",
+        joined_at: team.created_at,
+        display_name: captainProfile?.display_name ?? "Capitão",
+        username: captainProfile?.username ?? "desconhecido",
+        avatar_url: captainProfile?.avatar_url ?? null,
+        xbox_gamertag: captainProfile?.xbox_gamertag ?? null,
+      },
+      ...memberList,
+    ];
+  }
+
+  memberList = memberList.sort((a, b) => {
+    const rankA = a.user_id === team.captain_id || a.role === "captain" ? 0 : 1;
+    const rankB = b.user_id === team.captain_id || b.role === "captain" ? 0 : 1;
+    if (rankA !== rankB) return rankA - rankB;
+    return new Date(a.joined_at).getTime() - new Date(b.joined_at).getTime();
   });
 
   const isCaptain = Boolean(user?.id && user.id === team.captain_id);
   const isMember = Boolean(user?.id && memberList.some((member) => member.user_id === user.id));
-  const captain = memberList.find((member) => member.role === "captain") ?? null;
+  const captain = memberList.find((member) => member.user_id === team.captain_id) ?? null;
 
   let pendingRequestsForCaptain: JoinRequestPendingItem[] = [];
   let historyRequestsForCaptain: JoinRequestHistoryItem[] = [];
