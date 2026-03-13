@@ -71,6 +71,10 @@ const dissolveSchema = z.object({
   confirmName: z.string().min(1, "Digite o nome da equipe para confirmar."),
 });
 
+const leaveTeamSchema = z.object({
+  teamId: z.string().uuid("Equipe inválida."),
+});
+
 async function requireCaptain(teamId: string) {
   const supabase = await createClient();
 
@@ -108,6 +112,65 @@ function revalidateTeamPaths(teamId: string) {
   revalidatePath(`/teams/${teamId}`);
   revalidatePath("/teams");
   revalidatePath("/profile/me");
+}
+
+export async function leaveTeam(input: { teamId: string }): Promise<ActionResult> {
+  const parsed = leaveTeamSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const { teamId } = parsed.data;
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Você precisa estar logado." };
+  }
+
+  const { data: team } = await supabase
+    .from("teams")
+    .select("id, captain_id")
+    .eq("id", teamId)
+    .maybeSingle();
+
+  if (!team) {
+    return { error: "Equipe não encontrada." };
+  }
+
+  if ((team.captain_id as string) === user.id) {
+    return {
+      error: "Capitão não pode sair da equipe. Transfira a liderança ou dissolva a equipe.",
+    };
+  }
+
+  const { data: membership } = await supabase
+    .from("team_members")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!membership) {
+    return { error: "Você não faz parte desta equipe." };
+  }
+
+  const { error } = await supabase
+    .from("team_members")
+    .delete()
+    .eq("team_id", teamId)
+    .eq("user_id", user.id)
+    .neq("role", "captain");
+
+  if (error) {
+    return { error: toFriendlyTeamError(error.message) };
+  }
+
+  revalidateTeamPaths(teamId);
+  return { success: "Você saiu da equipe com sucesso." };
 }
 
 export async function searchTeamCandidates(
@@ -345,13 +408,22 @@ export async function dissolveTeam(input: {
   }
 
   const { error } = await guard.supabase
+    .from("team_members")
+    .delete()
+    .eq("team_id", teamId);
+
+  if (error) {
+    return { error: toFriendlyTeamError(error.message) };
+  }
+
+  const { error: teamDeleteError } = await guard.supabase
     .from("teams")
     .delete()
     .eq("id", teamId)
     .eq("captain_id", guard.team.captain_id as string);
 
-  if (error) {
-    return { error: toFriendlyTeamError(error.message) };
+  if (teamDeleteError) {
+    return { error: toFriendlyTeamError(teamDeleteError.message) };
   }
 
   revalidatePath(`/teams/${teamId}`);

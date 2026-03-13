@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Clock3, Loader2, UserPlus2, Users, X } from "lucide-react";
+import { CheckCircle2, Clock3, Loader2, LogOut, UserPlus2, Users, X } from "lucide-react";
 
 import { cancelJoinRequest, createJoinRequest } from "@/app/actions/team-requests";
+import { leaveTeam } from "@/app/teams/[id]/actions";
 import { ActionToast } from "@/components/action-toast";
 import { teamRequestMessages } from "@/lib/team-request-messages";
 
@@ -34,8 +35,9 @@ export function JoinRequestButton({
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [optimisticIsMember, setOptimisticIsMember] = useState(isMember);
   const [optimisticPending, setOptimisticPending] = useState(hasPendingRequest);
-  const [actionType, setActionType] = useState<"request" | "cancel" | null>(null);
+  const [actionType, setActionType] = useState<"request" | "cancel" | "leave" | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null);
 
   const isFull = currentMemberCount >= 10;
@@ -51,12 +53,12 @@ export function JoinRequestButton({
   const state = useMemo(() => {
     if (!userId) return "guest" as const;
     if (isCaptain) return "captain" as const;
-    if (isMember) return "member" as const;
+    if (optimisticIsMember) return "member" as const;
     if (optimisticPending) return "pending" as const;
     if (teamLimitReached) return "limit" as const;
     if (isFull) return "full" as const;
     return "ready" as const;
-  }, [userId, isCaptain, isMember, optimisticPending, teamLimitReached, isFull]);
+  }, [userId, isCaptain, optimisticIsMember, optimisticPending, teamLimitReached, isFull]);
 
   if (state === "captain") return null;
 
@@ -104,6 +106,28 @@ export function JoinRequestButton({
     });
   }
 
+  async function onLeaveTeam() {
+    if (state !== "member") return;
+
+    const confirmed = window.confirm("Deseja sair desta equipe?");
+    if (!confirmed) return;
+
+    startTransition(async () => {
+      setActionType("leave");
+      const result = await leaveTeam({ teamId });
+      setActionType(null);
+
+      if (result.error) {
+        setToast({ type: "error", message: result.error });
+        return;
+      }
+
+      setOptimisticIsMember(false);
+      setToast({ type: "success", message: result.success ?? "Você saiu da equipe." });
+      router.refresh();
+    });
+  }
+
   return (
     <div className="space-y-2">
       {toast ? (
@@ -122,15 +146,32 @@ export function JoinRequestButton({
       ) : null}
 
       {state === "member" ? (
-        <button
-          type="button"
-          disabled
-          aria-label="Você já faz parte desta equipe"
-          className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-2.5 text-sm font-semibold text-emerald-200"
-        >
-          <CheckCircle2 className="h-4 w-4" />
-          Sua Equipe
-        </button>
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <button
+            type="button"
+            disabled
+            aria-label="Você já faz parte desta equipe"
+            className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-2.5 text-sm font-semibold text-emerald-200"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Sua Equipe
+          </button>
+
+          <button
+            type="button"
+            onClick={onLeaveTeam}
+            disabled={isPending}
+            aria-label="Sair da equipe"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-300/30 bg-rose-300/10 px-4 py-2.5 text-sm font-semibold text-rose-200 transition hover:bg-rose-300/20 disabled:opacity-50"
+          >
+            {isPending && actionType === "leave" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <LogOut className="h-4 w-4" />
+            )}
+            {isPending && actionType === "leave" ? "Saindo..." : "Sair da equipe"}
+          </button>
+        </div>
       ) : null}
 
       {state === "pending" ? (
