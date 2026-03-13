@@ -202,8 +202,8 @@ export function RankingsAdminPanel({
           Resetar e arquivar temporada
         </AdminButton>
 
-        <AdminBadge tone="pending">Jogadores: {filteredPlayers.length}</AdminBadge>
-        <AdminBadge tone="info">Equipes: {filteredTeams.length}</AdminBadge>
+        <AdminBadge tone="pending">{`Jogadores: ${filteredPlayers.length}`}</AdminBadge>
+        <AdminBadge tone="info">{`Equipes: ${filteredTeams.length}`}</AdminBadge>
       </div>
 
       <section className="space-y-2">
