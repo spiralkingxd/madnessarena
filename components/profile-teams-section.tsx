@@ -30,8 +30,7 @@ export function ProfileTeamsSection({ userId, teams, teamsError }: Props) {
   const [isLaunching, startTransition] = useTransition();
 
   const teamsCount = teams.length;
-  const captainTeamsCount = teams.filter((team) => team.role === "captain").length;
-  const reachedLimit = captainTeamsCount >= 3;
+  const reachedLimit = teamsCount >= 3;
 
   const orderedTeams = useMemo(
     () =>
@@ -54,7 +53,7 @@ export function ProfileTeamsSection({ userId, teams, teamsError }: Props) {
 
         <div className="flex items-center gap-2">
           <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300">
-            Equipes ({captainTeamsCount}/3)
+            Equipes ({teamsCount}/3)
           </span>
           <button
             type="button"

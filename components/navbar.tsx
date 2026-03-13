@@ -48,8 +48,7 @@ export async function Navbar() {
     const { count } = await supabase
       .from("team_members")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("role", "captain");
+      .eq("user_id", user.id);
 
     teamsCount = count ?? 0;
   }

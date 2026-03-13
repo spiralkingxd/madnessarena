@@ -149,8 +149,7 @@ export async function createTeam(
   const { count } = await supabase
     .from("team_members")
     .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("role", "captain");
+    .eq("user_id", user.id);
 
   if ((count ?? 0) >= 3) {
     return { error: "Você atingiu o limite de 3 equipes" };

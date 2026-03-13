@@ -28,7 +28,6 @@ type TeamMemberRow = {
   team_id: string;
   role: "captain" | "member";
   joined_at: string;
-  teams: TeamRow | TeamRow[] | null;
 };
 
 type UserTeamCard = {
@@ -78,14 +77,35 @@ export default async function MyProfilePage() {
 
   const { data: membershipsRaw, error: membershipsError } = await supabase
     .from("team_members")
-    .select("team_id, role, joined_at, teams(id, name, logo_url, max_members)")
+    .select("team_id, role, joined_at")
     .eq("user_id", user.id);
 
   if (membershipsError) {
     teamsError = "Não foi possível carregar suas equipes agora.";
   } else {
     const memberships = (membershipsRaw ?? []) as TeamMemberRow[];
-    const teamIds = memberships.map((m) => m.team_id);
+    const teamIds = Array.from(new Set(memberships.map((m) => m.team_id)));
+
+    const { data: teamsRaw, error: teamsLoadError } = teamIds.length
+      ? await supabase
+          .from("teams")
+          .select("id, name, logo_url, max_members")
+          .in("id", teamIds)
+      : { data: [] as TeamRow[], error: null };
+
+    if (teamsLoadError) {
+      teamsError = "Não foi possível carregar suas equipes agora.";
+    }
+
+    const teamMap = new Map<string, TeamRow>();
+    for (const team of teamsRaw ?? []) {
+      teamMap.set(team.id as string, {
+        id: team.id as string,
+        name: team.name as string,
+        logo_url: (team.logo_url as string | null) ?? null,
+        max_members: (team.max_members as number) ?? 10,
+      });
+    }
 
     let countMap = new Map<string, number>();
 
@@ -103,10 +123,7 @@ export default async function MyProfilePage() {
 
     userTeams = memberships
       .map((membership) => {
-        const related = Array.isArray(membership.teams)
-          ? membership.teams[0]
-          : membership.teams;
-
+        const related = teamMap.get(membership.team_id);
         if (!related) return null;
 
         return {
