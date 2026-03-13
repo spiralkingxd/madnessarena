@@ -96,6 +96,28 @@ where discord_id is null;
 alter table public.profiles alter column role set default 'user';
 update public.profiles set role = 'user' where role is null;
 
+do $$
+declare
+  role_udt_schema text;
+  role_udt_name text;
+begin
+  select c.udt_schema, c.udt_name
+  into role_udt_schema, role_udt_name
+  from information_schema.columns c
+  where c.table_schema = 'public'
+    and c.table_name = 'profiles'
+    and c.column_name = 'role';
+
+  if role_udt_name is not null and role_udt_name <> 'text' then
+    begin
+      execute format('alter type %I.%I add value if not exists ''owner''', role_udt_schema, role_udt_name);
+    exception
+      when others then null;
+    end;
+  end if;
+end
+$$;
+
 update public.profiles
 set role = 'admin'
 where role::text not in ('user', 'admin', 'owner');
@@ -122,7 +144,7 @@ begin
   end if;
 
   alter table public.profiles
-    add constraint profiles_role_check check (role in ('user', 'admin', 'owner'));
+    add constraint profiles_role_check check (role::text in ('user', 'admin', 'owner'));
 end
 $$;
 
@@ -159,7 +181,7 @@ as $$
     select 1
     from public.profiles
     where id = auth.uid()
-      and role in ('admin', 'owner')
+      and role::text in ('admin', 'owner')
   );
 $$;
 
@@ -174,7 +196,7 @@ as $$
     select 1
     from public.profiles
     where id = auth.uid()
-      and role = 'owner'
+      and role::text = 'owner'
   );
 $$;
 
@@ -191,7 +213,7 @@ begin
 
   if owner_discord_id is not null and new.discord_id = owner_discord_id then
     new.role := 'owner';
-  elsif new.role is null or new.role not in ('user', 'admin', 'owner') then
+  elsif new.role is null or new.role::text not in ('user', 'admin', 'owner') then
     new.role := 'user';
   end if;
 
@@ -1530,7 +1552,7 @@ create policy "Public can read active data from events"
 on public.events
 for select
 to anon, authenticated
-using (public.is_admin() or status in ('published', 'active', 'finished'));
+using (public.is_admin() or status::text in ('published', 'active', 'finished'));
 
 drop policy if exists "Admins manage events" on public.events;
 create policy "Admins manage events"
@@ -1924,7 +1946,7 @@ using (
     select 1
     from public.events
     where events.id = registrations.event_id
-      and events.status in ('published', 'active', 'finished')
+      and events.status::text in ('published', 'active', 'finished')
   )
 );
 
