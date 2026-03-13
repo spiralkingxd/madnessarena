@@ -116,7 +116,7 @@ Use [.env.example](.env.example) como referência.
 | Variável | Obrigatória | Descrição |
 | --- | --- | --- |
 | NEXT_PUBLIC_APP_URL | Sim | URL pública da aplicação. Ex.: http://localhost:3000 ou https://seu-projeto.vercel.app |
-| OWNER_DISCORD_ID | Sim | Discord ID do proprietário. Esse usuário é promovido automaticamente para role admin no login |
+| OWNER_DISCORD_ID | Sim | Discord ID do proprietário. Esse usuário é promovido automaticamente para role owner no login |
 
 ### Supabase
 
@@ -179,6 +179,22 @@ Use [.env.example](.env.example) como referência.
 
 O escopo connections é necessário para tentar sincronizar Xbox via endpoint /users/@me/connections.
 
+### Como obter o OWNER_DISCORD_ID
+
+1. No Discord, abra Configurações > Avançado e ative o Modo Desenvolvedor.
+2. Clique com botão direito no seu usuário e escolha Copiar ID.
+3. Cole esse valor em OWNER_DISCORD_ID no .env.local.
+
+### Configuração do owner no banco
+
+Para permitir promoção automática via trigger no banco, configure também o parâmetro SQL:
+
+```sql
+alter database postgres set app.owner_discord_id = 'SEU_DISCORD_ID_AQUI';
+```
+
+Depois execute novamente o schema em [supabase/schema.sql](supabase/schema.sql).
+
 ## Fluxo de autenticação e permissões
 
 ### Login e perfil
@@ -195,8 +211,9 @@ Referências:
 
 ### Papel de admin
 
-- Promoção automática: se discord_id for igual a OWNER_DISCORD_ID.
+- Promoção automática para owner: se discord_id for igual a OWNER_DISCORD_ID.
 - Promoção manual: por ação administrativa no painel.
+- Acesso administrativo: roles admin e owner.
 
 ## Fluxo de equipes e solicitações
 

@@ -70,7 +70,7 @@ export async function upsertProfileFromOAuth(options?: UpsertProfileOptions) {
     avatar_url: string | null;
     xbox_gamertag?: string | null;
     updated_at: string;
-    role?: "admin";
+    role?: "admin" | "owner";
   } = {
     id: user.id,
     discord_id: discordId,
@@ -83,7 +83,7 @@ export async function upsertProfileFromOAuth(options?: UpsertProfileOptions) {
   };
 
   if (isOwner) {
-    profilePayload.role = "admin";
+    profilePayload.role = "owner";
   }
 
   await supabase.from("profiles").upsert(

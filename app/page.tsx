@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Anchor, Calendar, Coins, Skull, Sword, Trophy, Users } from "lucide-react";
 
+import { formatTeamSize } from "@/lib/events";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -11,20 +12,21 @@ type ActiveEventRow = {
   description: string | null;
   start_date: string;
   end_date: string | null;
-  status: "draft" | "active" | "finished";
-  prize_pool: number;
+  status: "published" | "active" | "finished";
+  prize_description: string | null;
+  team_size: number;
 };
 
 type FinishedEventRow = {
   id: string;
   title: string;
   end_date: string | null;
-  prize_pool: number;
+  prize_description: string | null;
 };
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Em andamento",
-  draft: "Em breve",
+  published: "Publicado",
   finished: "Finalizado",
 };
 
@@ -43,13 +45,13 @@ async function getHomeData() {
   ] = await Promise.all([
     supabase
       .from("events")
-      .select("id, title, description, start_date, end_date, status, prize_pool")
-      .in("status", ["active", "draft"])
+      .select("id, title, description, start_date, end_date, status, prize_description, team_size")
+      .in("status", ["active", "published"])
       .order("start_date", { ascending: true })
       .limit(1),
     supabase
       .from("events")
-      .select("id, title, end_date, prize_pool")
+      .select("id, title, end_date, prize_description")
       .eq("status", "finished")
       .order("end_date", { ascending: false })
       .limit(6),
@@ -66,8 +68,6 @@ async function getHomeData() {
 }
 
 const fmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" });
-const fmtMoney = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-
 export default async function Home() {
   const { featuredEvent, finishedEvents, teamCount, eventCount } = await getHomeData();
 
@@ -168,22 +168,19 @@ export default async function Home() {
                   </div>
                   <h2 className="text-3xl font-bold text-white lg:text-4xl">{featuredEvent.title}</h2>
                   {featuredEvent.description && (
-                    <p className="max-w-2xl text-sm leading-7 text-slate-300">
-                      {featuredEvent.description}
-                    </p>
+                    <div className="prose prose-invert max-w-2xl text-sm leading-7 text-slate-300" dangerouslySetInnerHTML={{ __html: featuredEvent.description }} />
                   )}
                 </div>
                 <div className="flex flex-col items-start gap-4 lg:items-end">
-                  {featuredEvent.prize_pool > 0 && (
+                  {featuredEvent.prize_description && (
                     <div className="rounded-2xl border border-amber-400/25 bg-amber-400/8 px-6 py-4 text-center">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-amber-300/70">
-                        Premiação
-                      </p>
-                      <p className="mt-1.5 text-3xl font-extrabold text-amber-300">
-                        {fmtMoney.format(featuredEvent.prize_pool)}
-                      </p>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-amber-300/70">Premiação</p>
+                      <p className="mt-1.5 max-w-[220px] text-sm font-extrabold text-amber-200">{featuredEvent.prize_description}</p>
                     </div>
                   )}
+                  <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">
+                    {formatTeamSize(featuredEvent.team_size)}
+                  </span>
                   <Link
                     href={`/events/${featuredEvent.id}`}
                     className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-300"
@@ -287,10 +284,10 @@ export default async function Home() {
                         {fmt.format(new Date(event.end_date))}
                       </span>
                     )}
-                    {event.prize_pool > 0 && (
+                    {event.prize_description && (
                       <span className="flex items-center gap-1 text-amber-300/60">
                         <Coins className="h-3 w-3" />
-                        {fmtMoney.format(event.prize_pool)}
+                        {event.prize_description}
                       </span>
                     )}
                   </div>
@@ -353,7 +350,7 @@ function StatusBadge({ status }: { status: string }) {
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
         status === "active" && "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-        status === "draft" && "border border-amber-400/30 bg-amber-400/10 text-amber-300",
+        status === "published" && "border border-amber-400/30 bg-amber-400/10 text-amber-300",
         status === "finished" && "border border-slate-400/30 bg-slate-400/10 text-slate-300",
       )}
     >

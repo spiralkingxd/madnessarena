@@ -33,12 +33,6 @@ const updateRankingSchema = z.object({
   match_id: z.string().uuid("Partida inválida."),
 });
 
-const POINTS_CONFIG = {
-  win: Number(process.env.MATCH_POINTS_WIN ?? 3),
-  draw: Number(process.env.MATCH_POINTS_DRAW ?? 1),
-  loss: Number(process.env.MATCH_POINTS_LOSS ?? 0),
-};
-
 type RankingAccumulator = {
   points: number;
   wins: number;
@@ -69,6 +63,27 @@ export async function registerTeamForEvent(
 
   const { event_id, team_id } = parsed.data;
 
+  const { data: event } = await supabase
+    .from("events")
+    .select("status, registration_deadline")
+    .eq("id", event_id)
+    .maybeSingle<{
+      status: "draft" | "published" | "active" | "paused" | "finished";
+      registration_deadline: string | null;
+    }>();
+
+  if (!event) {
+    return { error: "Evento não encontrado." };
+  }
+
+  if (event.status !== "published" && event.status !== "active") {
+    return { error: "Este evento não está aceitando inscrições no momento." };
+  }
+
+  if (event.registration_deadline && new Date(event.registration_deadline) < new Date()) {
+    return { error: "O prazo de inscrição para este evento já terminou." };
+  }
+
   // Garante no servidor que o usuário é capitão da equipe informada.
   const { data: team } = await supabase
     .from("teams")
@@ -80,7 +95,13 @@ export async function registerTeamForEvent(
     return { error: "Você não é o capitão desta equipe." };
   }
 
-  const { error } = await supabase.from("registrations").insert({ event_id, team_id });
+  const { error } = await supabase.from("registrations").insert({
+    event_id,
+    team_id,
+    source: "self_service",
+    created_by: user.id,
+    updated_at: new Date().toISOString(),
+  });
 
   if (error) {
     if (error.code === "23505") {
@@ -108,7 +129,7 @@ export async function updateMatchResult(
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
 
-  if (profile?.role !== "admin") {
+  if (profile?.role !== "admin" && profile?.role !== "owner") {
     return { error: "Apenas administradores podem editar partidas." };
   }
 
@@ -172,7 +193,7 @@ export async function updateRanking(formData: FormData): Promise<UpdateMatchStat
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
 
-  if (profile?.role !== "admin") {
+  if (profile?.role !== "admin" && profile?.role !== "owner") {
     return { error: "Apenas administradores podem atualizar o ranking." };
   }
 
@@ -186,9 +207,12 @@ export async function updateRanking(formData: FormData): Promise<UpdateMatchStat
 
   const { data: allTeams } = await supabase.from("teams").select("id, captain_id");
   const { data: members } = await supabase.from("team_members").select("team_id, user_id");
-  const { data: matches } = await supabase
-    .from("matches")
-    .select("id, team_a_id, team_b_id, winner_id, score_a, score_b");
+  const [{ data: matches }, { data: events }] = await Promise.all([
+    supabase
+      .from("matches")
+      .select("id, event_id, team_a_id, team_b_id, winner_id, score_a, score_b"),
+    supabase.from("events").select("id, scoring_win, scoring_draw, scoring_loss"),
+  ]);
 
   const rosterByTeam = new Map<string, Set<string>>();
 
@@ -209,6 +233,15 @@ export async function updateRanking(formData: FormData): Promise<UpdateMatchStat
   }
 
   const standings = new Map<string, RankingAccumulator>();
+  const eventScoreMap = new Map<string, { win: number; draw: number; loss: number }>();
+
+  for (const event of events ?? []) {
+    eventScoreMap.set(String(event.id), {
+      win: Number(event.scoring_win ?? 3),
+      draw: Number(event.scoring_draw ?? 1),
+      loss: Number(event.scoring_loss ?? 0),
+    });
+  }
 
   function applyToRoster(profileIds: Set<string>, update: (acc: RankingAccumulator) => void) {
     for (const profileId of profileIds) {
@@ -223,6 +256,7 @@ export async function updateRanking(formData: FormData): Promise<UpdateMatchStat
   }
 
   for (const match of matches ?? []) {
+    const scoring = eventScoreMap.get(String(match.event_id)) ?? { win: 3, draw: 1, loss: 0 };
     const teamAId = match.team_a_id as string;
     const teamBId = match.team_b_id as string;
     const scoreA = Number(match.score_a ?? 0);
@@ -239,10 +273,10 @@ export async function updateRanking(formData: FormData): Promise<UpdateMatchStat
 
     if (scoreA === scoreB) {
       applyToRoster(rosterA, (acc) => {
-        acc.points += POINTS_CONFIG.draw;
+        acc.points += scoring.draw;
       });
       applyToRoster(rosterB, (acc) => {
-        acc.points += POINTS_CONFIG.draw;
+        acc.points += scoring.draw;
       });
       continue;
     }
@@ -253,12 +287,12 @@ export async function updateRanking(formData: FormData): Promise<UpdateMatchStat
     const loserRoster = loserTeamId === teamAId ? rosterA : rosterB;
 
     applyToRoster(winnerRoster, (acc) => {
-      acc.points += POINTS_CONFIG.win;
+      acc.points += scoring.win;
       acc.wins += 1;
     });
 
     applyToRoster(loserRoster, (acc) => {
-      acc.points += POINTS_CONFIG.loss;
+      acc.points += scoring.loss;
       acc.losses += 1;
     });
   }

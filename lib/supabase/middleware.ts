@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getSupabaseEnv, isSupabaseConfigured } from "@/lib/supabase/env";
+import { getOwnerDiscordId, getSupabaseEnv, isSupabaseConfigured } from "@/lib/supabase/env";
 
 const PRIVATE_PATH_PREFIXES = ["/profile/me"];
 const ADMIN_PATH_PREFIX = "/admin";
@@ -54,6 +54,8 @@ export async function updateSession(request: NextRequest) {
     }
 
     if (user && (isPrivatePath || isAdminPath)) {
+      const ownerDiscordId = getOwnerDiscordId();
+      const isOwner = Boolean(ownerDiscordId && user.id === ownerDiscordId);
       const { data: existingProfile } = await supabase
         .from("profiles")
         .select("id")
@@ -76,7 +78,7 @@ export async function updateSession(request: NextRequest) {
             email: user.email ?? null,
             avatar_url: avatarUrl,
             xbox_gamertag: null,
-            role: "user",
+            role: isOwner ? "owner" : "user",
             updated_at: new Date().toISOString(),
           },
           { onConflict: "id" },
@@ -87,12 +89,37 @@ export async function updateSession(request: NextRequest) {
     if (user && isAdminPath) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, is_banned")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profile?.role !== "admin") {
+      if (profile?.is_banned) {
+        console.warn("[banned-user-admin-attempt]", {
+          userId: user.id,
+          pathname,
+        });
+        return NextResponse.redirect(new URL("/?reason=banned", request.url));
+      }
+
+      if (profile?.role !== "admin" && profile?.role !== "owner") {
+        console.warn("[admin-access-denied]", {
+          userId: user.id,
+          pathname,
+          role: profile?.role ?? "unknown",
+        });
         return NextResponse.redirect(new URL("/", request.url));
+      }
+    }
+
+    if (user && isPrivatePath) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_banned")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.is_banned) {
+        return NextResponse.redirect(new URL("/?reason=banned", request.url));
       }
     }
 

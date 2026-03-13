@@ -29,6 +29,9 @@ begin
 end
 $$;
 
+alter type public.event_status add value if not exists 'published';
+alter type public.event_status add value if not exists 'paused';
+
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   discord_id text unique,
@@ -38,6 +41,10 @@ create table if not exists public.profiles (
   xbox_gamertag text,
   avatar_url text,
   role text not null default 'user',
+  is_banned boolean not null default false,
+  banned_reason text,
+  banned_at timestamptz,
+  banned_by uuid references public.profiles (id) on delete set null,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -49,9 +56,32 @@ alter table public.profiles add column if not exists email text;
 alter table public.profiles add column if not exists xbox_gamertag text;
 alter table public.profiles add column if not exists avatar_url text;
 alter table public.profiles add column if not exists role text;
+alter table public.profiles add column if not exists is_banned boolean;
+alter table public.profiles add column if not exists banned_reason text;
+alter table public.profiles add column if not exists banned_at timestamptz;
+alter table public.profiles add column if not exists banned_by uuid;
 alter table public.profiles add column if not exists created_at timestamptz;
 alter table public.profiles add column if not exists updated_at timestamptz;
 alter table public.profiles drop column if exists bio;
+
+alter table public.profiles alter column is_banned set default false;
+update public.profiles set is_banned = false where is_banned is null;
+alter table public.profiles alter column is_banned set not null;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'profiles_banned_by_fkey'
+      and conrelid = 'public.profiles'::regclass
+  ) then
+    alter table public.profiles
+      add constraint profiles_banned_by_fkey
+      foreign key (banned_by) references public.profiles (id) on delete set null;
+  end if;
+end
+$$;
 
 update public.profiles p
 set discord_id = coalesce(u.raw_user_meta_data ->> 'provider_id', u.raw_user_meta_data ->> 'sub', p.id::text)
@@ -66,6 +96,10 @@ where discord_id is null;
 alter table public.profiles alter column role set default 'user';
 update public.profiles set role = 'user' where role is null;
 
+update public.profiles
+set role = 'admin'
+where role::text not in ('user', 'admin', 'owner');
+
 do $$
 begin
   begin
@@ -78,15 +112,17 @@ $$;
 
 do $$
 begin
-  if not exists (
+  if exists (
     select 1
     from pg_constraint
     where conname = 'profiles_role_check'
       and conrelid = 'public.profiles'::regclass
   ) then
-    alter table public.profiles
-      add constraint profiles_role_check check (role in ('user', 'admin'));
+    alter table public.profiles drop constraint profiles_role_check;
   end if;
+
+  alter table public.profiles
+    add constraint profiles_role_check check (role in ('user', 'admin', 'owner'));
 end
 $$;
 
@@ -123,9 +159,51 @@ as $$
     select 1
     from public.profiles
     where id = auth.uid()
-      and role = 'admin'
+      and role in ('admin', 'owner')
   );
 $$;
+
+create or replace function public.is_owner()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and role = 'owner'
+  );
+$$;
+
+create or replace function public.promote_owner_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  owner_discord_id text;
+begin
+  owner_discord_id := nullif(current_setting('app.owner_discord_id', true), '');
+
+  if owner_discord_id is not null and new.discord_id = owner_discord_id then
+    new.role := 'owner';
+  elsif new.role is null or new.role not in ('user', 'admin', 'owner') then
+    new.role := 'user';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_promote_owner on public.profiles;
+create trigger profiles_promote_owner
+before insert or update of discord_id, role on public.profiles
+for each row
+execute function public.promote_owner_profile();
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -709,6 +787,210 @@ create table if not exists public.events (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+alter table public.events add column if not exists description text;
+alter table public.events add column if not exists end_date timestamptz;
+alter table public.events add column if not exists status public.event_status;
+alter table public.events add column if not exists prize_pool numeric(12, 2);
+alter table public.events add column if not exists rules text;
+alter table public.events add column if not exists created_at timestamptz;
+alter table public.events add column if not exists updated_at timestamptz;
+alter table public.events add column if not exists registration_deadline timestamptz;
+alter table public.events add column if not exists event_kind text;
+alter table public.events add column if not exists team_size integer;
+alter table public.events add column if not exists prize_description text;
+alter table public.events add column if not exists logo_url text;
+alter table public.events add column if not exists banner_url text;
+alter table public.events add column if not exists scoring_win integer;
+alter table public.events add column if not exists scoring_loss integer;
+alter table public.events add column if not exists scoring_draw integer;
+alter table public.events add column if not exists tournament_format text;
+alter table public.events add column if not exists rounds_count integer;
+alter table public.events add column if not exists seeding_method text;
+alter table public.events add column if not exists max_teams integer;
+alter table public.events add column if not exists duplicated_from uuid;
+alter table public.events add column if not exists published_at timestamptz;
+alter table public.events add column if not exists paused_at timestamptz;
+alter table public.events add column if not exists finalized_at timestamptz;
+
+alter table public.events alter column status set default 'draft';
+update public.events set status = 'draft' where status is null;
+alter table public.events alter column status set not null;
+alter table public.events alter column prize_pool set default 0;
+update public.events set prize_pool = 0 where prize_pool is null;
+alter table public.events alter column prize_pool set not null;
+alter table public.events alter column created_at set default timezone('utc', now());
+update public.events set created_at = timezone('utc', now()) where created_at is null;
+alter table public.events alter column created_at set not null;
+alter table public.events alter column updated_at set default timezone('utc', now());
+update public.events set updated_at = coalesce(updated_at, created_at, timezone('utc', now())) where updated_at is null;
+alter table public.events alter column updated_at set not null;
+alter table public.events alter column event_kind set default 'event';
+update public.events set event_kind = 'event' where event_kind is null;
+alter table public.events alter column event_kind set not null;
+alter table public.events alter column team_size set default 4;
+update public.events set team_size = 4 where team_size is null or team_size < 1;
+alter table public.events alter column team_size set not null;
+alter table public.events alter column scoring_win set default 3;
+update public.events set scoring_win = 3 where scoring_win is null;
+alter table public.events alter column scoring_win set not null;
+alter table public.events alter column scoring_loss set default 0;
+update public.events set scoring_loss = 0 where scoring_loss is null;
+alter table public.events alter column scoring_loss set not null;
+alter table public.events alter column scoring_draw set default 1;
+update public.events set scoring_draw = 1 where scoring_draw is null;
+alter table public.events alter column scoring_draw set not null;
+alter table public.events alter column seeding_method set default 'random';
+update public.events set seeding_method = 'random' where seeding_method is null;
+alter table public.events alter column seeding_method set not null;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_event_kind_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_event_kind_check;
+  end if;
+
+  alter table public.events
+    add constraint events_event_kind_check check (event_kind in ('event', 'tournament'));
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_team_size_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_team_size_check;
+  end if;
+
+  alter table public.events
+    add constraint events_team_size_check check (team_size >= 1 and team_size <= 10);
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_tournament_format_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_tournament_format_check;
+  end if;
+
+  alter table public.events
+    add constraint events_tournament_format_check check (
+      tournament_format is null
+      or tournament_format in ('single_elimination', 'double_elimination', 'round_robin')
+    );
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_seeding_method_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_seeding_method_check;
+  end if;
+
+  alter table public.events
+    add constraint events_seeding_method_check check (seeding_method in ('random', 'manual', 'ranking'));
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_rounds_count_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_rounds_count_check;
+  end if;
+
+  alter table public.events
+    add constraint events_rounds_count_check check (rounds_count is null or rounds_count >= 1);
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_max_teams_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_max_teams_check;
+  end if;
+
+  alter table public.events
+    add constraint events_max_teams_check check (max_teams is null or max_teams >= 2);
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_date_order_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_date_order_check;
+  end if;
+
+  alter table public.events
+    add constraint events_date_order_check check (end_date is null or end_date > start_date);
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_registration_deadline_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_registration_deadline_check;
+  end if;
+
+  alter table public.events
+    add constraint events_registration_deadline_check check (
+      registration_deadline is null or registration_deadline <= start_date
+    );
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_duplicated_from_fkey'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events
+      add constraint events_duplicated_from_fkey
+      foreign key (duplicated_from) references public.events (id) on delete set null;
+  end if;
+end
+$$;
+
 create table if not exists public.registrations (
   id uuid primary key default gen_random_uuid(),
   event_id uuid not null references public.events (id) on delete cascade,
@@ -717,6 +999,69 @@ create table if not exists public.registrations (
   created_at timestamptz not null default timezone('utc', now()),
   unique (event_id, team_id)
 );
+
+alter table public.registrations add column if not exists reviewed_at timestamptz;
+alter table public.registrations add column if not exists reviewed_by uuid;
+alter table public.registrations add column if not exists rejection_reason text;
+alter table public.registrations add column if not exists source text;
+alter table public.registrations add column if not exists updated_at timestamptz;
+alter table public.registrations add column if not exists created_by uuid;
+
+alter table public.registrations alter column status set default 'pending';
+update public.registrations set status = 'pending' where status is null;
+alter table public.registrations alter column status set not null;
+alter table public.registrations alter column source set default 'self_service';
+update public.registrations set source = 'self_service' where source is null;
+alter table public.registrations alter column source set not null;
+alter table public.registrations alter column updated_at set default timezone('utc', now());
+update public.registrations set updated_at = coalesce(updated_at, created_at, timezone('utc', now())) where updated_at is null;
+alter table public.registrations alter column updated_at set not null;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'registrations_source_check'
+      and conrelid = 'public.registrations'::regclass
+  ) then
+    alter table public.registrations drop constraint registrations_source_check;
+  end if;
+
+  alter table public.registrations
+    add constraint registrations_source_check check (source in ('self_service', 'wildcard'));
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'registrations_reviewed_by_fkey'
+      and conrelid = 'public.registrations'::regclass
+  ) then
+    alter table public.registrations
+      add constraint registrations_reviewed_by_fkey
+      foreign key (reviewed_by) references public.profiles (id) on delete set null;
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'registrations_created_by_fkey'
+      and conrelid = 'public.registrations'::regclass
+  ) then
+    alter table public.registrations
+      add constraint registrations_created_by_fkey
+      foreign key (created_by) references public.profiles (id) on delete set null;
+  end if;
+end
+$$;
 
 create table if not exists public.matches (
   id uuid primary key default gen_random_uuid(),
@@ -734,6 +1079,184 @@ create table if not exists public.matches (
   check (score_b >= 0)
 );
 
+alter table public.matches add column if not exists status text;
+alter table public.matches add column if not exists scheduled_at timestamptz;
+alter table public.matches add column if not exists started_at timestamptz;
+alter table public.matches add column if not exists ended_at timestamptz;
+alter table public.matches add column if not exists duration_minutes integer;
+alter table public.matches add column if not exists evidence jsonb;
+alter table public.matches add column if not exists cancel_reason text;
+alter table public.matches add column if not exists updated_at timestamptz;
+alter table public.matches add column if not exists updated_by uuid;
+alter table public.matches add column if not exists next_match_id uuid;
+alter table public.matches add column if not exists next_slot text;
+
+alter table public.matches alter column status set default 'pending';
+alter table public.matches alter column team_a_id drop not null;
+alter table public.matches alter column team_b_id drop not null;
+update public.matches
+set status = case
+  when coalesce(score_a, 0) > 0 or coalesce(score_b, 0) > 0 or winner_id is not null then 'finished'
+  else 'pending'
+end
+where status is null;
+alter table public.matches alter column status set not null;
+alter table public.matches alter column evidence set default '[]'::jsonb;
+update public.matches set evidence = '[]'::jsonb where evidence is null;
+alter table public.matches alter column evidence set not null;
+alter table public.matches alter column updated_at set default timezone('utc', now());
+update public.matches set updated_at = coalesce(updated_at, created_at, timezone('utc', now())) where updated_at is null;
+alter table public.matches alter column updated_at set not null;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'matches_team_a_id_fkey'
+      and conrelid = 'public.matches'::regclass
+  ) then
+    alter table public.matches drop constraint matches_team_a_id_fkey;
+  end if;
+
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'matches_team_b_id_fkey'
+      and conrelid = 'public.matches'::regclass
+  ) then
+    alter table public.matches drop constraint matches_team_b_id_fkey;
+  end if;
+
+  alter table public.matches
+    add constraint matches_team_a_id_fkey
+    foreign key (team_a_id) references public.teams (id) on delete set null;
+
+  alter table public.matches
+    add constraint matches_team_b_id_fkey
+    foreign key (team_b_id) references public.teams (id) on delete set null;
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'matches_check'
+      and conrelid = 'public.matches'::regclass
+  ) then
+    alter table public.matches drop constraint matches_check;
+  end if;
+
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'matches_team_distinct_check'
+      and conrelid = 'public.matches'::regclass
+  ) then
+    alter table public.matches drop constraint matches_team_distinct_check;
+  end if;
+
+  alter table public.matches
+    add constraint matches_team_distinct_check check (
+      team_a_id is null
+      or team_b_id is null
+      or team_a_id <> team_b_id
+    );
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'matches_status_check'
+      and conrelid = 'public.matches'::regclass
+  ) then
+    alter table public.matches drop constraint matches_status_check;
+  end if;
+
+  alter table public.matches
+    add constraint matches_status_check check (status in ('pending', 'in_progress', 'finished', 'cancelled'));
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'matches_next_slot_check'
+      and conrelid = 'public.matches'::regclass
+  ) then
+    alter table public.matches drop constraint matches_next_slot_check;
+  end if;
+
+  alter table public.matches
+    add constraint matches_next_slot_check check (next_slot is null or next_slot in ('team_a', 'team_b'));
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'matches_duration_minutes_check'
+      and conrelid = 'public.matches'::regclass
+  ) then
+    alter table public.matches drop constraint matches_duration_minutes_check;
+  end if;
+
+  alter table public.matches
+    add constraint matches_duration_minutes_check check (duration_minutes is null or duration_minutes >= 0);
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'matches_updated_by_fkey'
+      and conrelid = 'public.matches'::regclass
+  ) then
+    alter table public.matches
+      add constraint matches_updated_by_fkey
+      foreign key (updated_by) references public.profiles (id) on delete set null;
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'matches_next_match_id_fkey'
+      and conrelid = 'public.matches'::regclass
+  ) then
+    alter table public.matches
+      add constraint matches_next_match_id_fkey
+      foreign key (next_match_id) references public.matches (id) on delete set null;
+  end if;
+end
+$$;
+
+create table if not exists public.match_result_logs (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.matches (id) on delete cascade,
+  event_id uuid not null references public.events (id) on delete cascade,
+  admin_user_id uuid not null references public.profiles (id) on delete cascade,
+  action text not null,
+  note text,
+  previous_state jsonb,
+  next_state jsonb,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.rankings (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null unique references public.profiles (id) on delete cascade,
@@ -747,12 +1270,240 @@ create table if not exists public.rankings (
   check (losses >= 0)
 );
 
+create table if not exists public.admin_action_logs (
+  id uuid primary key default gen_random_uuid(),
+  admin_user_id uuid not null references public.profiles (id) on delete cascade,
+  action text not null,
+  target_type text not null,
+  target_id text,
+  details jsonb,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+alter table public.admin_action_logs add column if not exists severity text;
+alter table public.admin_action_logs add column if not exists suspicious boolean;
+alter table public.admin_action_logs add column if not exists previous_state jsonb;
+alter table public.admin_action_logs add column if not exists next_state jsonb;
+
+update public.admin_action_logs set severity = 'info' where severity is null;
+update public.admin_action_logs set suspicious = false where suspicious is null;
+
+alter table public.admin_action_logs alter column severity set default 'info';
+alter table public.admin_action_logs alter column suspicious set default false;
+alter table public.admin_action_logs alter column severity set not null;
+alter table public.admin_action_logs alter column suspicious set not null;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'admin_action_logs_severity_check'
+      and conrelid = 'public.admin_action_logs'::regclass
+  ) then
+    alter table public.admin_action_logs drop constraint admin_action_logs_severity_check;
+  end if;
+
+  alter table public.admin_action_logs
+    add constraint admin_action_logs_severity_check
+    check (severity in ('info', 'warning', 'critical'));
+end
+$$;
+
+create table if not exists public.team_rankings (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null unique references public.teams (id) on delete cascade,
+  points integer not null default 0,
+  wins integer not null default 0,
+  losses integer not null default 0,
+  rank_position integer,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  check (points >= 0),
+  check (wins >= 0),
+  check (losses >= 0)
+);
+
+create table if not exists public.ranking_adjustments (
+  id uuid primary key default gen_random_uuid(),
+  entity_type text not null,
+  entity_id uuid not null,
+  points_delta integer not null,
+  reason text not null,
+  season text,
+  archived boolean not null default false,
+  created_by uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default timezone('utc', now()),
+  check (entity_type in ('player', 'team'))
+);
+
+create table if not exists public.ranking_seasons (
+  id uuid primary key default gen_random_uuid(),
+  season text not null,
+  archived_by uuid not null references public.profiles (id) on delete cascade,
+  player_snapshot jsonb not null default '[]'::jsonb,
+  team_snapshot jsonb not null default '[]'::jsonb,
+  archived_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.system_settings (
+  id integer primary key,
+  platform_name text not null default 'MadnessArena',
+  logo_url text,
+  branding jsonb not null default '{}'::jsonb,
+  social_links jsonb not null default '{}'::jsonb,
+  terms_of_use text,
+  general_rules text,
+  tournament jsonb not null default '{"points_win":3,"points_loss":0,"points_draw":1,"max_teams_per_tournament":64,"max_members_per_team":10,"max_teams_per_user":3}'::jsonb,
+  discord jsonb not null default '{}'::jsonb,
+  email jsonb not null default '{}'::jsonb,
+  updated_by uuid references public.profiles (id) on delete set null,
+  updated_at timestamptz not null default timezone('utc', now()),
+  check (id = 1)
+);
+
+insert into public.system_settings (id)
+values (1)
+on conflict (id) do nothing;
+
+create table if not exists public.admin_security_alerts (
+  id uuid primary key default gen_random_uuid(),
+  admin_user_id uuid references public.profiles (id) on delete set null,
+  action text not null,
+  target_type text,
+  target_id text,
+  risk_level text not null default 'medium',
+  context jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  resolved_at timestamptz,
+  resolved_by uuid references public.profiles (id) on delete set null,
+  check (risk_level in ('low', 'medium', 'high', 'critical'))
+);
+
+create table if not exists public.backup_jobs (
+  id uuid primary key default gen_random_uuid(),
+  status text not null default 'queued',
+  backup_type text not null default 'manual',
+  scheduled_for timestamptz,
+  started_at timestamptz,
+  completed_at timestamptz,
+  requested_by uuid references public.profiles (id) on delete set null,
+  file_name text,
+  payload jsonb,
+  checksum text,
+  restore_token text,
+  restored_at timestamptz,
+  restored_by uuid references public.profiles (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  check (status in ('queued', 'running', 'completed', 'failed', 'restored')),
+  check (backup_type in ('manual', 'scheduled'))
+);
+
+create table if not exists public.team_notifications (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams (id) on delete cascade,
+  event_id uuid references public.events (id) on delete cascade,
+  kind text not null,
+  title text not null,
+  message text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  read_at timestamptz,
+  delivered_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.notification_templates (
+  id uuid primary key default gen_random_uuid(),
+  type text not null unique,
+  label text not null,
+  template text not null,
+  enabled boolean not null default true,
+  updated_by uuid references public.profiles (id) on delete set null,
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.notifications_outbox (
+  id uuid primary key default gen_random_uuid(),
+  type text not null,
+  webhook_kind text not null,
+  payload jsonb not null default '{}'::jsonb,
+  rendered_message text,
+  status text not null default 'scheduled',
+  scheduled_at timestamptz,
+  sent_at timestamptz,
+  failed_at timestamptz,
+  attempts integer not null default 0,
+  response_code integer,
+  error_message text,
+  created_by uuid references public.profiles (id) on delete set null,
+  created_at timestamptz not null default timezone('utc', now()),
+  check (status in ('scheduled', 'sent', 'failed', 'cancelled')),
+  check (webhook_kind in ('announcements', 'admin_logs'))
+);
+
+insert into public.notification_templates (type, label, template)
+values
+  ('tournament_published', 'Novo torneio publicado', 'Novo torneio publicado: {{title}}. Inicio: {{startDate}}.'),
+  ('registration_approved', 'Inscricao aprovada', 'Inscricao aprovada para {{teamName}} em {{eventTitle}}.'),
+  ('registration_rejected', 'Inscricao rejeitada', 'Inscricao rejeitada para {{teamName}} em {{eventTitle}}. Motivo: {{reason}}.'),
+  ('match_scheduled', 'Partida agendada', 'Partida agendada em {{eventTitle}}: {{teamA}} vs {{teamB}} em {{scheduledAt}}.'),
+  ('match_result_published', 'Resultado publicado', 'Resultado em {{eventTitle}}: {{teamA}} {{scoreA}}x{{scoreB}} {{teamB}}. Vencedor: {{winner}}.'),
+  ('ranking_updated', 'Ranking atualizado', 'Ranking atualizado por {{source}}.'),
+  ('user_banned', 'Usuario banido', 'Usuario banido: {{userId}}. Motivo: {{reason}}.'),
+  ('team_dissolved', 'Equipe dissolvida', 'Equipe dissolvida: {{teamName}}.'),
+  ('admin_log', 'Log administrativo', '[ADMIN] {{message}}')
+on conflict (type) do nothing;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'team_notifications_kind_check'
+      and conrelid = 'public.team_notifications'::regclass
+  ) then
+    alter table public.team_notifications drop constraint team_notifications_kind_check;
+  end if;
+
+  alter table public.team_notifications
+    add constraint team_notifications_kind_check check (
+      kind in ('event_published', 'registration_approved', 'registration_rejected', 'event_starting_soon')
+    );
+end
+$$;
+
+create index if not exists admin_action_logs_admin_idx on public.admin_action_logs (admin_user_id, created_at desc);
+create index if not exists admin_action_logs_target_idx on public.admin_action_logs (target_type, target_id);
+create index if not exists admin_action_logs_suspicious_idx on public.admin_action_logs (suspicious, created_at desc);
+create index if not exists ranking_adjustments_entity_idx on public.ranking_adjustments (entity_type, entity_id, created_at desc);
+create index if not exists ranking_adjustments_archived_idx on public.ranking_adjustments (archived, created_at desc);
+create index if not exists ranking_seasons_season_idx on public.ranking_seasons (season, archived_at desc);
+create index if not exists team_rankings_points_idx on public.team_rankings (points desc);
+create index if not exists admin_security_alerts_risk_idx on public.admin_security_alerts (risk_level, created_at desc);
+create index if not exists backup_jobs_status_idx on public.backup_jobs (status, created_at desc);
+create index if not exists backup_jobs_created_idx on public.backup_jobs (created_at desc);
+
 create index if not exists profiles_role_idx on public.profiles (role);
 create index if not exists events_status_idx on public.events (status);
+create index if not exists events_kind_idx on public.events (event_kind, status);
+create index if not exists events_start_date_idx on public.events (start_date desc);
 create index if not exists registrations_event_id_idx on public.registrations (event_id);
 create index if not exists registrations_team_id_idx on public.registrations (team_id);
+create index if not exists registrations_status_idx on public.registrations (event_id, status);
 create index if not exists matches_event_id_idx on public.matches (event_id);
+create index if not exists matches_status_idx on public.matches (event_id, status, round);
+create index if not exists matches_schedule_idx on public.matches (scheduled_at);
 create index if not exists rankings_points_idx on public.rankings (points desc);
+create index if not exists team_notifications_team_idx on public.team_notifications (team_id, created_at desc);
+create index if not exists team_notifications_event_idx on public.team_notifications (event_id, kind);
+create index if not exists notifications_outbox_status_idx on public.notifications_outbox (status, scheduled_at);
+create index if not exists notifications_outbox_type_idx on public.notifications_outbox (type, created_at desc);
+create index if not exists notification_templates_type_idx on public.notification_templates (type);
+create index if not exists match_result_logs_match_idx on public.match_result_logs (match_id, created_at desc);
+create index if not exists match_result_logs_event_idx on public.match_result_logs (event_id, created_at desc);
+create unique index if not exists team_notifications_unique_kind_per_team_event_idx
+  on public.team_notifications (team_id, event_id, kind)
+  where event_id is not null;
 
 alter table public.profiles enable row level security;
 alter table public.teams enable row level security;
@@ -762,13 +1513,24 @@ alter table public.events enable row level security;
 alter table public.registrations enable row level security;
 alter table public.matches enable row level security;
 alter table public.rankings enable row level security;
+alter table public.team_rankings enable row level security;
+alter table public.ranking_adjustments enable row level security;
+alter table public.ranking_seasons enable row level security;
+alter table public.system_settings enable row level security;
+alter table public.admin_action_logs enable row level security;
+alter table public.admin_security_alerts enable row level security;
+alter table public.backup_jobs enable row level security;
+alter table public.team_notifications enable row level security;
+alter table public.notification_templates enable row level security;
+alter table public.notifications_outbox enable row level security;
+alter table public.match_result_logs enable row level security;
 
 drop policy if exists "Public can read active data from events" on public.events;
 create policy "Public can read active data from events"
 on public.events
 for select
 to anon, authenticated
-using (true);
+using (public.is_admin() or status in ('published', 'active', 'finished'));
 
 drop policy if exists "Admins manage events" on public.events;
 create policy "Admins manage events"
@@ -990,6 +1752,104 @@ to authenticated
 using (public.is_admin())
 with check (public.is_admin());
 
+drop policy if exists "Public can read team rankings" on public.team_rankings;
+create policy "Public can read team rankings"
+on public.team_rankings
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Admins manage team rankings" on public.team_rankings;
+create policy "Admins manage team rankings"
+on public.team_rankings
+for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "Admins read ranking adjustments" on public.ranking_adjustments;
+create policy "Admins read ranking adjustments"
+on public.ranking_adjustments
+for select
+to authenticated
+using (public.is_admin());
+
+drop policy if exists "Admins manage ranking adjustments" on public.ranking_adjustments;
+create policy "Admins manage ranking adjustments"
+on public.ranking_adjustments
+for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "Admins read ranking seasons" on public.ranking_seasons;
+create policy "Admins read ranking seasons"
+on public.ranking_seasons
+for select
+to authenticated
+using (public.is_admin());
+
+drop policy if exists "Owners manage ranking seasons" on public.ranking_seasons;
+create policy "Owners manage ranking seasons"
+on public.ranking_seasons
+for all
+to authenticated
+using (public.is_owner())
+with check (public.is_owner());
+
+drop policy if exists "Public can read system settings" on public.system_settings;
+create policy "Public can read system settings"
+on public.system_settings
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Owners manage system settings" on public.system_settings;
+create policy "Owners manage system settings"
+on public.system_settings
+for all
+to authenticated
+using (public.is_owner())
+with check (public.is_owner());
+
+drop policy if exists "Admins manage admin logs" on public.admin_action_logs;
+create policy "Admins manage admin logs"
+on public.admin_action_logs
+for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "Admins read security alerts" on public.admin_security_alerts;
+create policy "Admins read security alerts"
+on public.admin_security_alerts
+for select
+to authenticated
+using (public.is_admin());
+
+drop policy if exists "Owners manage security alerts" on public.admin_security_alerts;
+create policy "Owners manage security alerts"
+on public.admin_security_alerts
+for all
+to authenticated
+using (public.is_owner())
+with check (public.is_owner());
+
+drop policy if exists "Admins read backup jobs" on public.backup_jobs;
+create policy "Admins read backup jobs"
+on public.backup_jobs
+for select
+to authenticated
+using (public.is_admin());
+
+drop policy if exists "Owners manage backup jobs" on public.backup_jobs;
+create policy "Owners manage backup jobs"
+on public.backup_jobs
+for all
+to authenticated
+using (public.is_owner())
+with check (public.is_owner());
+
 drop policy if exists "Users can read own profile" on public.profiles;
 drop policy if exists "Public can read profiles" on public.profiles;
 create policy "Public can read profiles"
@@ -1053,6 +1913,87 @@ using (
   )
 );
 
+drop policy if exists "Public can read approved registrations" on public.registrations;
+create policy "Public can read approved registrations"
+on public.registrations
+for select
+to anon, authenticated
+using (
+  status = 'approved'
+  and exists (
+    select 1
+    from public.events
+    where events.id = registrations.event_id
+      and events.status in ('published', 'active', 'finished')
+  )
+);
+
+drop policy if exists "Team members read notifications" on public.team_notifications;
+create policy "Team members read notifications"
+on public.team_notifications
+for select
+to authenticated
+using (
+  public.is_admin()
+  or exists (
+    select 1
+    from public.team_members tm
+    where tm.team_id = team_notifications.team_id
+      and tm.user_id = auth.uid()
+  )
+  or exists (
+    select 1
+    from public.teams t
+    where t.id = team_notifications.team_id
+      and t.captain_id = auth.uid()
+  )
+);
+
+drop policy if exists "Admins manage notifications" on public.team_notifications;
+create policy "Admins manage notifications"
+on public.team_notifications
+for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "Admins read notification templates" on public.notification_templates;
+create policy "Admins read notification templates"
+on public.notification_templates
+for select
+to authenticated
+using (public.is_admin());
+
+drop policy if exists "Owners manage notification templates" on public.notification_templates;
+create policy "Owners manage notification templates"
+on public.notification_templates
+for all
+to authenticated
+using (public.is_owner())
+with check (public.is_owner());
+
+drop policy if exists "Admins read notifications outbox" on public.notifications_outbox;
+create policy "Admins read notifications outbox"
+on public.notifications_outbox
+for select
+to authenticated
+using (public.is_admin());
+
+drop policy if exists "Admins insert notifications outbox" on public.notifications_outbox;
+create policy "Admins insert notifications outbox"
+on public.notifications_outbox
+for insert
+to authenticated
+with check (public.is_admin());
+
+drop policy if exists "Owners manage notifications outbox" on public.notifications_outbox;
+create policy "Owners manage notifications outbox"
+on public.notifications_outbox
+for update
+to authenticated
+using (public.is_owner())
+with check (public.is_owner());
+
 drop policy if exists "Public can read matches" on public.matches;
 create policy "Public can read matches"
 on public.matches
@@ -1063,6 +2004,14 @@ using (true);
 drop policy if exists "Admins manage matches" on public.matches;
 create policy "Admins manage matches"
 on public.matches
+for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "Admins manage match result logs" on public.match_result_logs;
+create policy "Admins manage match result logs"
+on public.match_result_logs
 for all
 to authenticated
 using (public.is_admin())

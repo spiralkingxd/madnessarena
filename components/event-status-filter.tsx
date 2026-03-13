@@ -4,8 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 const FILTERS = [
   { label: "Todos", value: "" },
+  { label: "Publicados", value: "published" },
   { label: "Ativos", value: "active" },
-  { label: "Rascunho", value: "draft" },
   { label: "Finalizados", value: "finished" },
 ] as const;
 

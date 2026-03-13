@@ -1,0 +1,176 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Download, RefreshCcw } from "lucide-react";
+
+import { recalculateAllRankings, revertMatchResult } from "@/app/admin/match-actions";
+import { AdminButton } from "@/components/admin/admin-button";
+import { AdminTable, type AdminTableColumn } from "@/components/admin/admin-table";
+import { useAdminToast } from "@/components/admin/admin-toast";
+import type { ResultRow } from "@/app/admin/matches/_data";
+
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+export function ResultsTable({ rows }: { rows: ResultRow[] }) {
+  const router = useRouter();
+  const { pushToast } = useAdminToast();
+  const [isPending, startTransition] = useTransition();
+  const [search, setSearch] = useState("");
+  const [eventFilter, setEventFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState<"all" | "7" | "30" | "90">("all");
+  const [pageSize, setPageSize] = useState(25);
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return rows.filter((row) => {
+      if (eventFilter !== "all" && row.event_id !== eventFilter) return false;
+      if (dateFilter !== "all") {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - Number(dateFilter));
+        const ref = new Date(row.ended_at ?? row.updated_at);
+        if (ref < cutoff) return false;
+      }
+      if (!query) return true;
+      return row.team_a_name.toLowerCase().includes(query) || row.team_b_name.toLowerCase().includes(query);
+    });
+  }, [rows, search, eventFilter, dateFilter]);
+
+  const events = useMemo(
+    () =>
+      [...new Map(rows.map((row) => [row.event_id, row.event_title])).entries()].map(([id, title]) => ({ id, title })),
+    [rows],
+  );
+
+  const columns: AdminTableColumn<ResultRow>[] = [
+    {
+      key: "event",
+      header: "Evento",
+      sortable: true,
+      accessor: (row) => row.event_title,
+      render: (row) => <span>{row.event_title}</span>,
+    },
+    {
+      key: "round",
+      header: "Round",
+      sortable: true,
+      accessor: (row) => row.round,
+      render: (row) => <span>R{row.round}</span>,
+    },
+    {
+      key: "teams",
+      header: "Equipes",
+      sortable: true,
+      accessor: (row) => `${row.team_a_name} vs ${row.team_b_name}`,
+      render: (row) => <span>{row.team_a_name} vs {row.team_b_name}</span>,
+    },
+    {
+      key: "score",
+      header: "Placar",
+      sortable: true,
+      accessor: (row) => `${row.score_a}:${row.score_b}`,
+      render: (row) => <span className="font-semibold">{row.score_a} x {row.score_b}</span>,
+    },
+    {
+      key: "winner",
+      header: "Vencedor",
+      sortable: true,
+      accessor: (row) => row.winner_name,
+      render: (row) => <span>{row.winner_name}</span>,
+    },
+    {
+      key: "date",
+      header: "Data",
+      sortable: true,
+      accessor: (row) => row.ended_at ?? row.updated_at,
+      render: (row) => <span className="text-xs">{dateFmt.format(new Date(row.ended_at ?? row.updated_at))}</span>,
+    },
+    {
+      key: "actions",
+      header: "Ações",
+      render: (row) => (
+        <div className="flex flex-wrap gap-1">
+          <button
+            type="button"
+            className="rounded-lg border border-white/15 bg-white/5 px-2 py-1 text-xs hover:bg-white/10"
+            onClick={() =>
+              startTransition(async () => {
+                const result = await revertMatchResult(row.id);
+                pushToast(result.error ? "error" : "success", result.error ?? result.success ?? "Ação concluída.");
+                router.refresh();
+              })
+            }
+          >
+            Reverter
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+        <label className="flex min-w-[240px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+          Buscar equipe
+          <input value={search} onChange={(event) => setSearch(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100 outline-none" />
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+          Evento
+          <select value={eventFilter} onChange={(event) => setEventFilter(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+            <option value="all">Todos</option>
+            {events.map((event) => <option key={event.id} value={event.id}>{event.title}</option>)}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+          Data
+          <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value as typeof dateFilter)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+            <option value="all">Todas</option>
+            <option value="7">7 dias</option>
+            <option value="30">30 dias</option>
+            <option value="90">90 dias</option>
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+          Página
+          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <a href="/admin/results/export?format=csv" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/10">
+          <Download className="h-4 w-4" />
+          Exportar CSV
+        </a>
+        <a href="/admin/results/export?format=json" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/10">
+          <Download className="h-4 w-4" />
+          Exportar JSON
+        </a>
+        <AdminButton
+          type="button"
+          variant="ghost"
+          disabled={isPending}
+          onClick={() =>
+            startTransition(async () => {
+              const result = await recalculateAllRankings();
+              pushToast(result.error ? "error" : "success", result.error ?? result.success ?? "Ação concluída.");
+              router.refresh();
+            })
+          }
+        >
+          <RefreshCcw className="h-4 w-4" />
+          Recalcular ranking
+        </AdminButton>
+      </div>
+
+      <AdminTable data={filtered} columns={columns} pageSize={pageSize} emptyText="Nenhum resultado encontrado." />
+    </section>
+  );
+}

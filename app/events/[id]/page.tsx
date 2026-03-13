@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Calendar, Coins, Scroll, Shield, Trophy, Users } from "lucide-react";
 
 import { RegisterTeamForm } from "@/components/register-team-form";
+import { formatTeamSize } from "@/lib/events";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -12,22 +13,27 @@ type EventDetail = {
   title: string;
   description: string | null;
   rules: string | null;
-  status: "draft" | "active" | "finished";
+  status: "draft" | "published" | "active" | "paused" | "finished";
   start_date: string;
   end_date: string | null;
-  prize_pool: number;
+  registration_deadline: string | null;
+  prize_description: string | null;
+  team_size: number;
+  logo_url: string | null;
+  banner_url: string | null;
 };
 
 type TeamOption = { id: string; name: string };
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Em andamento",
-  draft: "Em breve",
+  draft: "Rascunho",
+  published: "Publicado",
+  paused: "Pausado",
   finished: "Finalizado",
 };
 
 const fmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" });
-const fmtMoney = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -45,12 +51,13 @@ export default async function EventDetailPage({ params }: Props) {
   ] = await Promise.all([
     supabase
       .from("events")
-      .select("id, title, description, rules, status, start_date, end_date, prize_pool")
+      .select("id, title, description, rules, status, start_date, end_date, registration_deadline, prize_description, team_size, logo_url, banner_url")
       .eq("id", id)
       .single<EventDetail>(),
     supabase
       .from("registrations")
       .select("id", { count: "exact", head: true })
+      .eq("status", "approved")
       .eq("event_id", id),
     supabase.auth.getUser(),
   ]);
@@ -84,6 +91,8 @@ export default async function EventDetailPage({ params }: Props) {
   const eligibleTeams = captainTeams.filter((t) => !alreadyRegisteredTeamIds.includes(t.id));
   const allTeamsAlreadyRegistered =
     captainTeams.length > 0 && eligibleTeams.length === 0;
+  const registrationClosed = Boolean(event.registration_deadline && new Date(event.registration_deadline) < new Date());
+  const canRegister = event.status === "published" || event.status === "active";
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#13293d_0%,_#0b1826_40%,_#050b12_100%)] text-slate-100">
@@ -99,6 +108,11 @@ export default async function EventDetailPage({ params }: Props) {
 
         {/* Event header */}
         <section className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-950/80 to-slate-900/40 p-8">
+          {event.banner_url ? (
+            <div className="mb-6 overflow-hidden rounded-2xl border border-white/10">
+              <img src={event.banner_url} alt={event.title} className="h-52 w-full object-cover" />
+            </div>
+          ) : null}
           <div
             aria-hidden
             className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-amber-400/4 blur-3xl"
@@ -107,16 +121,17 @@ export default async function EventDetailPage({ params }: Props) {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-3">
               <StatusBadge status={event.status} />
-              <h1 className="text-3xl font-bold text-white lg:text-4xl">{event.title}</h1>
+              <div className="flex items-center gap-3">
+                {event.logo_url ? <img src={event.logo_url} alt={event.title} className="h-14 w-14 rounded-2xl object-cover" /> : null}
+                <h1 className="text-3xl font-bold text-white lg:text-4xl">{event.title}</h1>
+              </div>
             </div>
-            {event.prize_pool > 0 ? (
+            {event.prize_description ? (
               <div className="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-6 py-4 text-center">
                 <p className="text-xs font-medium uppercase tracking-wider text-amber-300/70">
                   Premiação
                 </p>
-                <p className="mt-1 text-2xl font-bold text-amber-300">
-                  {fmtMoney.format(event.prize_pool)}
-                </p>
+                <p className="mt-1 max-w-[220px] text-sm font-semibold text-amber-200">{event.prize_description}</p>
               </div>
             ) : null}
           </div>
@@ -132,9 +147,18 @@ export default async function EventDetailPage({ params }: Props) {
                 Fim: {fmt.format(new Date(event.end_date))}
               </span>
             ) : null}
+            {event.registration_deadline ? (
+              <span className="flex items-center gap-1.5">
+                <Scroll className="h-4 w-4" />
+                Inscrições até {fmt.format(new Date(event.registration_deadline))}
+              </span>
+            ) : null}
             <span className="flex items-center gap-1.5">
               <Users className="h-4 w-4" />
               {registrationCount ?? 0} equipe{(registrationCount ?? 0) !== 1 ? "s" : ""} inscrita{(registrationCount ?? 0) !== 1 ? "s" : ""}
+            </span>
+            <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">
+              {formatTeamSize(event.team_size)}
             </span>
             <Link href={`/events/${event.id}/bracket`} className="font-medium text-cyan-300 hover:text-cyan-200">
               Ver chaveamento →
@@ -142,7 +166,7 @@ export default async function EventDetailPage({ params }: Props) {
           </div>
 
           {event.description ? (
-            <p className="mt-5 text-sm leading-7 text-slate-300">{event.description}</p>
+            <div className="prose prose-invert mt-5 max-w-none text-sm leading-7 text-slate-300" dangerouslySetInnerHTML={{ __html: event.description }} />
           ) : null}
         </section>
 
@@ -155,11 +179,7 @@ export default async function EventDetailPage({ params }: Props) {
                   <Shield className="h-5 w-5 text-cyan-400" />
                   Regras do Torneio
                 </h2>
-                <div className="prose prose-sm prose-invert mt-4 max-w-none text-slate-300">
-                  <pre className="whitespace-pre-wrap font-sans text-sm leading-7">
-                    {event.rules}
-                  </pre>
-                </div>
+                <div className="prose prose-sm prose-invert mt-4 max-w-none text-slate-300" dangerouslySetInnerHTML={{ __html: event.rules }} />
               </section>
             ) : null}
 
@@ -185,13 +205,13 @@ export default async function EventDetailPage({ params }: Props) {
                   <dt className="text-slate-400">Equipes inscritas</dt>
                   <dd className="font-semibold text-white">{registrationCount ?? 0}</dd>
                 </div>
-                {event.prize_pool > 0 ? (
+                {event.prize_description ? (
                   <div className="flex items-center justify-between">
                     <dt className="flex items-center gap-1.5 text-slate-400">
                       <Coins className="h-3.5 w-3.5" />
-                      Pool de premiação
+                      Premiação
                     </dt>
-                    <dd className="font-bold text-amber-300">{fmtMoney.format(event.prize_pool)}</dd>
+                    <dd className="max-w-[200px] text-right font-bold text-amber-300">{event.prize_description}</dd>
                   </div>
                 ) : null}
               </dl>
@@ -209,6 +229,18 @@ export default async function EventDetailPage({ params }: Props) {
               {event.status === "finished" ? (
                 <p className="mt-4 rounded-xl border border-slate-400/20 bg-slate-400/10 px-4 py-3 text-sm text-slate-400">
                   Este torneio já foi encerrado.
+                </p>
+              ) : event.status === "paused" ? (
+                <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+                  As inscrições estão temporariamente pausadas pela organização.
+                </p>
+              ) : !canRegister ? (
+                <p className="mt-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+                  O evento ainda não foi publicado para inscrições.
+                </p>
+              ) : registrationClosed ? (
+                <p className="mt-4 rounded-xl border border-rose-300/20 bg-rose-300/10 px-4 py-3 text-sm text-rose-100">
+                  O prazo de inscrições já foi encerrado.
                 </p>
               ) : !user ? (
                 <div className="mt-4 space-y-3">
@@ -257,7 +289,9 @@ function StatusBadge({ status }: { status: string }) {
   const cls = cn(
     "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
     status === "active" && "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-    status === "draft" && "border border-amber-400/30 bg-amber-400/10 text-amber-300",
+    status === "draft" && "border border-slate-400/20 bg-slate-400/10 text-slate-300",
+    status === "published" && "border border-amber-400/30 bg-amber-400/10 text-amber-300",
+    status === "paused" && "border border-rose-400/30 bg-rose-400/10 text-rose-300",
     status === "finished" && "border border-slate-400/30 bg-slate-400/10 text-slate-400",
   );
   return <span className={cls}>{STATUS_LABELS[status] ?? status}</span>;

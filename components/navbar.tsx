@@ -10,7 +10,7 @@ type ProfileNavbarRow = {
   display_name: string;
   username: string;
   avatar_url: string | null;
-  role: "user" | "admin";
+  role: "user" | "admin" | "owner";
 };
 
 export async function Navbar() {
@@ -81,7 +81,7 @@ export async function Navbar() {
           </Link>
         ) : (
           <div className="flex shrink-0 items-center gap-2">
-            {profile?.role === "admin" && (
+            {(profile?.role === "admin" || profile?.role === "owner") && (
               <Link
                 href="/admin/dashboard"
                 className="hidden rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm font-semibold text-amber-200 transition hover:bg-amber-300/20 sm:inline-flex"

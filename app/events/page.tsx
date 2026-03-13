@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Calendar, Coins, Search, Trophy } from "lucide-react";
 
 import { EventStatusFilter } from "@/components/event-status-filter";
+import { formatTeamSize } from "@/lib/events";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -11,23 +12,23 @@ type EventRow = {
   id: string;
   title: string;
   description: string | null;
-  status: "draft" | "active" | "finished";
+  status: "published" | "active" | "finished";
   start_date: string;
   end_date: string | null;
-  prize_pool: number;
+  prize_description: string | null;
+  team_size: number;
 };
 
-const VALID_STATUSES = ["active", "draft", "finished"] as const;
+const VALID_STATUSES = ["published", "active", "finished"] as const;
 type StatusFilter = (typeof VALID_STATUSES)[number];
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Em andamento",
-  draft: "Em breve",
+  published: "Publicado",
   finished: "Finalizado",
 };
 
 const fmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" });
-const fmtMoney = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 async function getEvents(status: StatusFilter | null) {
   if (!isSupabaseConfigured()) return [] as EventRow[];
@@ -35,7 +36,8 @@ async function getEvents(status: StatusFilter | null) {
   const supabase = await createClient();
   let query = supabase
     .from("events")
-    .select("id, title, description, status, start_date, end_date, prize_pool")
+    .select("id, title, description, status, start_date, end_date, prize_description, team_size")
+    .in("status", ["published", "active", "finished"])
     .order("start_date", { ascending: false });
 
   if (status) {
@@ -56,7 +58,7 @@ async function getAllEventStatuses() {
   return {
     total: all.length,
     active: all.filter((e) => e.status === "active").length,
-    upcoming: all.filter((e) => e.status === "draft").length,
+    upcoming: all.filter((e) => e.status === "published").length,
     finished: all.filter((e) => e.status === "finished").length,
   };
 }
@@ -100,7 +102,7 @@ export default async function EventsPage({ searchParams }: Props) {
             {[
               { label: "Total", value: stats.total, color: "text-white" },
               { label: "Em andamento", value: stats.active, color: "text-emerald-400" },
-              { label: "Em breve", value: stats.upcoming, color: "text-amber-400" },
+              { label: "Publicados", value: stats.upcoming, color: "text-amber-400" },
               { label: "Finalizados", value: stats.finished, color: "text-slate-400" },
             ].map(({ label, value, color }) => (
               <div
@@ -149,9 +151,10 @@ export default async function EventsPage({ searchParams }: Props) {
                 </div>
 
                 {event.description && (
-                  <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-400">
-                    {event.description}
-                  </p>
+                  <div
+                    className="mt-3 line-clamp-3 text-sm leading-6 text-slate-400"
+                    dangerouslySetInnerHTML={{ __html: event.description }}
+                  />
                 )}
 
                 <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">
@@ -164,10 +167,13 @@ export default async function EventsPage({ searchParams }: Props) {
                       até {fmt.format(new Date(event.end_date))}
                     </span>
                   )}
-                  {event.prize_pool > 0 && (
+                  <span className="rounded-full border border-white/10 px-2 py-1 text-[11px] text-slate-400">
+                    {formatTeamSize(event.team_size)}
+                  </span>
+                  {event.prize_description && (
                     <span className="flex items-center gap-1 text-amber-300/70">
                       <Coins className="h-3 w-3" />
-                      {fmtMoney.format(event.prize_pool)}
+                      {event.prize_description}
                     </span>
                   )}
                 </div>
@@ -216,7 +222,7 @@ function StatusBadge({ status }: { status: string }) {
       className={cn(
         "shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
         status === "active" && "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-        status === "draft" && "border border-amber-400/30 bg-amber-400/10 text-amber-300",
+        status === "published" && "border border-amber-400/30 bg-amber-400/10 text-amber-300",
         status === "finished" && "border border-slate-400/30 bg-slate-400/10 text-slate-400",
       )}
     >

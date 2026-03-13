@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 type EventRow = {
   id: string;
   title: string;
-  status: "draft" | "active" | "finished";
+  status: "draft" | "published" | "active" | "paused" | "finished";
 };
 
 type MatchRow = {
@@ -25,8 +25,10 @@ type MatchRow = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  draft: "Em breve",
+  draft: "Rascunho",
+  published: "Publicado",
   active: "Em andamento",
+  paused: "Pausado",
   finished: "Finalizado",
 };
 
@@ -66,7 +68,7 @@ export default async function EventBracketPage({ params }: Props) {
 
   if (user) {
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-    isAdmin = profile?.role === "admin";
+    isAdmin = profile?.role === "admin" || profile?.role === "owner";
   }
 
   const matches = (matchesRaw ?? []) as MatchRow[];
@@ -100,11 +102,11 @@ export default async function EventBracketPage({ params }: Props) {
           </div>
         </div>
 
-        {event.status === "draft" ? (
+        {event.status === "draft" || event.status === "published" || event.status === "paused" ? (
           <section className="rounded-2xl border border-amber-400/25 bg-amber-400/8 px-6 py-12 text-center">
             <h2 className="text-2xl font-semibold text-amber-300">Em breve</h2>
             <p className="mt-3 text-sm text-amber-200/80">
-              O chaveamento será disponibilizado quando o evento começar.
+              O chaveamento será disponibilizado quando o evento entrar em andamento.
             </p>
           </section>
         ) : matches.length === 0 ? (
