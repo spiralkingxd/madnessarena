@@ -86,7 +86,7 @@ const getTeamsFiltersSchema = z.object({
   sortBy: z.enum(["created_at", "name", "member_count", "status", "tournaments_count"]).optional(),
   sortDir: z.enum(["asc", "desc"]).optional(),
   page: z.number().int().min(1).optional(),
-  pageSize: z.number().int().min(1).max(200).optional(),
+  pageSize: z.number().int().min(1).max(3000).optional(),
 });
 
 const updateTeamSchema = z.object({
