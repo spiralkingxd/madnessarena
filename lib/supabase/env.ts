@@ -1,5 +1,3 @@
-import "server-only";
-
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const ownerDiscordIdRaw = process.env.OWNER_DISCORD_ID;
