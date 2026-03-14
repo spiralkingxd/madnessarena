@@ -4,6 +4,8 @@ import { Anchor, Calendar, Crown, Users } from "lucide-react";
 
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { unstable_cache } from "next/cache";
 
 type TeamListRow = {
   id: string;
@@ -19,71 +21,88 @@ type TeamListRow = {
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" });
 
+const getCachedTeams = unstable_cache(
+  async () => {
+    const supabaseAction = createAdminClient();
+    if (!supabaseAction) return [];
+
+    const { data: teamsRaw } = await supabaseAction
+      .from("teams")
+      .select("id, name, logo_url, captain_id, max_members, created_at")        
+      .is("dissolved_at", null)
+      .order("created_at", { ascending: false });
+
+    if (!teamsRaw || teamsRaw.length === 0) return [];
+
+    const teamIds = teamsRaw.map((t) => t.id as string);
+    const { data: memberCounts } = await supabaseAction
+      .from("team_members")
+      .select("team_id, user_id")
+      .in("team_id", teamIds);
+
+    const captainIds = Array.from(new Set(teamsRaw.map((t) => t.captain_id as string)));                                                                            
+    const { data: captainProfiles } = await supabaseAction
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", captainIds);
+
+    const captainMap = new Map<string, { id: string; display_name: string; avatar_url: string | null }>();                                                          
+    for (const row of captainProfiles ?? []) {
+      captainMap.set(row.id as string, {
+        id: row.id as string,
+        display_name: (row.display_name as string) ?? "Capitão",
+        avatar_url: (row.avatar_url as string | null) ?? null,
+      });
+    }
+
+    const countMap = new Map<string, number>();
+    const memberMap = new Map<string, Set<string>>();
+    for (const row of memberCounts ?? []) {
+      const teamId = row.team_id as string;
+      const userId = row.user_id as string;
+      
+      countMap.set(teamId, (countMap.get(teamId) ?? 0) + 1);
+      
+      if (!memberMap.has(teamId)) memberMap.set(teamId, new Set());
+      memberMap.get(teamId)!.add(userId);
+    }
+
+    return teamsRaw.map((t) => ({
+      id: t.id as string,
+      name: t.name as string,
+      logo_url: (t.logo_url as string | null) ?? null,
+      captain_id: t.captain_id as string,
+      created_at: t.created_at as string,
+      captain: captainMap.get(t.captain_id as string) ?? null,
+      member_count: countMap.get(t.id as string) ?? 0,
+      max_members: (t.max_members as number) ?? 10,
+      _members: Array.from(memberMap.get(t.id as string) ?? [])
+    }));
+  },
+  ["teams-public-data"],
+  { tags: ["teams", "public-data"], revalidate: 3600 }
+);
+
 async function getData() {
   if (!isSupabaseConfigured()) {
     return { teams: [] as TeamListRow[], userId: null };
   }
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const [
-    { data: { user } },
-    { data: teamsRaw },
-  ] = await Promise.all([
-    supabase.auth.getUser(),
-    supabase
-      .from("teams")
-      .select("id, name, logo_url, captain_id, max_members, created_at")
-      .is("dissolved_at", null)
-      .order("created_at", { ascending: false }),
-  ]);
+  const cachedTeams = await getCachedTeams();
 
-  if (!teamsRaw || teamsRaw.length === 0) {
-    return { teams: [] as TeamListRow[], userId: user?.id ?? null };
-  }
-
-  // Conta quantos membros existem em cada equipe.
-  const teamIds = teamsRaw.map((t) => t.id as string);
-  const { data: memberCounts } = await supabase
-    .from("team_members")
-    .select("team_id, user_id")
-    .in("team_id", teamIds);
-
-  const captainIds = Array.from(new Set(teamsRaw.map((t) => t.captain_id as string)));
-  const { data: captainProfiles } = await supabase
-    .from("profiles")
-    .select("id, display_name, avatar_url")
-    .in("id", captainIds);
-
-  const captainMap = new Map<string, { id: string; display_name: string; avatar_url: string | null }>();
-  for (const row of captainProfiles ?? []) {
-    captainMap.set(row.id as string, {
-      id: row.id as string,
-      display_name: (row.display_name as string) ?? "Capitão",
-      avatar_url: (row.avatar_url as string | null) ?? null,
-    });
-  }
-
-  const countMap = new Map<string, number>();
-  const myTeamSet = new Set<string>();
-  for (const row of memberCounts ?? []) {
-    const teamId = row.team_id as string;
-    countMap.set(teamId, (countMap.get(teamId) ?? 0) + 1);
-    if (user?.id && (row.user_id as string) === user.id) {
-      myTeamSet.add(teamId);
-    }
-  }
-
-  const teams: TeamListRow[] = teamsRaw.map((t) => ({
-    id: t.id as string,
-    name: t.name as string,
-    logo_url: (t.logo_url as string | null) ?? null,
-    captain_id: t.captain_id as string,
-    created_at: t.created_at as string,
-    captain: captainMap.get(t.captain_id as string) ?? null,
-    member_count: countMap.get(t.id as string) ?? 0,
-    max_members: (t.max_members as number) ?? 10,
-    is_user_member: myTeamSet.has(t.id as string),
+  const teams: TeamListRow[] = cachedTeams.map((t) => ({
+    id: t.id,
+    name: t.name,
+    logo_url: t.logo_url,
+    captain_id: t.captain_id,
+    created_at: t.created_at,
+    captain: t.captain,
+    member_count: t.member_count,
+    max_members: t.max_members,
+    is_user_member: user?.id ? (t._members as string[]).includes(user.id) : false,
   }));
 
   return { teams, userId: user?.id ?? null };

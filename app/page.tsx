@@ -68,33 +68,8 @@ async function getHomeData() {
     return { featuredEvent: null, finishedEvents: [] };
   }
 
-  const cached = await getCachedHomeData();
-  if (cached.featuredEvent || cached.finishedEvents.length > 0) {
-    return cached;
-  }
-
-  const supabase = await createClient();
-  const [{ data: activeEvents }, { data: finishedEvents }] = await Promise.all([
-    supabase
-      .from("events")
-      .select("id, title, description, start_date, end_date, status, prize_description, team_size")
-      .in("status", ["active", "published"])
-      .order("start_date", { ascending: true })
-      .limit(1),
-    supabase
-      .from("events")
-      .select("id, title, end_date, prize_description")
-      .eq("status", "finished")
-      .order("end_date", { ascending: false })
-      .limit(6),
-  ]);
-
-  return {
-    featuredEvent: (activeEvents?.[0] as ActiveEventRow) ?? null,
-    finishedEvents: (finishedEvents ?? []) as FinishedEventRow[],
-  };
+  return await getCachedHomeData();
 }
-
 const fmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" });
 export default async function Home() {
   const { featuredEvent, finishedEvents } = await getHomeData();

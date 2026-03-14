@@ -4,6 +4,8 @@ import { Trophy } from "lucide-react";
 import { RankingLiveSync } from "@/components/ranking-live-sync";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { unstable_cache } from "next/cache";
 import { cn } from "@/lib/utils";
 
 type RankingRow = {
@@ -23,40 +25,49 @@ type ProfileRow = {
   xbox_gamertag: string | null;
 };
 
+const getCachedRanking = unstable_cache(
+  async () => {
+    const supabase = createAdminClient();
+    if (!supabase) return [];
+    
+    const { data: rankings } = await supabase
+      .from("rankings")
+      .select("id, profile_id, points, wins, losses, rank_position")
+      .order("points", { ascending: false })
+      .order("wins", { ascending: false })
+      .order("losses", { ascending: true });
+
+    const profileIds = (rankings ?? []).map((r) => r.profile_id as string);       
+
+    if (profileIds.length === 0) {
+      return [] as Array<RankingRow & { profile: ProfileRow | null }>;
+    }
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, display_name, username, avatar_url, xbox_gamertag")
+      .in("id", profileIds);
+
+    const byId = new Map<string, ProfileRow>();
+    for (const profile of profiles ?? []) {
+      byId.set(profile.id as string, profile as ProfileRow);
+    }
+
+    return (rankings ?? []).map((row) => ({
+      ...(row as RankingRow),
+      profile: byId.get(row.profile_id as string) ?? null,
+    }));
+  },
+  ["ranking-public-data"],
+  { tags: ["ranking", "public-data"], revalidate: 3600 }
+);
+
 async function getRankingData() {
   if (!isSupabaseConfigured()) {
     return [] as Array<RankingRow & { profile: ProfileRow | null }>;
   }
 
-  const supabase = await createClient();
-
-  const { data: rankings } = await supabase
-    .from("rankings")
-    .select("id, profile_id, points, wins, losses, rank_position")
-    .order("points", { ascending: false })
-    .order("wins", { ascending: false })
-    .order("losses", { ascending: true });
-
-  const profileIds = (rankings ?? []).map((r) => r.profile_id as string);
-
-  if (profileIds.length === 0) {
-    return [] as Array<RankingRow & { profile: ProfileRow | null }>;
-  }
-
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, display_name, username, avatar_url, xbox_gamertag")
-    .in("id", profileIds);
-
-  const byId = new Map<string, ProfileRow>();
-  for (const profile of profiles ?? []) {
-    byId.set(profile.id as string, profile as ProfileRow);
-  }
-
-  return (rankings ?? []).map((row) => ({
-    ...(row as RankingRow),
-    profile: byId.get(row.profile_id as string) ?? null,
-  }));
+  return await getCachedRanking();
 }
 
 export default async function RankingPage() {
@@ -161,3 +172,5 @@ function PositionBadge({ position }: { position: number }) {
 
   return <span className="text-sm text-slate-400">#{position}</span>;
 }
+
+

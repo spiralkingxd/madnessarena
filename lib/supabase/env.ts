@@ -54,6 +54,7 @@ export function getOwnerDiscordIds(): string[] {
 
   const uniqueOwners = Array.from(new Set(owners));
   const validOwners = uniqueOwners.filter(isDiscordSnowflake);
+  if (validOwners.length === 0) {
     if (process.env.NODE_ENV !== "production" && !ownerEnvWarningPrinted) {
       console.warn("[owner-env] OWNER_DISCORD_ID nao configurado corretamente. Promocao automatica de owner esta desativada.");
       ownerEnvWarningPrinted = true;

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { unstable_cache } from "next/cache";
 import { Calendar, Coins, Search, Trophy } from "lucide-react";
 
 import { EventStatusFilter } from "@/components/event-status-filter";
 import { formatTeamSize } from "@/lib/events";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { cn } from "@/lib/utils";
 
 type EventRow = {
@@ -31,6 +32,17 @@ const STATUS_LABELS: Record<string, string> = {
 
 const fmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" });
 
+const getCachedAllEvents = unstable_cache(
+  async () => {
+    const supabase = createAdminClient();
+    if (!supabase) return [];
+    const { data } = await supabase.from('events').select('id, title, description, status, start_date, end_date, prize_description, team_size').in('status', ['published', 'active', 'paused', 'finished']).order('start_date', { ascending: false });
+    return (data ?? []) as EventRow[];
+  },
+  ['all-events-public'],
+  { tags: ['events', 'public-data'], revalidate: 3600 }
+);
+
 async function getEventsData(status: StatusFilter | null) {
   if (!isSupabaseConfigured()) {
     return {
@@ -39,14 +51,7 @@ async function getEventsData(status: StatusFilter | null) {
     };
   }
 
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("events")
-    .select("id, title, description, status, start_date, end_date, prize_description, team_size")
-    .in("status", ["published", "active", "paused", "finished"])
-    .order("start_date", { ascending: false });
-
-  const allEvents = (data ?? []) as EventRow[];
+  const allEvents = await getCachedAllEvents();
   const events = status ? allEvents.filter((event) => event.status === status) : allEvents;
 
   return {
@@ -228,5 +233,7 @@ function StatusBadge({ status }: { status: string }) {
     </span>
   );
 }
+
+
 
 

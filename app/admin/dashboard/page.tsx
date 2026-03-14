@@ -19,6 +19,7 @@ import { AdminBadge } from "@/components/admin/admin-badge";
 import { AdminButton } from "@/components/admin/admin-button";
 import { AlertBanner } from "@/components/admin/alert-banner";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
+import { BotAccessCard } from "@/components/admin/bot-access-card";
 import { DashboardExportButton } from "@/components/admin/dashboard-export-button";
 
 import { createClient } from "@/lib/supabase/server";
@@ -232,10 +233,12 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      <section className="admin-surface space-y-4 rounded-2xl p-6">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">Atividades Recentes</h2>
-          <Link href="/admin/logs" className="text-xs uppercase tracking-[0.14em] text-cyan-300 hover:text-cyan-200">
+      <div className="grid gap-4 xl:grid-cols-4">
+        <div className="xl:col-span-3">
+          <section className="admin-surface space-y-4 rounded-2xl p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-white">Atividades Recentes</h2>
+              <Link href="/admin/logs" className="text-xs uppercase tracking-[0.14em] text-cyan-300 hover:text-cyan-200">
             Ver trilha completa
           </Link>
         </div>
@@ -280,7 +283,12 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
         </div>
-      </section>
+        </section>
+      </div>
+      <div>
+        <BotAccessCard />
+      </div>
+    </div>
 
       <section className="admin-surface rounded-2xl p-6">
         <div className="flex flex-wrap gap-2">
