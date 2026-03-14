@@ -526,7 +526,7 @@ export async function exportData(type: ExportType) {
 export async function getBotCredentials() {
   await assertAdminAccess(); // Seguranca cibernetica: Somente admins/owners reais chegam aqui
   return {
-    url: "https://madness-arena-admin.up.railway.app/login?next=/",
+    url: "https://madnessarena-bots.up.railway.app/login?next=/",
     username: process.env.BOT_PANEL_USER || "madness_admin",
     password: process.env.BOT_PANEL_PASS || "madnessarena26.sotbot",
   };
