@@ -53,14 +53,13 @@ export function AdminShell({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="admin-shell-bg">
-      <div className="mx-auto flex w-full max-w-[1400px] gap-0 xl:px-4">
-        <aside
-          className={cn(
-            "admin-surface fixed inset-y-0 left-0 z-50 w-72 border-r p-4 transition-transform xl:sticky xl:top-0 xl:h-screen xl:translate-x-0",
-            open ? "translate-x-0" : "-translate-x-full",
-          )}
-        >
+    <div className="admin-shell-bg flex w-full">
+      <aside
+        className={cn(
+          "admin-surface fixed inset-y-0 left-0 z-50 w-72 border-r border-y-0 border-l-0 p-4 transition-transform xl:sticky xl:top-[72px] xl:h-[calc(100vh-72px)] xl:overflow-y-auto xl:translate-x-0 hidden-scrollbar",
+          open ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
           <div className="mb-4 flex items-center justify-between xl:hidden">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--accent-cyan)]">Admin</p>
             <button type="button" onClick={() => setOpen(false)} aria-label="Fechar menu" className="rounded-lg p-1.5 hover:bg-black/10 dark:hover:bg-white/10 text-[color:var(--text-muted)] hover:text-[color:var(--text-strong)]">
@@ -122,9 +121,8 @@ export function AdminShell({
             </div>
           </header>
 
-          <main className="px-4 py-6 lg:px-6">{children}</main>
+          <main className="mx-auto w-full max-w-[1400px] px-4 py-6 lg:px-8">{children}</main>
         </div>
       </div>
-    </div>
   );
 }

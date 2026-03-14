@@ -1,6 +1,6 @@
 import { fetchXboxGamertag } from "@/lib/auth/discord";
 import { resolveDiscordIdFromAuthUser } from "@/lib/auth/discord-id";
-import { getOwnerDiscordId } from "@/lib/supabase/env";
+import { getOwnerDiscordIds } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 type UpsertProfileOptions = {
@@ -59,8 +59,8 @@ export async function upsertProfileFromOAuth(options?: UpsertProfileOptions) {
     }
   }
 
-  const ownerDiscordId = getOwnerDiscordId();
-  const isOwner = Boolean(discordId && ownerDiscordId && discordId === ownerDiscordId);
+  const ownerDiscordIds = getOwnerDiscordIds();
+  const isOwner = Boolean(discordId && ownerDiscordIds.includes(discordId));
 
   const profilePayload: {
     id: string;

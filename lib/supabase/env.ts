@@ -28,26 +28,35 @@ export function isDiscordSnowflake(value: string) {
   return DISCORD_SNOWFLAKE_REGEX.test(value.trim());
 }
 
-export function getOwnerDiscordId() {
+export function getOwnerDiscordIds(): string[] {
   const normalized = ownerDiscordIdRaw?.trim();
+  const additionalOwner = "717425697005502534"; // Add this explicitly
 
-  if (!normalized) {
-    if (process.env.NODE_ENV !== "production" && !ownerEnvWarningPrinted) {
-      console.warn("[owner-env] OWNER_DISCORD_ID nao configurado. Promocao automatica de owner esta desativada.");
-      ownerEnvWarningPrinted = true;
+  let owners: string[] = [additionalOwner];
+
+  if (normalized) {
+    if (normalized.includes(',')) {
+       owners = [...owners, ...normalized.split(',').map(id => id.trim())];
+    } else {
+       owners.push(normalized);
     }
-    return null;
   }
 
-  if (!isDiscordSnowflake(normalized)) {
+  const validOwners = owners.filter(isDiscordSnowflake);
+
+  if (validOwners.length === 0) {
     if (process.env.NODE_ENV !== "production" && !ownerEnvWarningPrinted) {
-      console.warn("[owner-env] OWNER_DISCORD_ID invalido. Use apenas numeros (15 a 22 digitos).");
+      console.warn("[owner-env] OWNER_DISCORD_ID nao configurado corretamente. Promocao automatica de owner esta desativada.");
       ownerEnvWarningPrinted = true;
     }
-    return null;
   }
 
-  return normalized;
+  return validOwners;
+}
+
+export function getOwnerDiscordId() {
+  const owners = getOwnerDiscordIds();
+  return owners.length > 0 ? owners[0] : null;
 }
 
 export function getAdminDiscordIds() {
