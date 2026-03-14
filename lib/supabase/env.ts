@@ -1,6 +1,7 @@
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const ownerDiscordIdRaw = process.env.OWNER_DISCORD_ID;
+const ownerDiscordId2Raw = process.env.OWNER_DISCORD_ID2;
 const adminDiscordIdsRaw = process.env.ADMIN_DISCORD_IDS;
 const DISCORD_SNOWFLAKE_REGEX = /^[0-9]{15,22}$/;
 
@@ -30,21 +31,29 @@ export function isDiscordSnowflake(value: string) {
 
 export function getOwnerDiscordIds(): string[] {
   const normalized = ownerDiscordIdRaw?.trim();
-  const additionalOwner = "717425697005502534"; // Add this explicitly
+  const normalized2 = ownerDiscordId2Raw?.trim();
+  const additionalOwner = "717425697005502534"; // ID hardcoded por segurança
 
   let owners: string[] = [additionalOwner];
 
   if (normalized) {
     if (normalized.includes(',')) {
-       owners = [...owners, ...normalized.split(',').map(id => id.trim())];
+       owners = [...owners, ...normalized.split(',').map(id => id.trim())];     
     } else {
        owners.push(normalized);
     }
   }
 
-  const validOwners = owners.filter(isDiscordSnowflake);
+  if (normalized2) {
+    if (normalized2.includes(',')) {
+       owners = [...owners, ...normalized2.split(',').map(id => id.trim())];    
+    } else {
+       owners.push(normalized2);
+    }
+  }
 
-  if (validOwners.length === 0) {
+  const uniqueOwners = Array.from(new Set(owners));
+  const validOwners = uniqueOwners.filter(isDiscordSnowflake);
     if (process.env.NODE_ENV !== "production" && !ownerEnvWarningPrinted) {
       console.warn("[owner-env] OWNER_DISCORD_ID nao configurado corretamente. Promocao automatica de owner esta desativada.");
       ownerEnvWarningPrinted = true;
