@@ -32,17 +32,12 @@ const STATUS_LABELS: Record<string, string> = {
 
 async function getHomeData() {
   if (!isSupabaseConfigured()) {
-    return { featuredEvent: null, finishedEvents: [], teamCount: 0, eventCount: 0 };
+    return { featuredEvent: null, finishedEvents: [] };
   }
 
   const supabase = await createClient();
 
-  const [
-    { data: activeEvents },
-    { data: finishedEvents },
-    { count: teamCount },
-    { count: eventCount },
-  ] = await Promise.all([
+  const [{ data: activeEvents }, { data: finishedEvents }] = await Promise.all([
     supabase
       .from("events")
       .select("id, title, description, start_date, end_date, status, prize_description, team_size")
@@ -55,21 +50,17 @@ async function getHomeData() {
       .eq("status", "finished")
       .order("end_date", { ascending: false })
       .limit(6),
-    supabase.from("teams").select("id", { count: "exact", head: true }),
-    supabase.from("events").select("id", { count: "exact", head: true }),
   ]);
 
   return {
     featuredEvent: (activeEvents?.[0] as ActiveEventRow) ?? null,
     finishedEvents: (finishedEvents ?? []) as FinishedEventRow[],
-    teamCount: teamCount ?? 0,
-    eventCount: eventCount ?? 0,
   };
 }
 
 const fmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" });
 export default async function Home() {
-  const { featuredEvent, finishedEvents, teamCount, eventCount } = await getHomeData();
+  const { featuredEvent, finishedEvents } = await getHomeData();
 
   return (
     <main className="min-h-screen bg-[#050b12] text-slate-100">
@@ -90,7 +81,7 @@ export default async function Home() {
         <div aria-hidden className="pointer-events-none absolute -top-24 left-1/2 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-cyan-600/8 blur-[130px]" />
         <div aria-hidden className="pointer-events-none absolute bottom-0 left-1/4 h-64 w-80 rounded-full bg-amber-500/6 blur-[100px]" />
 
-        <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-6 px-6 py-24 text-center lg:px-10 lg:py-36">
+        <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-3 px-6 py-10 text-center lg:px-10 lg:py-12">
           <div className="inline-flex items-center gap-2.5 rounded-full border border-amber-400/25 bg-amber-400/8 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.3em] text-amber-300">
             <Skull className="h-3.5 w-3.5" />
             Sea of Thieves · Temporada Competitiva
@@ -104,43 +95,10 @@ export default async function Home() {
             </span>
           </h1>
 
-          <p className="max-w-xl text-base leading-7 text-slate-400 sm:text-lg">
+          <p className="max-w-xl text-sm leading-6 text-slate-400 sm:text-base">
             Competições oficiais de Sea of Thieves. Monte sua tripulação,
             participe de torneios e conquiste o topo dos mares.
           </p>
-
-          <div className="flex flex-wrap justify-center gap-3 pt-2">
-            <Link
-              href="/events"
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-7 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-amber-900/30 transition hover:bg-amber-300"
-            >
-              <Trophy className="h-4 w-4" />
-              Ver Torneios
-            </Link>
-            <Link
-              href="/teams"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/12 bg-white/5 px-7 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
-            >
-              <Anchor className="h-4 w-4" />
-              Criar Equipe
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="mt-6 flex flex-wrap justify-center gap-0 divide-x divide-white/8 rounded-2xl border border-white/8 bg-white/3 overflow-hidden">
-            <div className="px-8 py-4 text-center">
-              <p className="text-3xl font-extrabold text-white">{eventCount}</p>
-              <p className="mt-0.5 text-xs text-slate-500">Torneios</p>
-            </div>
-            <div className="px-8 py-4 text-center">
-              <p className="text-3xl font-extrabold text-white">{teamCount}</p>
-              <p className="mt-0.5 text-xs text-slate-500">Equipes</p>
-            </div>
-            <div className="px-8 py-4 text-center">
-              <p className="text-3xl font-extrabold text-white">🏴‍☠️</p>
-              <p className="mt-0.5 text-xs text-slate-500">Mar dos Ladrões</p>
-            </div>
-          </div>
         </div>
       </section>
 
