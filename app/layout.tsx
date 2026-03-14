@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  icons: { icon: '/icon.png' },
   title: "MadnessArena",
   description: "Gerenciamento de torneios de Sea of Thieves com Next.js e Supabase.",
 };
