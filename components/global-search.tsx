@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, Loader2, User, Trophy, Users, MoveRight } from "lucide-react";
 import { globalSearchAction, SearchResult } from "@/app/actions/search-actions";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Image from "next/image";
 
 type SearchFilter = "all" | "user" | "tournament" | "team";
 
@@ -179,14 +179,17 @@ export function GlobalSearch() {
                       onClick={() => handleResultClick(result.url)}
                       className="w-full flex items-center text-left gap-3 p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition group"
                     >
-                      <Avatar className="h-10 w-10 border border-slate-200 dark:border-slate-800 shadow-sm bg-slate-100 dark:bg-slate-900">
-                        <AvatarImage src={result.imageUrl || ""} className="object-cover" />
-                        <AvatarFallback className="bg-transparent text-slate-500">
-                          {result.type === "user" && <User className="h-5 w-5" />}
-                          {result.type === "tournament" && <Trophy className="h-5 w-5" />}
-                          {result.type === "team" && <Users className="h-5 w-5" />}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative flex shrink-0 h-10 w-10 overflow-hidden rounded-full border border-slate-200 dark:border-slate-800 shadow-sm bg-slate-100 dark:bg-slate-900 justify-center items-center">
+                        {result.imageUrl ? (
+                          <img src={result.imageUrl} alt={result.title} className="aspect-square h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-transparent text-slate-500">
+                            {result.type === "user" && <User className="h-5 w-5" />}
+                            {result.type === "tournament" && <Trophy className="h-5 w-5" />}
+                            {result.type === "team" && <Users className="h-5 w-5" />}
+                          </div>
+                        )}
+                      </div>
                       
                       <div className="flex-1 overflow-hidden">
                         <div className="font-medium text-slate-900 dark:text-slate-200 truncate">
