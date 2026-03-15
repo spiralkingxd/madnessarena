@@ -47,13 +47,13 @@ export function AdminXboxControl({
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-white/10 bg-slate-900/50 p-4">
+    <div className="mt-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/50 p-4 shadow-sm dark:shadow-none">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-slate-200">
-          <Gamepad2 className="h-5 w-5 text-green-500" />
+        <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
+          <Gamepad2 className="h-5 w-5 text-green-600 dark:text-green-500" />
           <div>
             <p className="text-sm font-semibold">Conta Xbox</p>
-            <p className="text-xs text-slate-400">{currentGamertag || "Nenhuma conta vinculada"}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{currentGamertag || "Nenhuma conta vinculada"}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -61,7 +61,7 @@ export function AdminXboxControl({
              <button
               onClick={handleRemove}
               disabled={isPending}
-              className="flex h-8 items-center gap-1 rounded bg-rose-500/20 px-3 text-xs font-medium text-rose-300 transition hover:bg-rose-500/30 disabled:opacity-50"
+              className="flex h-8 items-center gap-1 rounded bg-rose-100 dark:bg-rose-500/20 px-3 text-xs font-medium text-rose-700 dark:text-rose-300 transition hover:bg-rose-200 dark:hover:bg-rose-500/30 disabled:opacity-50"
              >
                <Trash2 className="h-3 w-3" />
                Remover
@@ -70,7 +70,7 @@ export function AdminXboxControl({
           <button
             onClick={handleUpdate}
             disabled={isPending}
-            className="flex h-8 items-center gap-1 rounded bg-white/10 px-3 text-xs font-medium text-white transition hover:bg-white/20 disabled:opacity-50"
+            className="flex h-8 items-center gap-1 rounded bg-slate-200 dark:bg-white/10 px-3 text-xs font-medium text-slate-800 dark:text-white transition hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50"
           >
             <Pen className="h-3 w-3" />
             {currentGamertag ? "Alterar" : "Vincular"}
