@@ -25,9 +25,9 @@ export async function Navbar() {
         <div className="relative mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between gap-4 px-6 lg:px-10">
           <Link
             href="/"
-            className="shrink-0 text-sm font-bold uppercase tracking-[0.3em] text-cyan-200 transition hover:text-cyan-100"
+            className="shrink-0 text-[15px] md:text-base font-black uppercase tracking-[0.25em] bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 bg-clip-text text-transparent transition-transform hover:scale-[1.03] drop-shadow-sm"
           >
-            MadnessArena
+            Madness Arena
           </Link>
 
           <NavLinks />
@@ -54,9 +54,9 @@ export async function Navbar() {
         <div className="relative mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between gap-4 px-6 lg:px-10">
           <Link
             href="/"
-            className="shrink-0 text-sm font-bold uppercase tracking-[0.3em] text-cyan-200 transition hover:text-cyan-100"
+            className="shrink-0 text-[15px] md:text-base font-black uppercase tracking-[0.25em] bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 bg-clip-text text-transparent transition-transform hover:scale-[1.03] drop-shadow-sm"
           >
-            MadnessArena
+            Madness Arena
           </Link>
 
           <NavLinks />
@@ -117,9 +117,9 @@ export async function Navbar() {
       <div className="relative mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between gap-4 px-6 lg:px-10">
         <Link
           href="/"
-          className="shrink-0 text-sm font-bold uppercase tracking-[0.3em] text-cyan-200 transition hover:text-cyan-100"
+          className="shrink-0 text-[15px] md:text-base font-black uppercase tracking-[0.25em] bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 bg-clip-text text-transparent transition-transform hover:scale-[1.03] drop-shadow-sm"
         >
-          MadnessArena
+          Madness Arena
         </Link>
 
         <NavLinks />
