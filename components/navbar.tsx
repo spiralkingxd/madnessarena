@@ -1,10 +1,11 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { NavLinks } from "@/components/nav-links";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { GlobalSearch } from "@/components/global-search";
 import { UserDropdown } from "@/components/user-dropdown";
 import { upsertProfileFromOAuth } from "@/lib/auth/profile";
 
@@ -33,7 +34,7 @@ export async function Navbar() {
           <NavLinks />
 
           <div className="flex shrink-0 items-center gap-2">
-            <ThemeToggle />
+            <GlobalSearch />`r`n            <ThemeToggle />
             <Link href="/auth/login" className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition">
               Login com Discord
             </Link>
@@ -62,7 +63,7 @@ export async function Navbar() {
           <NavLinks />
 
           <div className="flex shrink-0 items-center gap-2">
-            <ThemeToggle />
+            <GlobalSearch />`r`n            <ThemeToggle />
             <Link href="/auth/login" className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition">
               Login com Discord
             </Link>
@@ -125,7 +126,7 @@ export async function Navbar() {
         <NavLinks />
 
         <div className="flex shrink-0 items-center gap-2">
-          <ThemeToggle />
+          <GlobalSearch />`r`n            <ThemeToggle />
           {!user ? (
             <Link href="/auth/login" className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition">
               Login com Discord
@@ -145,3 +146,4 @@ export async function Navbar() {
     </header>
   );
 }
+
