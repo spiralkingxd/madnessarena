@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { createClient } from "@/lib/supabase/server";
@@ -17,7 +17,8 @@ type ProfileNavbarRow = {
   role: "user" | "admin" | "owner";
 };
 
-const PROFILE_SELECT = "display_name, username, avatar_url, xbox_gamertag, role";
+const PROFILE_SELECT =
+  "display_name, username, avatar_url, xbox_gamertag, role";
 
 export async function Navbar() {
   if (!isSupabaseConfigured()) {
@@ -34,8 +35,11 @@ export async function Navbar() {
           <NavLinks />
 
           <div className="flex shrink-0 items-center gap-2">
-            <GlobalSearch />`r`n            <ThemeToggle />
-            <Link href="/auth/login" className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition">
+            <GlobalSearch /> <ThemeToggle />
+            <Link
+              href="/auth/login"
+              className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+            >
               Login com Discord
             </Link>
           </div>
@@ -63,8 +67,11 @@ export async function Navbar() {
           <NavLinks />
 
           <div className="flex shrink-0 items-center gap-2">
-            <GlobalSearch />`r`n            <ThemeToggle />
-            <Link href="/auth/login" className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition">
+            <GlobalSearch /> <ThemeToggle />
+            <Link
+              href="/auth/login"
+              className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+            >
               Login com Discord
             </Link>
           </div>
@@ -110,8 +117,10 @@ export async function Navbar() {
     }
   }
 
-  const avatarUrl = profile?.avatar_url ?? user?.user_metadata?.avatar_url ?? null;
-  const nickname = profile?.display_name ?? profile?.username ?? user?.email ?? "Jogador";
+  const avatarUrl =
+    profile?.avatar_url ?? user?.user_metadata?.avatar_url ?? null;
+  const nickname =
+    profile?.display_name ?? profile?.username ?? user?.email ?? "Jogador";
 
   return (
     <header className="site-topbar sticky top-0 z-50">
@@ -126,9 +135,12 @@ export async function Navbar() {
         <NavLinks />
 
         <div className="flex shrink-0 items-center gap-2">
-          <GlobalSearch />`r`n            <ThemeToggle />
+          <GlobalSearch /> <ThemeToggle />
           {!user ? (
-            <Link href="/auth/login" className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition">
+            <Link
+              href="/auth/login"
+              className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+            >
               Login com Discord
             </Link>
           ) : (
@@ -146,4 +158,3 @@ export async function Navbar() {
     </header>
   );
 }
-
