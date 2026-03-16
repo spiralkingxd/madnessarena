@@ -421,7 +421,7 @@ export function ManageTeamModal({
                         {isCaptain ? "Capitão" : "Membro"}
                       </span>
                       <span className="text-xs text-slate-500">
-                        Entrada: {new Date(member.joined_at).toLocaleDateString("pt-BR")}
+                        Entrada: {new Date(member.joined_at).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
                       </span>
 
                       {!isCaptain ? (

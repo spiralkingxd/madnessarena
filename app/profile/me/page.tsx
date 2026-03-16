@@ -15,6 +15,8 @@ type ProfileRow = {
   xbox_gamertag: string | null;
   avatar_url: string | null;
   created_at: string;
+  updated_at: string;
+  rankings?: { wins: number; points: number; }[] | null;
 };
 
 type TeamRow = {
@@ -52,7 +54,7 @@ export default async function MyProfilePage() {
 
   let { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, username, xbox_gamertag, avatar_url, created_at")
+    .select("id, display_name, username, xbox_gamertag, avatar_url, created_at, updated_at, rankings(wins, points)")
     .eq("id", user.id)
     .maybeSingle<ProfileRow>();
 
@@ -61,7 +63,7 @@ export default async function MyProfilePage() {
 
     const { data: recoveredProfile } = await supabase
       .from("profiles")
-      .select("id, display_name, username, xbox_gamertag, avatar_url, created_at")
+      .select("id, display_name, username, xbox_gamertag, avatar_url, created_at, updated_at, rankings(wins, points)")
       .eq("id", user.id)
       .maybeSingle<ProfileRow>();
 
@@ -145,7 +147,7 @@ export default async function MyProfilePage() {
       });
   }
 
-  const memberSince = new Date(profile.created_at).toLocaleDateString("pt-BR");
+  const memberSince = new Date(profile.created_at).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
   return (
     <main className="min-h-[calc(100vh-72px)] bg-slate-50 dark:bg-[radial-gradient(ellipse_at_top,_#0f2847_0%,_#0b1826_50%,_#050b12_100%)] px-4 py-16 text-slate-900 dark:text-slate-100">

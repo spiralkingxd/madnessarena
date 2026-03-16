@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeStyle: "short" });
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "full", timeStyle: "short" });
 
 type SearchParams = Promise<{
   reason?: string;

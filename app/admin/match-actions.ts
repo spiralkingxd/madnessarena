@@ -433,7 +433,7 @@ export async function createMatch(
           eventTitle: event?.title ?? parsed.data.eventId,
           teamA: teamA?.name ?? parsed.data.teamAId,
           teamB: teamB?.name ?? parsed.data.teamBId,
-          scheduledAt: new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(parsed.data.scheduledAt)),
+          scheduledAt: new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(parsed.data.scheduledAt)),
         },
       });
     }
@@ -962,7 +962,7 @@ export async function updateMatchDetails(input: {
           eventTitle: event.title,
           teamA: teamA?.name ?? "Equipe A",
           teamB: teamB?.name ?? "Equipe B",
-          scheduledAt: new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(parsed.data.scheduled_at)),
+          scheduledAt: new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(parsed.data.scheduled_at)),
         },
       });
     }

@@ -9,7 +9,7 @@ import { TeamDetailMemberActions } from "@/components/admin/team-detail-member-a
 
 type Props = { params: Promise<{ id: string }> };
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 export default async function AdminTeamDetailPage({ params }: Props) {
   const { id } = await params;

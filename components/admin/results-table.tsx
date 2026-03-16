@@ -10,7 +10,7 @@ import { AdminTable, type AdminTableColumn } from "@/components/admin/admin-tabl
 import { useAdminToast } from "@/components/admin/admin-toast";
 import type { ResultRow } from "@/app/admin/matches/_data";
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 export function ResultsTable({
   rows,

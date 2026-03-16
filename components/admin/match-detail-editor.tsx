@@ -18,7 +18,7 @@ import { AdminButton } from "@/components/admin/admin-button";
 import { useAdminToast } from "@/components/admin/admin-toast";
 import type { MatchDetail, MatchHistoryItem } from "@/app/admin/matches/_data";
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 export function MatchDetailEditor({ detail, history }: { detail: MatchDetail; history: MatchHistoryItem[] }) {
   const router = useRouter();

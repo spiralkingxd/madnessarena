@@ -25,7 +25,7 @@ type TeamRow = {
   status: "active" | "incomplete" | "empty" | "dissolved";
 };
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 export function TeamsTable({ rows }: { rows: TeamRow[] }) {
   const router = useRouter();

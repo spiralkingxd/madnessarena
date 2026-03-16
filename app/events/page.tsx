@@ -30,7 +30,7 @@ const STATUS_LABELS: Record<string, string> = {
   finished: "Finalizado",
 };
 
-const fmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" });
+const fmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "medium" });
 
 const getCachedAllEvents = unstable_cache(
   async () => {

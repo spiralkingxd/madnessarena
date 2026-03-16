@@ -31,7 +31,7 @@ const EVENT_TRIGGER_KEYS = [
   "team_dissolved",
 ] as const;
 
-const DATE_FMT = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const DATE_FMT = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 type Props = {
   templates: NotificationTemplateItem[];

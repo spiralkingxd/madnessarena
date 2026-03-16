@@ -57,7 +57,7 @@ function endOfDay(date = new Date()) {
 }
 
 function monthLabel(date: Date) {
-  return new Intl.DateTimeFormat("pt-BR", { month: "short", year: "2-digit" }).format(date);
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", month: "short", year: "2-digit" }).format(date);
 }
 
 function startOfWeek(date = new Date()) {
@@ -198,7 +198,7 @@ export async function getWeeklyUsers(): Promise<LinePoint[]> {
   }
 
   return Array.from(weekMap.entries()).map(([key, total]) => ({
-    label: new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(new Date(key)),
+    label: new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit" }).format(new Date(key)),
     total,
   }));
 }

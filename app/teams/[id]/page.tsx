@@ -56,7 +56,7 @@ const EVENT_STATUS_LABELS: Record<string, string> = {
   finished: "Finalizado",
 };
 
-const fmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" });
+const fmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "medium" });
 
 type Props = { params: Promise<{ id: string }> };
 

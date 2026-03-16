@@ -40,7 +40,7 @@ const DashboardCharts = dynamic(
   },
 );
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "full" });
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "full" });
 const numberFmt = new Intl.NumberFormat("pt-BR");
 
 function getGreetingLabel(now: Date) {

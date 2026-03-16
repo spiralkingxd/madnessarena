@@ -31,7 +31,7 @@ type LogItem = {
   details: Record<string, unknown> | null;
 };
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 export default async function AdminMemberDetailPage({ params }: Props) {
   const { id } = await params;

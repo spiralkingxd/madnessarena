@@ -19,7 +19,7 @@ type TeamListRow = {
   is_user_member: boolean;
 };
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" });
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "medium" });
 
 const getCachedTeams = unstable_cache(
   async () => {

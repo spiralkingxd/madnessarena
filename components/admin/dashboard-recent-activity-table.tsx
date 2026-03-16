@@ -9,7 +9,7 @@ type ActivityRow = {
   created_at: string;
 };
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", {
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo",
   dateStyle: "short",
   timeStyle: "short",
 });

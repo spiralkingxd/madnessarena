@@ -46,7 +46,7 @@ export type AdminEventRow = {
   tournament_format: string | null;
 };
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
   const router = useRouter();

@@ -70,7 +70,7 @@ async function getHomeData() {
 
   return await getCachedHomeData();
 }
-const fmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" });
+const fmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "long" });
 export default async function Home() {
   const { featuredEvent, finishedEvents } = await getHomeData();
 

@@ -286,7 +286,7 @@ async function queueEventPublishedNotifications(
       event_id: eventId,
       kind: "event_published" as const,
       title: `Evento publicado: ${eventTitle}`,
-      message: `As inscrições para ${eventTitle} foram abertas. Início previsto para ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(startDate))}.`,
+      message: `As inscrições para ${eventTitle} foram abertas. Início previsto para ${new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(startDate))}.`,
       metadata: { eventId },
     })),
   );
@@ -315,7 +315,7 @@ async function queueUpcomingStartNotifications(
       event_id: eventId,
       kind: "event_starting_soon" as const,
       title: `${eventTitle} começa em breve`,
-      message: `Seu time está confirmado. O evento começa em ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(start)}.`,
+      message: `Seu time está confirmado. O evento começa em ${new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(start)}.`,
       metadata: { eventId },
     })),
   );
@@ -643,7 +643,7 @@ export async function publishEvent(eventId: string): Promise<ActionResult> {
         type: "tournament_published",
         data: {
           title: event.title,
-          startDate: new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(event.start_date)),
+          startDate: new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(event.start_date)),
           eventId: event.id,
         },
       });

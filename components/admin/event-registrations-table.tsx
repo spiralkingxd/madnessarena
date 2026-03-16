@@ -34,7 +34,7 @@ type TeamOption = {
   captain_name: string;
 };
 
-const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const dateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 export function EventRegistrationsTable({
   eventId,

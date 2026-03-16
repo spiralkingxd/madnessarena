@@ -23,7 +23,7 @@ type Props = {
   teamsError?: string | null;
 };
 
-const teamDateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" });
+const teamDateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "medium" });
 
 export function ProfileTeamsSection({ userId, teams, teamsError }: Props) {
   const [open, setOpen] = useState(false);
