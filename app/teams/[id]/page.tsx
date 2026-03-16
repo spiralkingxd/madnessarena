@@ -58,10 +58,21 @@ const EVENT_STATUS_LABELS: Record<string, string> = {
 
 const fmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "medium" });
 
-type Props = { params: Promise<{ id: string }> };
+type SearchParams = {
+  back?: string;
+};
 
-export default async function TeamDetailPage({ params }: Props) {
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<SearchParams>;
+};
+
+export default async function TeamDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const query = await searchParams;
+  const isBackToProfile = query?.back === "profile";
+  const backHref = isBackToProfile ? "/profile/me" : "/teams";
+  const backLabel = isBackToProfile ? "← Voltar ao perfil" : "← Todas as equipes";
 
   if (!isSupabaseConfigured()) {
     notFound();
@@ -315,8 +326,8 @@ export default async function TeamDetailPage({ params }: Props) {
       <div className="mx-auto w-full max-w-5xl space-y-10 px-6 py-10 lg:px-10">
 
         {/* Voltar */}
-        <Link href="/teams" className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-slate-200">
-          ← Todas as equipes
+        <Link href={backHref} className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-slate-200">
+          {backLabel}
         </Link>
 
         {/* Team header */}

@@ -134,7 +134,7 @@ export function UserDropdown({
           ) : null}
 
           <Link
-            href="/my-team"
+            href="/my-team?from=profile"
             role="menuitem"
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-[color:var(--text-base)] transition hover:bg-black/5 dark:hover:bg-white/10 hover:text-[color:var(--text-strong)]"
