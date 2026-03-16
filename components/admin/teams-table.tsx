@@ -8,6 +8,7 @@ import { Edit3, RotateCcw, ShieldAlert, Users } from "lucide-react";
 import { dissolveTeam, restoreTeam, updateTeam } from "@/app/admin/team-actions";
 import { AdminButton } from "@/components/admin/admin-button";
 import { AdminBadge } from "@/components/admin/admin-badge";
+import { AdminModal } from "@/components/admin/admin-modal";
 import { AdminTable, type AdminTableColumn } from "@/components/admin/admin-table";
 import { useAdminToast } from "@/components/admin/admin-toast";
 
@@ -37,6 +38,10 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
   const [pageSize, setPageSize] = useState(25);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [isPending, startTransition] = useTransition();
+  const [dissolveTarget, setDissolveTarget] = useState<TeamRow | null>(null);
+  const [dissolveConfirmName, setDissolveConfirmName] = useState("");
+  const [dissolveReason, setDissolveReason] = useState("Equipe dissolvida por decisão administrativa");
+  const [dissolveNotifyDiscord, setDissolveNotifyDiscord] = useState(true);
 
   const selectedIds = useMemo(() => Object.keys(selected).filter((id) => selected[id]), [selected]);
 
@@ -177,15 +182,10 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
               type="button"
               className="rounded-lg border border-rose-300/30 bg-rose-300/10 px-2 py-1 text-xs text-rose-100 hover:bg-rose-300/20"
               onClick={() => {
-                const confirmName = window.prompt(`Digite o nome da equipe para confirmar: ${row.name}`)?.trim();
-                if (!confirmName) return;
-                const reason = window.prompt("Motivo da dissolução:", "Equipe dissolvida por decisão administrativa")?.trim() ?? "";
-                if (!reason) return;
-                startTransition(async () => {
-                  const result = await dissolveTeam(row.id, undefined, reason, { confirmName, notifyDiscord: true });
-                  pushToast(result.error ? "error" : "success", result.error ?? result.success ?? "Ação concluída.");
-                  router.refresh();
-                });
+                setDissolveTarget(row);
+                setDissolveConfirmName("");
+                setDissolveReason("Equipe dissolvida por decisão administrativa");
+                setDissolveNotifyDiscord(true);
               }}
               disabled={isPending}
             >
@@ -296,6 +296,85 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
       </div>
 
       <AdminTable data={filtered} columns={columns} pageSize={pageSize} emptyText="Nenhuma equipe encontrada." />
+
+      <AdminModal
+        open={Boolean(dissolveTarget)}
+        title="Apagar equipe"
+        onClose={() => {
+          if (isPending) return;
+          setDissolveTarget(null);
+        }}
+      >
+        {dissolveTarget ? (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-300">
+              Esta ação vai apagar a equipe <span className="font-semibold text-white">{dissolveTarget.name}</span>, remover membros e cancelar inscrições pendentes.
+            </p>
+
+            <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+              Confirmação
+              <p className="mt-1 text-[11px] normal-case text-slate-400">
+                Digite exatamente: <span className="font-semibold text-slate-200">{dissolveTarget.name}</span>
+              </p>
+              <input
+                value={dissolveConfirmName}
+                onChange={(event) => setDissolveConfirmName(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                placeholder={dissolveTarget.name}
+              />
+            </label>
+
+            <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+              Motivo
+              <textarea
+                value={dissolveReason}
+                onChange={(event) => setDissolveReason(event.target.value)}
+                className="mt-1 h-24 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                placeholder="Descreva o motivo da dissolução"
+              />
+            </label>
+
+            <label className="inline-flex items-center gap-2 text-sm text-slate-200">
+              <input
+                type="checkbox"
+                checked={dissolveNotifyDiscord}
+                onChange={(event) => setDissolveNotifyDiscord(event.target.checked)}
+              />
+              Notificar no Discord
+            </label>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <AdminButton type="button" variant="ghost" disabled={isPending} onClick={() => setDissolveTarget(null)}>
+                Cancelar
+              </AdminButton>
+              <AdminButton
+                type="button"
+                variant="danger"
+                disabled={
+                  isPending ||
+                  dissolveConfirmName.trim() !== dissolveTarget.name.trim() ||
+                  dissolveReason.trim().length < 2
+                }
+                onClick={() =>
+                  startTransition(async () => {
+                    const result = await dissolveTeam(dissolveTarget.id, undefined, dissolveReason.trim(), {
+                      confirmName: dissolveConfirmName.trim(),
+                      notifyDiscord: dissolveNotifyDiscord,
+                    });
+                    pushToast(result.error ? "error" : "success", result.error ?? result.success ?? "Ação concluída.");
+                    if (!result.error) {
+                      setDissolveTarget(null);
+                    }
+                    router.refresh();
+                  })
+                }
+              >
+                Confirmar apagar equipe
+              </AdminButton>
+            </div>
+          </div>
+        ) : null}
+      </AdminModal>
     </section>
   );
 }

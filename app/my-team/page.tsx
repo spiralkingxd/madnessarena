@@ -46,5 +46,9 @@ export default async function MyTeamRedirectPage({ searchParams }: Props) {
     redirect(`/teams/${captainTeam.id}${backQuery}`);
   }
 
+  if (from === "profile") {
+    redirect("/profile/me?action=team-choice#teams");
+  }
+
   redirect(`/teams${backQuery}`);
 }

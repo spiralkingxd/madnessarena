@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Anchor, Plus, Shield, Swords, Users } from "lucide-react";
+import { AlertTriangle, Anchor, Plus, Shield, Swords, Users } from "lucide-react";
 
 import { CreateTeamModal } from "@/components/create-team-modal";
 
@@ -28,6 +29,7 @@ type Props = { dict?: any;
 const teamDateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "medium" });
 
 function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, systemMaxMembers = 10, dict }: Props) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isLaunching, startTransition] = useTransition();
   const searchParams = useSearchParams();
@@ -40,6 +42,7 @@ function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, syst
 
   const teamsCount = teams.length;
   const reachedLimit = teamsCount >= 1;
+  const shouldShowTeamChoice = teamsCount === 0 && searchParams.get("action") === "team-choice";
 
   const orderedTeams = useMemo(
     () =>
@@ -83,6 +86,38 @@ function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, syst
         <p className="mt-4 rounded-xl border border-rose-300/30 bg-rose-300/10 px-4 py-3 text-sm text-rose-200">
           {teamsError}
         </p>
+      ) : null}
+
+      {shouldShowTeamChoice ? (
+        <div className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 rounded-lg border border-amber-300/30 bg-amber-300/15 p-2 text-amber-200">
+              <AlertTriangle className="h-4 w-4" />
+            </span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-100">Você ainda não participa de nenhuma equipe.</p>
+              <p className="mt-1 text-sm text-amber-50/90">
+                Escolha como deseja continuar: criar sua equipe agora ou pedir entrada em uma existente.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                >
+                  <Plus className="h-4 w-4" /> Fundar equipe
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/teams")}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/8 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/12"
+                >
+                  <Users className="h-4 w-4" /> Pedir entrada em equipe
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {orderedTeams.length > 0 ? (
