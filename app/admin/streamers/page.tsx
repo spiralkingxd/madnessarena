@@ -1,6 +1,6 @@
 
 import { Suspense } from "react";
-import { Loader2, Plus, Trash2, ShieldAlert, Star } from "lucide-react";
+import { Loader2, Plus, Trash2, ShieldAlert, Star, MonitorUp } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
@@ -72,6 +72,24 @@ export default async function AdminStreamersPage() {
     revalidatePath("/transmissoes");
   }
 
+  async function toggleMultiview(formData: FormData) {
+    "use server";
+    const id = formData.get("id")?.toString();
+    const isActive = formData.get("isActive") === "true";
+    if (!id) return;
+
+    const supabase = await createClient();
+
+    const primary = await supabase.from("streamers").update({ is_active: !isActive }).eq("id", id);
+    if (primary.error && primary.error.code === "42703") {
+      await supabase.from("streamers").update({ selected_for_multiview: !isActive }).eq("id", id);
+    }
+
+    revalidatePath("/admin/streamers");
+    revalidatePath("/transmissoes");
+    revalidatePath("/multiview");
+  }
+
   if (streamers === null) {
     return (
       <div className="p-6">
@@ -88,6 +106,10 @@ export default async function AdminStreamersPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <div className="mb-8"><h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Gerenciar Streamers</h1><p className="text-slate-500 dark:text-slate-400 mt-2">Adicione e remova pessoas da pagina de transmissoes.</p></div> 
+
+      <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+        O toggle <span className="font-semibold">Multiview</span> define quem aparece na página <span className="font-semibold">/multiview</span>.
+      </div>
 
 
 
@@ -127,6 +149,11 @@ export default async function AdminStreamersPage() {
                         <Star className="h-3 w-3" fill="currentColor" /> Oficial
                       </span>
                     )}
+                    {(s.is_active ?? s.selected_for_multiview ?? true) ? (
+                      <span className="flex items-center gap-1 text-[10px] uppercase font-bold text-cyan-300 bg-cyan-400/10 px-2 py-0.5 rounded-full border border-cyan-400/30">
+                        <MonitorUp className="h-3 w-3" /> Multiview
+                      </span>
+                    ) : null}
                   </div>
                   <span className="text-xs text-slate-500 dark:text-slate-400">Adicionado em: {new Date(s.created_at).toLocaleDateString()}</span>
                 </div>
@@ -144,6 +171,19 @@ export default async function AdminStreamersPage() {
                       title={s.is_official ? "Remover cargo oficial" : "Tornar oficial"}
                     >
                       <Star className={`h-4 w-4 ${s.is_official ? "text-yellow-400" : "text-slate-500"}`} />
+                    </Button>
+                  </form>
+
+                  <form action={toggleMultiview}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <input type="hidden" name="isActive" value={String(s.is_active ?? s.selected_for_multiview ?? true)} />
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      title={(s.is_active ?? s.selected_for_multiview ?? true) ? "Remover da Multiview" : "Mostrar na Multiview"}
+                      className={(s.is_active ?? s.selected_for_multiview ?? true) ? "text-cyan-300 hover:bg-cyan-400/10" : "text-slate-400"}
+                    >
+                      <MonitorUp className="h-4 w-4" />
                     </Button>
                   </form>
 

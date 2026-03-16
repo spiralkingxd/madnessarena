@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Anchor, Calendar, Crown, Users } from "lucide-react";
@@ -7,6 +8,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { unstable_cache } from "next/cache";
 import { getDictionary } from "@/lib/i18n";
+
+export const metadata: Metadata = {
+  title: "Equipes",
+};
 
 type TeamListRow = {
   id: string;

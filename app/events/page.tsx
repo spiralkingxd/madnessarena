@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { unstable_cache } from "next/cache";
@@ -9,6 +10,10 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cn } from "@/lib/utils";
 import { getDictionary } from "@/lib/i18n";
+
+export const metadata: Metadata = {
+  title: "Torneios",
+};
 
 type EventRow = {
   id: string;

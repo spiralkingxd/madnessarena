@@ -842,7 +842,7 @@ export async function dissolveTeam(
           user_id: userId,
           type: "team_dissolved_admin",
           title: "Equipe dissolvida",
-          message: `Um administrador dissolveu a equipe ${team.name}.`,
+          message: `Um administrador dissolveu a equipe ${team.name}. Motivo: ${parsed.data.reason}.`,
           data: { team_id: team.id, reason: parsed.data.reason },
         })),
       );

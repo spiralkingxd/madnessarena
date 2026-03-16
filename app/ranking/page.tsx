@@ -1,4 +1,5 @@
-﻿import Image from "next/image";
+﻿import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Trophy, Anchor } from "lucide-react";
 
@@ -9,6 +10,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { unstable_cache } from "next/cache";
 import { cn } from "@/lib/utils";
 import { getDictionary } from "@/lib/i18n";
+
+export const metadata: Metadata = {
+  title: "Ranking",
+};
 
 type RankingRow = {
   id: string;

@@ -204,6 +204,14 @@ export default function StreamsPage() {
   return (
     <main className="container mx-auto px-4 py-12 md:max-w-[1000px]">
       <div className="mb-10 text-center md:text-left">
+        <div className="mb-4">
+          <Link
+            href="/multiview"
+            className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/35 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/20"
+          >
+            Abrir Multiview
+          </Link>
+        </div>
         <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-white mb-4">
           Transmiss<span className="text-cyan-400">oes</span>
         </h1>
