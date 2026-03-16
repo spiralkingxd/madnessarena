@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export async function updateProfileFeatures(formData: FormData) {
+export async function updateProfileFeatures(prevState: any, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -32,7 +32,7 @@ export async function updateProfileFeatures(formData: FormData) {
   return { success: "Perfil atualizado com sucesso!" };
 }
 
-export async function syncDiscordAvatarAction() {
+export async function syncDiscordAvatarAction(prevState: any, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
