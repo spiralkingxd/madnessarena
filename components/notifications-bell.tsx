@@ -18,10 +18,10 @@ export function NotificationsBell() {
 
   // Buscar inicial
   const fetchNotifications = useCallback(async () => {
-    const { data } = await getNotifications();
+    const { data, unreadCount: unreadTotal } = await getNotifications();
     if (data) {
       setNotifications(data);
-      setUnreadCount(data.filter((n) => !n.read).length);
+      setUnreadCount(typeof unreadTotal === "number" ? unreadTotal : data.filter((n) => !n.read).length);
     }
   }, []);
 

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
+import { insertNotifications } from "@/lib/notifications";
 
 type ActionResult = {
   error?: string | null;
@@ -284,9 +285,7 @@ export async function addTeamMember(input: {
   const senderName = senderProfile?.display_name || senderProfile?.username || "Alguém";
 
   // Criar notificação
-  const { error: notifError } = await supabase
-    .from("notifications")
-    .insert({
+  const { success: inviteNotified } = await insertNotifications(supabase, {
       user_id: userId,
       type: "team_invite",
       title: "Convite de Equipe",
@@ -294,7 +293,7 @@ export async function addTeamMember(input: {
       data: { team_id: teamId },
     });
 
-  if (notifError) {
+  if (!inviteNotified) {
     return { error: "Não foi possível enviar o convite. Tente novamente." };
   }
 
@@ -329,9 +328,7 @@ export async function removeTeamMember(input: {
     return { error: toFriendlyTeamError(error.message) };
   }
 
-  await guard.supabase
-    .from("notifications")
-    .insert({
+  await insertNotifications(guard.supabase, {
       user_id: targetUserId,
       type: "team_removed",
       title: "Removido da equipe",
@@ -443,7 +440,7 @@ export async function dissolveTeam(input: {
     .eq("team_id", teamId);
 
   const memberIds = Array.from(
-    new Set((membersBeforeDelete ?? []).map((row) => String(row.user_id)).filter(Boolean)),
+    new Set([guard.user.id, ...(membersBeforeDelete ?? []).map((row) => String(row.user_id))].filter(Boolean)),
   );
 
   const currentName = (guard.team.name as string).trim();
@@ -471,7 +468,8 @@ export async function dissolveTeam(input: {
   }
 
   if (memberIds.length > 0) {
-    await guard.supabase.from("notifications").insert(
+    await insertNotifications(
+      guard.supabase,
       memberIds.map((userId) => ({
         user_id: userId,
         type: "team_dissolved",

@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { assertAdminAccess, enforceAdminRateLimit, logAdminAction } from "@/app/admin/_lib";
 import { queueOrSendDiscordNotification } from "@/lib/discord-notifications";
+import { insertNotifications } from "@/lib/notifications";
 
 type ActionResult = { success?: string; error?: string };
 
@@ -695,9 +696,7 @@ export async function removeTeamMember(teamId: string, userId: string, _adminId?
       severity: "warning",
     });
 
-    await supabase
-      .from("notifications")
-      .insert({
+    await insertNotifications(supabase, {
         user_id: parsed.data.userId,
         type: "team_removed_admin",
         title: "Removido da equipe",
@@ -780,9 +779,9 @@ export async function dissolveTeam(
 
     const { data: team } = await supabase
       .from("teams")
-      .select("id, name, dissolved_at")
+      .select("id, name, captain_id, dissolved_at")
       .eq("id", parsed.data.teamId)
-      .maybeSingle<{ id: string; name: string; dissolved_at: string | null }>();
+      .maybeSingle<{ id: string; name: string; captain_id: string; dissolved_at: string | null }>();
 
     if (!team) return { error: "Equipe nao encontrada." };
     if (parsed.data.confirmName && parsed.data.confirmName !== team.name) {
@@ -807,7 +806,7 @@ export async function dissolveTeam(
       .eq("team_id", team.id);
 
     const memberIds = Array.from(
-      new Set((membersBeforeDelete ?? []).map((row) => String(row.user_id)).filter(Boolean)),
+      new Set([...(membersBeforeDelete ?? []).map((row) => String(row.user_id)), team.captain_id].filter(Boolean)),
     );
 
     await supabase.from("team_members").delete().eq("team_id", team.id);
@@ -837,7 +836,8 @@ export async function dissolveTeam(
     if (patchError) return { error: "Nao foi possivel apagar equipe." };
 
     if (memberIds.length > 0) {
-      await supabase.from("notifications").insert(
+      await insertNotifications(
+        supabase,
         memberIds.map((userId) => ({
           user_id: userId,
           type: "team_dissolved_admin",

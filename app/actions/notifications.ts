@@ -18,20 +18,27 @@ export async function getNotifications() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return { data: [], error: "Não autenticado" };
+  if (!user) return { data: [], unreadCount: 0, error: "Não autenticado" };
 
-  const { data, error } = await supabase
-    .from("notifications")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(20);
+  const [{ data, error }, { count: unreadCount, error: unreadError }] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("read", false),
+  ]);
 
-  if (error) {
-    return { data: [], error: error.message };
+  if (error || unreadError) {
+    return { data: [], unreadCount: 0, error: error?.message ?? unreadError?.message ?? "Erro ao buscar notificações." };
   }
 
-  return { data: data as Notification[], error: null };
+  return { data: data as Notification[], unreadCount: unreadCount ?? 0, error: null };
 }
 
 export async function markAsRead(notificationId: string) {

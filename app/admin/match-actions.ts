@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { assertAdminAccess, enforceAdminRateLimit, logAdminAction } from "@/app/admin/_lib";
 import { queueOrSendDiscordNotification } from "@/lib/discord-notifications";
+import { insertNotifications } from "@/lib/notifications";
 
 type ActionResult<T = undefined> = {
   success?: string;
@@ -598,7 +599,8 @@ export async function setMatchWinner(matchId: string, winnerId: string | "draw",
         );
 
         if (winnerUserIds.length > 0) {
-          await supabase.from("notifications").insert(
+          await insertNotifications(
+            supabase,
             winnerUserIds.map((userId) => ({
               user_id: userId,
               type: "team_match_win",
@@ -616,7 +618,8 @@ export async function setMatchWinner(matchId: string, winnerId: string | "draw",
           .in("status", ["pending", "in_progress"]);
 
         if ((unfinishedCount ?? 0) === 0 && winnerUserIds.length > 0) {
-          await supabase.from("notifications").insert(
+          await insertNotifications(
+            supabase,
             winnerUserIds.map((userId) => ({
               user_id: userId,
               type: "team_tournament_win",
