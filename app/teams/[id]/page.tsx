@@ -415,48 +415,50 @@ export default async function TeamDetailPage({ params }: Props) {
             {memberList.length > 0 ? (
               <ul className="mt-4 space-y-3">
                 {memberList.map((member) => (
-                  <li
-                    key={member.user_id}
-                    className="flex items-center justify-between rounded-xl border border-white/8 bg-white/4 px-4 py-3 text-sm"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/10 text-xs font-bold text-slate-300">
-                        {member.avatar_url ? (
-                          <Image
-                            src={member.avatar_url}
-                            alt={member.display_name}
-                            width={36}
-                            height={36}
-                            className="h-9 w-9 object-cover"
-                          />
-                        ) : (
-                          member.display_name.slice(0, 1).toUpperCase()
-                        )}
-                      </span>
-                      <div className="space-y-0.5">
-                        <span className="block text-sm font-medium text-slate-200">
-                          {member.display_name}
+                  <li key={member.user_id}>
+                    <Link
+                      href={`/profile/${member.user_id}`}
+                      className="flex items-center justify-between rounded-xl border border-white/8 bg-white/4 px-4 py-3 text-sm transition-colors hover:bg-white/10 hover:border-white/20"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/10 text-xs font-bold text-slate-300">
+                          {member.avatar_url ? (
+                            <Image
+                              src={member.avatar_url}
+                              alt={member.display_name}
+                              width={36}
+                              height={36}
+                              className="h-9 w-9 object-cover"
+                            />
+                          ) : (
+                            member.display_name.slice(0, 1).toUpperCase()
+                          )}
                         </span>
-                        <span className="block text-xs text-slate-400">
-                          @{member.username}
-                        </span>
-                        {member.xbox_gamertag ? (
-                          <span className="block text-xs text-cyan-300">
-                            Xbox: {member.xbox_gamertag}
+                        <div className="space-y-0.5">
+                          <span className="block text-sm font-medium text-slate-200">
+                            {member.display_name}
                           </span>
-                        ) : null}
-                        <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
-                          member.role === "captain"
-                            ? "border-amber-300/30 bg-amber-300/10 text-amber-200"
-                            : "border-slate-300/20 bg-slate-300/10 text-slate-300"
-                        }`}>
-                          {member.role === "captain" ? "Capitão" : "Membro"}
-                        </span>
+                          <span className="block text-xs text-slate-400">
+                            @{member.username}
+                          </span>
+                          {member.xbox_gamertag ? (
+                            <span className="block text-xs text-cyan-300">
+                              Xbox: {member.xbox_gamertag}
+                            </span>
+                          ) : null}
+                          <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                            member.role === "captain"
+                              ? "border-amber-300/30 bg-amber-300/10 text-amber-200"
+                              : "border-slate-300/20 bg-slate-300/10 text-slate-300"
+                          }`}>
+                            {member.role === "captain" ? "Capitão" : "Membro"}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <span className="text-xs text-slate-500">
-                      {fmt.format(new Date(member.joined_at))}
-                    </span>
+                      <span className="text-xs text-slate-500">
+                        {fmt.format(new Date(member.joined_at))}
+                      </span>
+                    </Link>
                   </li>
                 ))}
               </ul>

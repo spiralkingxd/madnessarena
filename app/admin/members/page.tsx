@@ -73,7 +73,7 @@ export default async function AdminMembersPage() {
         <p className="mt-2 text-sm text-slate-400">Administre roles, status e participação em equipes.</p>
       </header>
 
-      <div className="space-y-12"> <div> <h2 className="mb-4 text-xl font-semibold text-white">Equipe de Administra��o</h2> <MembersTable rows={rows.filter(r => r.role === "admin" || r.role === "owner")} currentAdminId={adminProfile?.id ?? user?.id ?? ""} currentAdminRole={adminProfile?.role === "owner" ? "owner" : "admin"} /> </div> <div> <h2 className="mb-4 text-xl font-semibold text-white">Membros Comuns</h2> <MembersTable rows={rows.filter(r => r.role === "user")} currentAdminId={adminProfile?.id ?? user?.id ?? ""} currentAdminRole={adminProfile?.role === "owner" ? "owner" : "admin"} /> </div> </div>
+      <div className="space-y-12"> <div> <h2 className="mb-4 text-xl font-semibold text-white">Equipe de Administração</h2> <MembersTable rows={rows.filter(r => r.role === "admin" || r.role === "owner")} currentAdminId={adminProfile?.id ?? user?.id ?? ""} currentAdminRole={adminProfile?.role === "owner" ? "owner" : "admin"} /> </div> <div> <h2 className="mb-4 text-xl font-semibold text-white">Membros Comuns</h2> <MembersTable rows={rows.filter(r => r.role === "user")} currentAdminId={adminProfile?.id ?? user?.id ?? ""} currentAdminRole={adminProfile?.role === "owner" ? "owner" : "admin"} /> </div> </div>
     </section>
   );
 }

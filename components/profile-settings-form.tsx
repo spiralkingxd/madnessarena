@@ -55,13 +55,13 @@ export function ProfileSettingsForm({
   }, [imageSrc, croppedAreaPixels]);
 
   return (
-    <div className="flex justify-center pb-8 transition-all">
+    <div className="flex transition-all">
       <button 
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800/80 px-6 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition shadow-sm"
+        className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/80 dark:bg-slate-800/80 px-4 py-2 text-xs md:text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition shadow-sm backdrop-blur-md"
       >
         <Settings className="h-4 w-4" />
-        Configurar Perfil
+        <span className="hidden md:inline">Configurar Perfil</span>
       </button>
 
       {isOpen && (

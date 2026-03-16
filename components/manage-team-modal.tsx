@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useMemo, useState, useTransition } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -396,7 +397,10 @@ export function ManageTeamModal({
                         : "border-white/10 bg-white/4"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <Link
+                      href={`/profile/${member.user_id}`}
+                      className="flex items-center gap-3 transition-opacity hover:opacity-80 rounded-lg p-1 -m-1"
+                    >
                       <Avatar src={member.avatar_url} name={member.display_name} />
                       <div>
                         <p className="font-medium text-slate-100">{member.display_name}</p>
@@ -405,7 +409,7 @@ export function ManageTeamModal({
                           <p className="text-xs text-cyan-300">Xbox: {member.xbox_gamertag}</p>
                         ) : null}
                       </div>
-                    </div>
+                    </Link>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <span

@@ -156,7 +156,16 @@ export default async function MyProfilePage() {
   return (
     <main className="min-h-[calc(100vh-72px)] bg-slate-50 dark:bg-[radial-gradient(ellipse_at_top,_#0f2847_0%,_#0b1826_50%,_#050b12_100%)] px-4 py-16 text-slate-900 dark:text-slate-100">
       <div className="mx-auto w-full max-w-6xl space-y-6">
-        <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 shadow-xl dark:shadow-2xl dark:shadow-black/40 backdrop-blur-sm">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 shadow-xl dark:shadow-2xl dark:shadow-black/40 backdrop-blur-sm">
+          {/* Settings Button absolute top right on mobile and desktop */}
+          <div className="absolute top-4 right-4 z-10">
+            <ProfileSettingsForm
+              initialStatus={profile.custom_status}
+              initialRole={profile.boat_role}
+              initialXboxGamertag={profile.xbox_gamertag}
+            />
+          </div>
+
           {/* Gold accent bar */}
           <div className="h-1.5 w-full bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600" />
 
@@ -226,7 +235,7 @@ export default async function MyProfilePage() {
           </div>
 
           {/* Info grid - Stats Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-slate-200 dark:sm:divide-white/5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-slate-200 dark:sm:divide-white/5 pb-6">
             <InfoCard icon={<Target className="h-4 w-4 text-emerald-400" />} label="Pontos de Liga">
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{profile.rankings?.[0]?.points || 0}</span>
             </InfoCard>
@@ -234,14 +243,6 @@ export default async function MyProfilePage() {
             <InfoCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label="Torneios Ganhos">
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{profile.rankings?.[0]?.wins || 0}</span>
             </InfoCard>
-          </div>
-
-          <div className="pt-6">
-            <ProfileSettingsForm
-              initialStatus={profile.custom_status}
-              initialRole={profile.boat_role}
-              initialXboxGamertag={profile.xbox_gamertag}
-            />
           </div>
         </div>
 
