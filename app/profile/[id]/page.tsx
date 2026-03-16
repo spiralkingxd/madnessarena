@@ -39,10 +39,10 @@ export default async function PublicProfilePage({ params }: Props) {
     <main className="min-h-screen bg-slate-50 dark:bg-[radial-gradient(ellipse_at_top,_#0f2847_0%,_#0b1826_50%,_#050b12_100%)] px-4 py-14 text-slate-900 dark:text-slate-100">
       <div className="mx-auto w-full max-w-3xl space-y-5">
         <Link
-          href="/teams"
+          href="/"
           className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-slate-200"
         >
-          ← Voltar para equipes
+          ← Voltar para o início
         </Link>
 
         <section className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/65 p-8 shadow-xl dark:shadow-2xl dark:shadow-black/35">
