@@ -77,21 +77,21 @@ export function MatchDetailEditor({ detail, history }: { detail: MatchDetail; hi
 
   return (
     <section className="space-y-5">
-      <header className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Partida</p>
-        <h1 className="mt-1 text-2xl font-bold text-white">{detail.team_a_name} vs {detail.team_b_name}</h1>
+      <header className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
+        <p className="text-xs uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Partida</p>
+        <h1 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{detail.team_a_name} vs {detail.team_b_name}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-4">
-          <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-200">
-            {detail.team_a_logo_url ? <img src={detail.team_a_logo_url} alt={detail.team_a_name} className="h-6 w-6 rounded-full object-cover" /> : <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 text-xs">A</span>}
+          <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+            {detail.team_a_logo_url ? <img src={detail.team_a_logo_url} alt={detail.team_a_name} className="h-6 w-6 rounded-full object-cover" /> : <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 text-xs">A</span>}
             <span>{detail.team_a_name}</span>
           </div>
           <span className="text-slate-500">vs</span>
-          <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-200">
-            {detail.team_b_logo_url ? <img src={detail.team_b_logo_url} alt={detail.team_b_name} className="h-6 w-6 rounded-full object-cover" /> : <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 text-xs">B</span>}
+          <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+            {detail.team_b_logo_url ? <img src={detail.team_b_logo_url} alt={detail.team_b_name} className="h-6 w-6 rounded-full object-cover" /> : <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 text-xs">B</span>}
             <span>{detail.team_b_name}</span>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2 text-sm text-slate-300">
+        <div className="mt-3 flex flex-wrap gap-2 text-sm text-slate-600 dark:text-slate-300">
           <AdminBadge tone="info">{detail.event_title}</AdminBadge>
           <AdminBadge tone={statusTone(status)}>{`Status: ${statusLabel(status)}`}</AdminBadge>
           <AdminBadge tone="pending">{`R${detail.round}`}</AdminBadge>
@@ -99,20 +99,20 @@ export function MatchDetailEditor({ detail, history }: { detail: MatchDetail; hi
         </div>
       </header>
 
-      <section className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <h2 className="text-lg font-semibold text-white">Editar resultado</h2>
+      <section className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Editar resultado</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             Placar {detail.team_a_name}
-            <input type="number" min={0} value={scoreA} onChange={(event) => setScoreA(Number(event.target.value))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm" />
+            <input type="number" min={0} value={scoreA} onChange={(event) => setScoreA(Number(event.target.value))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm" />
           </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             Placar {detail.team_b_name}
-            <input type="number" min={0} value={scoreB} onChange={(event) => setScoreB(Number(event.target.value))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm" />
+            <input type="number" min={0} value={scoreB} onChange={(event) => setScoreB(Number(event.target.value))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm" />
           </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             Vencedor
-            <select value={winner} onChange={(event) => setWinner(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
+            <select value={winner} onChange={(event) => setWinner(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm">
               {winnerOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>
@@ -205,48 +205,48 @@ export function MatchDetailEditor({ detail, history }: { detail: MatchDetail; hi
         </div>
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <h2 className="text-lg font-semibold text-white">Meta da partida</h2>
+      <section className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Meta da partida</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             Status
-            <select value={status} onChange={(event) => setStatus(event.target.value as MatchDetail["status"])} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
+            <select value={status} onChange={(event) => setStatus(event.target.value as MatchDetail["status"])} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm">
               <option value="pending">Pendente</option>
               <option value="in_progress">Em andamento</option>
               <option value="finished">Finalizada</option>
               <option value="cancelled">Cancelada</option>
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             Duração (minutos)
-            <input type="number" min={0} value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm" />
+            <input type="number" min={0} value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm" />
           </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             Agendada em
-            <input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm" />
+            <input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm" />
           </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             Início
-            <input type="datetime-local" value={startedAt} onChange={(event) => setStartedAt(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm" />
+            <input type="datetime-local" value={startedAt} onChange={(event) => setStartedAt(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm" />
           </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             Fim
-            <input type="datetime-local" value={endedAt} onChange={(event) => setEndedAt(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm" />
+            <input type="datetime-local" value={endedAt} onChange={(event) => setEndedAt(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm" />
           </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             Motivo cancelamento
-            <input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm" />
+            <input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm" />
           </label>
         </div>
 
-        <label className="mt-4 flex flex-col gap-1 text-sm text-slate-200">
+        <label className="mt-4 flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
           Evidências (uma por linha: `image|url|label` ou `link|url|label`)
-          <textarea value={evidenceText} onChange={(event) => setEvidenceText(event.target.value)} rows={6} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs" />
+          <textarea value={evidenceText} onChange={(event) => setEvidenceText(event.target.value)} rows={6} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-xs" />
         </label>
 
-        <label className="mt-4 flex flex-col gap-1 text-sm text-slate-200">
+        <label className="mt-4 flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
           Nota da edição
-          <input value={note} onChange={(event) => setNote(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm" />
+          <input value={note} onChange={(event) => setNote(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm" />
         </label>
 
         <div className="mt-4">
@@ -276,19 +276,19 @@ export function MatchDetailEditor({ detail, history }: { detail: MatchDetail; hi
         </div>
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+      <section className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
           <History className="h-5 w-5" />
           Histórico de edições
         </h2>
         <ul className="mt-4 space-y-3">
           {history.map((item) => (
-            <li key={item.id} className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-slate-300">
+            <li key={item.id} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 p-3 text-sm text-slate-600 dark:text-slate-300">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-medium text-white">{item.action}</p>
+                <p className="font-medium text-slate-900 dark:text-white">{item.action}</p>
                 <span className="text-xs text-slate-500">{dateFmt.format(new Date(item.created_at))} · {item.admin_name}</span>
               </div>
-              {item.note ? <p className="mt-1 text-xs text-slate-400">{item.note}</p> : null}
+              {item.note ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.note}</p> : null}
               <p className="mt-2 text-xs text-slate-500">Antes: {JSON.stringify(item.previous_state ?? {})}</p>
               <p className="mt-1 text-xs text-slate-500">Depois: {JSON.stringify(item.next_state ?? {})}</p>
             </li>

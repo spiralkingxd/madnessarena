@@ -73,7 +73,7 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
           type="checkbox"
           checked={Boolean(selected[row.id])}
           onChange={(e) => setSelected((prev) => ({ ...prev, [row.id]: e.target.checked }))}
-          className="h-4 w-4 rounded border-white/20 bg-black/20"
+          className="h-4 w-4 rounded border-white/20 bg-slate-100 dark:bg-black/20"
           aria-label={`Selecionar ${row.name}`}
         />
       ),
@@ -85,7 +85,7 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
         row.logo_url ? (
           <img src={row.logo_url} alt={row.name} className="h-8 w-8 rounded-lg object-cover" />
         ) : (
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[10px] font-semibold text-slate-300">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-white/5 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
             {row.name.slice(0, 1).toUpperCase()}
           </span>
         )
@@ -98,8 +98,8 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
       accessor: (row) => row.name,
       render: (row) => (
         <div>
-          <p className="font-medium text-slate-100">{row.name}</p>
-          <p className="text-xs text-slate-400">Capitão: {row.captain_name}</p>
+          <p className="font-medium text-slate-800 dark:text-slate-100">{row.name}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Capitão: {row.captain_name}</p>
         </div>
       ),
     },
@@ -109,7 +109,7 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
       sortable: true,
       accessor: (row) => row.captain_name,
       render: (row) => (
-        <Link href={`/profile/${row.captain_id}`} className="text-xs text-cyan-200 hover:text-cyan-100">
+        <Link href={`/profile/${row.captain_id}`} className="text-xs text-cyan-200 hover:text-cyan-900 dark:text-cyan-100">
           {row.captain_name}
         </Link>
       ),
@@ -162,7 +162,7 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
           </Link>
           <button
             type="button"
-            className="rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-2 py-1 text-xs text-cyan-100 hover:bg-cyan-300/20"
+            className="rounded-lg border border-cyan-300/30 bg-cyan-100 dark:bg-cyan-300/10 px-2 py-1 text-xs text-cyan-900 dark:text-cyan-100 hover:bg-cyan-300/20"
             onClick={() => {
               const name = window.prompt("Novo nome da equipe:", row.name)?.trim();
               if (!name) return;
@@ -217,19 +217,19 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
   return (
     <section className="space-y-4">
       <div className="admin-surface flex flex-wrap items-end gap-3 rounded-2xl p-4">
-        <label className="flex min-w-[240px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex min-w-[240px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Buscar
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Nome da equipe ou capitão"
-            className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100 outline-none"
+            className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none"
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Status
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100">
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             <option value="active">🟢 Ativas</option>
             <option value="incomplete">🟡 Incompletas</option>
@@ -238,9 +238,9 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Tamanho
-          <select value={sizeFilter} onChange={(e) => setSizeFilter(e.target.value as typeof sizeFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100">
+          <select value={sizeFilter} onChange={(e) => setSizeFilter(e.target.value as typeof sizeFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             <option value="solo">Solo (1)</option>
             <option value="small">2-4 membros</option>
@@ -248,18 +248,18 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Data
-          <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100">
+          <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todas</option>
             <option value="7">Últimos 7 dias</option>
             <option value="30">Últimos 30 dias</option>
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Página
-          <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100">
+          <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
@@ -292,7 +292,7 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
         >
           Exportar JSON
         </AdminButton>
-        <span className="text-xs text-slate-400">Selecionadas: {selectedIds.length}</span>
+        <span className="text-xs text-slate-500 dark:text-slate-400">Selecionadas: {selectedIds.length}</span>
       </div>
 
       <AdminTable data={filtered} columns={columns} pageSize={pageSize} emptyText="Nenhuma equipe encontrada." />
@@ -307,34 +307,34 @@ export function TeamsTable({ rows }: { rows: TeamRow[] }) {
       >
         {dissolveTarget ? (
           <div className="space-y-4">
-            <p className="text-sm text-slate-300">
-              Esta ação vai apagar a equipe <span className="font-semibold text-white">{dissolveTarget.name}</span>, remover membros e cancelar inscrições pendentes.
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Esta ação vai apagar a equipe <span className="font-semibold text-slate-900 dark:text-white">{dissolveTarget.name}</span>, remover membros e cancelar inscrições pendentes.
             </p>
 
-            <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+            <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
               Confirmação
-              <p className="mt-1 text-[11px] normal-case text-slate-400">
-                Digite exatamente: <span className="font-semibold text-slate-200">{dissolveTarget.name}</span>
+              <p className="mt-1 text-[11px] normal-case text-slate-500 dark:text-slate-400">
+                Digite exatamente: <span className="font-semibold text-slate-700 dark:text-slate-200">{dissolveTarget.name}</span>
               </p>
               <input
                 value={dissolveConfirmName}
                 onChange={(event) => setDissolveConfirmName(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
                 placeholder={dissolveTarget.name}
               />
             </label>
 
-            <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+            <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
               Motivo
               <textarea
                 value={dissolveReason}
                 onChange={(event) => setDissolveReason(event.target.value)}
-                className="mt-1 h-24 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                className="mt-1 h-24 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
                 placeholder="Descreva o motivo da dissolução"
               />
             </label>
 
-            <label className="inline-flex items-center gap-2 text-sm text-slate-200">
+            <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input
                 type="checkbox"
                 checked={dissolveNotifyDiscord}

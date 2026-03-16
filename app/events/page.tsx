@@ -8,6 +8,7 @@ import { formatTeamSize } from "@/lib/events";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cn } from "@/lib/utils";
+import { getTeamSizeLabel } from "@/lib/events";
 import { getDictionary } from "@/lib/i18n";
 
 type EventRow = {

@@ -71,14 +71,14 @@ export function LogsAdminPanel({ rows }: Props) {
 
   return (
     <>
-      <section className="space-y-4 rounded-2xl border border-white/10 bg-slate-950/60 p-6">
+      <section className="space-y-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
         <div className="flex flex-wrap items-end gap-3">
-          <label className="min-w-52 space-y-1 text-xs uppercase tracking-[0.16em] text-slate-400">
+          <label className="min-w-52 space-y-1 text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
             <span>Ação</span>
             <select
               value={action}
               onChange={(e) => setAction(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-sky-400"
+              className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200 dark:bg-black/40 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-sky-400"
             >
               {actions.map((entry) => (
                 <option key={entry} value={entry}>
@@ -87,13 +87,13 @@ export function LogsAdminPanel({ rows }: Props) {
               ))}
             </select>
           </label>
-          <label className="min-w-72 flex-1 space-y-1 text-xs uppercase tracking-[0.16em] text-slate-400">
+          <label className="min-w-72 flex-1 space-y-1 text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
             <span>Buscar</span>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="ator, recurso, detalhes..."
-              className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-sky-400"
+              className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-200 dark:bg-black/40 px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-sky-400"
             />
           </label>
           <AdminButton disabled={isPending} onClick={onExport}>

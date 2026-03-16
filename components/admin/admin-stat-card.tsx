@@ -10,9 +10,9 @@ type Props = {
 };
 
 const tones: Record<NonNullable<Props["tone"]>, string> = {
-  info: "border-cyan-300/20 bg-cyan-300/10 text-cyan-100",
+  info: "border-cyan-300/20 bg-cyan-100 dark:bg-cyan-300/10 text-cyan-900 dark:text-cyan-100",
   success: "border-emerald-300/20 bg-emerald-300/10 text-emerald-100",
-  warning: "border-amber-300/20 bg-amber-300/10 text-amber-100",
+  warning: "border-amber-300/20 bg-amber-100 dark:bg-amber-300/10 text-amber-900 dark:text-amber-100",
   danger: "border-rose-300/20 bg-rose-300/10 text-rose-100",
 };
 

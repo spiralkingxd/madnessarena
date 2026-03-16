@@ -126,7 +126,7 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
     {
       key: "error",
       header: "Erro",
-      render: (row) => <span className="line-clamp-2 text-xs text-slate-400">{row.error_message ?? "-"}</span>,
+      render: (row) => <span className="line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{row.error_message ?? "-"}</span>,
     },
     {
       key: "actions",
@@ -157,56 +157,55 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
 
   return (
     <section className="space-y-6">
-      <div className="grid gap-5 xl:grid-cols-2">
-        <article className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-          <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
+      <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
+          <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
             <ShieldCheck className="h-5 w-5 text-cyan-300" />
             Configuracao de Webhooks
           </h2>
           <div className="mt-4 space-y-3">
-            <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+            <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
               Webhook de anuncios
               <input
                 value={announcementsWebhook}
                 onChange={(event) => setAnnouncementsWebhook(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
                 placeholder="https://discord.com/api/webhooks/..."
               />
             </label>
 
-            <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+            <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
               Webhook de logs admin
               <input
                 value={adminWebhook}
                 onChange={(event) => setAdminWebhook(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
                 placeholder="https://discord.com/api/webhooks/..."
               />
             </label>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+              <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
                 Canal anuncios
                 <input
                   value={announcementChannel}
                   onChange={(event) => setAnnouncementChannel(event.target.value)}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                  className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
                   placeholder="#anuncios"
                 />
               </label>
 
-              <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+              <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
                 Role participante
                 <input
                   value={participantRole}
                   onChange={(event) => setParticipantRole(event.target.value)}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                  className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
                   placeholder="@participante"
                 />
               </label>
             </div>
 
-            <label className="inline-flex items-center gap-2 text-sm text-slate-200">
+            <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input
                 type="checkbox"
                 checked={verificationEnabled}
@@ -215,11 +214,11 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
               Integracao de verificacoes ativada
             </label>
 
-            <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-              <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Mapa de eventos</p>
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 p-3">
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Mapa de eventos</p>
               <div className="mt-2 grid gap-2 md:grid-cols-2">
                 {EVENT_TRIGGER_KEYS.map((key) => (
-                  <label key={key} className="inline-flex items-center gap-2 text-sm text-slate-200">
+                  <label key={key} className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
                     <input
                       type="checkbox"
                       checked={eventMap[key] ?? true}
@@ -294,15 +293,15 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
           </div>
         </article>
 
-        <article className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-          <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
+        <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
+          <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
             <BellRing className="h-5 w-5 text-amber-300" />
             Templates e Agendamento
           </h2>
 
           <div className="mt-4 space-y-4">
             <div className="space-y-2">
-              <label className="text-xs uppercase tracking-[0.12em] text-slate-400">Template</label>
+              <label className="text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Template</label>
               <select
                 value={selectedTemplateType}
                 onChange={(event) => {
@@ -311,7 +310,7 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
                   const found = templates.find((item) => item.type === type);
                   setTemplateText(found?.template ?? "");
                 }}
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
               >
                 {templates.map((template) => (
                   <option key={template.type} value={template.type}>{template.type}</option>
@@ -320,9 +319,9 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
               <textarea
                 value={templateText}
                 onChange={(event) => setTemplateText(event.target.value)}
-                className="h-32 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                className="h-32 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
               />
-              <p className="text-xs text-slate-400">Placeholders: {"{{key}}"}. Exemplo: {"{{eventTitle}}"}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Placeholders: {"{{key}}"}. Exemplo: {"{{eventTitle}}"}</p>
               <AdminButton
                 type="button"
                 disabled={!isOwner || isPending}
@@ -338,28 +337,28 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
               </AdminButton>
             </div>
 
-            <div className="space-y-2 rounded-xl border border-white/10 bg-black/20 p-3">
-              <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-100">
+            <div className="space-y-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 p-3">
+              <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
                 <Clock3 className="h-4 w-4" />
                 Agendar notificacao
               </p>
               <select
                 value={scheduleType}
                 onChange={(event) => setScheduleType(event.target.value as DiscordNotificationType)}
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
               >
                 {templateTypes.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
               <textarea
                 value={scheduleData}
                 onChange={(event) => setScheduleData(event.target.value)}
-                className="h-24 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                className="h-24 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
               />
               <input
                 type="datetime-local"
                 value={scheduleAt}
                 onChange={(event) => setScheduleAt(event.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
               />
 
               <div className="flex flex-wrap gap-2">
@@ -424,43 +423,46 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
           </div>
 
           {selectedTemplate ? (
-            <p className="mt-4 text-xs text-slate-400">Ultima atualizacao: {DATE_FMT.format(new Date(selectedTemplate.updated_at))}</p>
+            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">Ultima atualizacao: {DATE_FMT.format(new Date(selectedTemplate.updated_at))}</p>
           ) : null}
         </article>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        
       </div>
 
-      <article id="custom-in-app" className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-        <h2 className="mb-3 text-lg font-semibold text-white">Historico de notificacoes</h2>
+      <article id="custom-in-app" className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
+        <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Historico de notificacoes</h2>
         <AdminTable data={history} columns={columns} pageSize={25} emptyText="Nenhuma notificacao registrada." />
       </article>
 
-      <article className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-        <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
+      <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
+        <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
           <BellRing className="h-5 w-5 text-cyan-300" />
           Notificação personalizada (site)
         </h2>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Envie notificações in-app informativas, de aviso ou alerta para um usuário específico ou para todos.
         </p>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
             Título
             <input
               value={inAppTitle}
               onChange={(event) => setInAppTitle(event.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+              className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
               placeholder="Ex.: Manutenção hoje às 23h"
               maxLength={150}
             />
           </label>
 
-          <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
             Tipo visual
             <select
               value={inAppSeverity}
               onChange={(event) => setInAppSeverity(event.target.value as "info" | "warning" | "danger")}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+              className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
             >
               <option value="info">Informativa</option>
               <option value="warning">Aviso</option>
@@ -468,23 +470,23 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
             </select>
           </label>
 
-          <label className="block text-xs uppercase tracking-[0.12em] text-slate-400 md:col-span-2">
+          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 md:col-span-2">
             Mensagem
             <textarea
               value={inAppMessage}
               onChange={(event) => setInAppMessage(event.target.value)}
-              className="mt-1 h-24 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+              className="mt-1 h-24 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
               placeholder="Mensagem que aparecerá no sino de notificações"
               maxLength={2000}
             />
           </label>
 
-          <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
             Destinatário
             <select
               value={inAppAudience}
               onChange={(event) => setInAppAudience(event.target.value as "single" | "all")}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+              className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
             >
               <option value="single">Usuário específico</option>
               <option value="all">Todos os usuários</option>
@@ -492,12 +494,12 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
           </label>
 
           {inAppAudience === "single" ? (
-            <label className="block text-xs uppercase tracking-[0.12em] text-slate-400">
+            <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
               Usuário
               <select
                 value={inAppUserId}
                 onChange={(event) => setInAppUserId(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
               >
                 <option value="">Selecione</option>
                 {users.map((user) => (

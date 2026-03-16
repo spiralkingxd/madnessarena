@@ -76,7 +76,7 @@ export function TeamDetailAdminActions({
           <select
             value={transferUserId}
             onChange={(event) => setTransferUserId(event.target.value)}
-            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-100"
+            className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-xs text-slate-800 dark:text-slate-100"
           >
             <option value="">Transferir capitão...</option>
             {transferCandidates.map((member) => (
@@ -104,7 +104,7 @@ export function TeamDetailAdminActions({
           <select
             value={addUserId}
             onChange={(event) => setAddUserId(event.target.value)}
-            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-100"
+            className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-xs text-slate-800 dark:text-slate-100"
           >
             <option value="">Adicionar membro...</option>
             {availableUsers.map((user) => (

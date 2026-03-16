@@ -154,12 +154,12 @@ export default async function AdminMemberDetailPage({ params }: Props) {
 
   return (
     <section className="space-y-5">
-      <header className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <Link href="/admin/members" className="text-sm text-cyan-200 hover:text-cyan-100">
+      <header className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
+        <Link href="/admin/members" className="text-sm text-cyan-200 hover:text-cyan-900 dark:text-cyan-100">
           Voltar para membros
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-white">{profile.display_name || profile.username || "Usuario"}</h1>
-        <p className="text-sm text-slate-400">
+        <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{profile.display_name || profile.username || "Usuario"}</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           @{profile.username || "-"} - {profile.email ?? "sem email"}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -174,9 +174,9 @@ export default async function AdminMemberDetailPage({ params }: Props) {
       </header>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <article className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-300">Perfil</h2>
-          <ul className="mt-3 space-y-2 text-sm text-slate-200">
+        <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-300">Perfil</h2>
+          <ul className="mt-3 space-y-2 text-sm text-slate-700 dark:text-slate-200">
             <li>Discord ID: {profile.discord_id ?? "-"}</li>
             <li>Xbox: {profile.xbox_gamertag ?? "-"}</li>
             <li>Membro desde: {dateFmt.format(new Date(profile.created_at))}</li>
@@ -190,18 +190,18 @@ export default async function AdminMemberDetailPage({ params }: Props) {
           )}
         </article>
 
-        <article className="rounded-2xl border border-white/10 bg-slate-950/60 p-5 lg:col-span-2">
-          <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-slate-300">
+        <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5 lg:col-span-2">
+          <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-300">
             <Shield className="h-4 w-4" />
             Equipes ({teams.length})
           </h2>
           <ul className="mt-3 grid gap-2 md:grid-cols-2">
             {teams.map((team) => (
-              <li key={`${team.id}-${team.role}`} className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
-                <Link href={`/admin/teams/${team.id}`} className="font-medium text-cyan-200 hover:text-cyan-100">
+              <li key={`${team.id}-${team.role}`} className="rounded-xl border border-slate-200 dark:border-white/10 bg-white/5 p-3 text-sm">
+                <Link href={`/admin/teams/${team.id}`} className="font-medium text-cyan-200 hover:text-cyan-900 dark:text-cyan-100">
                   {team.name}
                 </Link>
-                <p className="text-xs text-slate-400">Cargo: {team.role === "captain" ? "Capitao" : "Membro"}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Cargo: {team.role === "captain" ? "Capitao" : "Membro"}</p>
                 <p className="text-xs text-slate-500">Entrada: {dateFmt.format(new Date(team.joined_at))}</p>
               </li>
             ))}
@@ -210,12 +210,12 @@ export default async function AdminMemberDetailPage({ params }: Props) {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <article className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-          <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-slate-300">
+        <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
+          <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-300">
             <Users className="h-4 w-4" />
             Estatisticas
           </h2>
-          <ul className="mt-3 space-y-2 text-sm text-slate-200">
+          <ul className="mt-3 space-y-2 text-sm text-slate-700 dark:text-slate-200">
             <li>Equipes que participa: {teams.length}</li>
             <li>Torneios inscritos: {registrations.length}</li>
             <li>Partidas jogadas: {matchesPlayed}</li>
@@ -225,16 +225,16 @@ export default async function AdminMemberDetailPage({ params }: Props) {
           </ul>
         </article>
 
-        <article className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-          <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-slate-300">
+        <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
+          <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-300">
             <Calendar className="h-4 w-4" />
             Torneios inscritos
           </h2>
           <ul className="mt-3 space-y-2">
             {registrations.map((item) => (
-              <li key={item.id} className="rounded-lg border border-white/10 bg-white/5 p-2 text-sm">
-                <p className="text-slate-100">{item.event_title}</p>
-                <p className="text-xs text-slate-400">
+              <li key={item.id} className="rounded-lg border border-slate-200 dark:border-white/10 bg-white/5 p-2 text-sm">
+                <p className="text-slate-800 dark:text-slate-100">{item.event_title}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Status: {item.status} - {dateFmt.format(new Date(item.created_at))}
                 </p>
               </li>
@@ -275,21 +275,21 @@ export default async function AdminMemberDetailPage({ params }: Props) {
         </div>
 
         <div className="mt-4 grid gap-3 text-sm text-rose-50 md:grid-cols-3">
-          <p className="rounded-xl border border-rose-300/30 bg-black/20 px-4 py-2">Equipes vinculadas: {teams.length}</p>
-          <p className="rounded-xl border border-rose-300/30 bg-black/20 px-4 py-2">Partidas jogadas: {matchesPlayed}</p>
-          <p className="rounded-xl border border-rose-300/30 bg-black/20 px-4 py-2">Cadastro: {dateFmt.format(new Date(profile.created_at))}</p>
+          <p className="rounded-xl border border-rose-300/30 bg-slate-100 dark:bg-black/20 px-4 py-2">Equipes vinculadas: {teams.length}</p>
+          <p className="rounded-xl border border-rose-300/30 bg-slate-100 dark:bg-black/20 px-4 py-2">Partidas jogadas: {matchesPlayed}</p>
+          <p className="rounded-xl border border-rose-300/30 bg-slate-100 dark:bg-black/20 px-4 py-2">Cadastro: {dateFmt.format(new Date(profile.created_at))}</p>
         </div>
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <article className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-          <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-slate-300">
+        <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
+          <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-300">
             <Users className="h-4 w-4" />
             Logins registrados
           </h2>
           <ul className="mt-3 space-y-2">
             {loginRaw.map((log) => (
-              <li key={String(log.id)} className="rounded-lg border border-white/10 bg-white/5 p-2 text-xs text-slate-300">
+              <li key={String(log.id)} className="rounded-lg border border-slate-200 dark:border-white/10 bg-white/5 p-2 text-xs text-slate-600 dark:text-slate-300">
                 <p>{dateFmt.format(new Date(String(log.created_at)))}</p>
                 <p className="text-slate-500">{JSON.stringify(log.new_value ?? log.old_value ?? {})}</p>
               </li>
@@ -298,14 +298,14 @@ export default async function AdminMemberDetailPage({ params }: Props) {
           </ul>
         </article>
 
-        <article className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-          <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-slate-300">
+        <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
+          <h2 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-300">
             <Users className="h-4 w-4" />
             Logs de admin relacionados
           </h2>
           <ul className="mt-3 space-y-2">
             {logs.map((log) => (
-              <li key={log.id} className="rounded-lg border border-white/10 bg-white/5 p-2 text-xs text-slate-300">
+              <li key={log.id} className="rounded-lg border border-slate-200 dark:border-white/10 bg-white/5 p-2 text-xs text-slate-600 dark:text-slate-300">
                 <p className="font-semibold">{log.action}</p>
                 <p>{dateFmt.format(new Date(log.created_at))}</p>
                 <p className="text-slate-500">{log.details ? JSON.stringify(log.details) : "-"}</p>

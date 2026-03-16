@@ -75,7 +75,7 @@ export default async function AdminStreamersPage() {
   if (streamers === null) {
     return (
       <div className="p-6">
-        <div><h1 className="text-3xl font-bold text-white tracking-tight">Streamers</h1><p className="text-slate-400 mt-2">Gerencie os streamers da Madness Arena.</p></div>
+        <div><h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Streamers</h1><p className="text-slate-500 dark:text-slate-400 mt-2">Gerencie os streamers da Madness Arena.</p></div>
         <div className="mt-8 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center text-red-400">
           <ShieldAlert className="mx-auto h-8 w-8 mb-2" />
           <p className="font-semibold">A tabela de streamers nÝo foi encontrada no banco de dados.</p>
@@ -87,19 +87,19 @@ export default async function AdminStreamersPage() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <div className="mb-8"><h1 className="text-3xl font-bold text-white tracking-tight">Gerenciar Streamers</h1><p className="text-slate-400 mt-2">Adicione e remova pessoas da pagina de transmissoes.</p></div> 
+      <div className="mb-8"><h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Gerenciar Streamers</h1><p className="text-slate-500 dark:text-slate-400 mt-2">Adicione e remova pessoas da pagina de transmissoes.</p></div> 
 
 
 
 
-      <div className="mt-8 max-w-2xl bg-white/5 border border-white/10 rounded-xl p-6">
+      <div className="mt-8 max-w-2xl bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-6">
         <h3 className="text-lg font-semibold mb-4">Adicionar Novo Streamer</h3>
         <form action={addStreamer} className="flex gap-2">
           <input 
             name="username" 
             placeholder="Username da Twitch (ex: hwmalk)" 
             required
-            className="flex flex-1 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder-slate-500 focus-within:border-cyan-500/50" />
+            className="flex flex-1 items-center gap-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus-within:border-cyan-500/50" />
 
           <Button type="submit" variant="primary">
             <Plus className="h-4 w-4 mr-2" />
@@ -112,13 +112,13 @@ export default async function AdminStreamersPage() {
         <h3 className="text-lg font-semibold mb-4">Streamers Cadastrados ({streamers.length})</h3>
         
         {streamers.length === 0 ? (
-          <div className="text-center py-12 bg-white/5 border border-white/10 rounded-xl">
-            <p className="text-slate-400">Nenhum streamer cadastrado.</p>
+          <div className="text-center py-12 bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
+            <p className="text-slate-500 dark:text-slate-400">Nenhum streamer cadastrado.</p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {streamers.map((s) => (
-              <div key={s.id} className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl">
+              <div key={s.id} className="flex items-center justify-between p-4 bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">{s.username}</span>
@@ -128,7 +128,7 @@ export default async function AdminStreamersPage() {
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-slate-400">Adicionado em: {new Date(s.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Adicionado em: {new Date(s.created_at).toLocaleDateString()}</span>
                 </div>
 
                 <div className="flex items-center gap-2">

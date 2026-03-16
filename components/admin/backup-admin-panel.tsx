@@ -63,12 +63,12 @@ export function BackupAdminPanel({ jobs }: Props) {
 
   return (
     <>
-      <section className="space-y-5 rounded-2xl border border-white/10 bg-slate-950/60 p-6">
+      <section className="space-y-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Backups</p>
-            <h2 className="mt-1 text-lg font-semibold text-white">Gerenciamento de backup</h2>
-            <p className="mt-1 text-sm text-slate-400">Crie backups sob demanda e acompanhe o histórico de execução.</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Backups</p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">Gerenciamento de backup</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Crie backups sob demanda e acompanhe o histórico de execução.</p>
           </div>
           <AdminButton disabled={isPending} onClick={onRequestBackup}>
             <DatabaseBackup className="h-4 w-4" />
@@ -76,13 +76,13 @@ export function BackupAdminPanel({ jobs }: Props) {
           </AdminButton>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Último backup</p>
+        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-black/30 p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Último backup</p>
           {latest ? (
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-200">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
               <AdminBadge tone={statusTone(latest.status)}>{latest.status}</AdminBadge>
               <span>{new Date(latest.created_at).toLocaleString("pt-BR")}</span>
-              <span className="text-slate-400">Solicitado por {latest.requested_by_name}</span>
+              <span className="text-slate-500 dark:text-slate-400">Solicitado por {latest.requested_by_name}</span>
               {latest.payload ? (
                 <button
                   type="button"
@@ -95,13 +95,13 @@ export function BackupAdminPanel({ jobs }: Props) {
               ) : null}
             </div>
           ) : (
-            <p className="mt-2 text-sm text-slate-400">Nenhum backup registrado ainda.</p>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Nenhum backup registrado ainda.</p>
           )}
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-white/10">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
           <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="bg-black/40 text-xs uppercase tracking-[0.14em] text-slate-400">
+            <thead className="bg-slate-200 dark:bg-black/40 text-xs uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="px-3 py-2">Data</th>
                 <th className="px-3 py-2">Status</th>
@@ -112,7 +112,7 @@ export function BackupAdminPanel({ jobs }: Props) {
             </thead>
             <tbody>
               {jobs.map((job) => (
-                <tr key={job.id} className="border-t border-white/10 text-slate-200">
+                <tr key={job.id} className="border-t border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200">
                   <td className="px-3 py-2">{new Date(job.created_at).toLocaleString("pt-BR")}</td>
                   <td className="px-3 py-2">
                     <AdminBadge tone={statusTone(job.status)}>{job.status}</AdminBadge>

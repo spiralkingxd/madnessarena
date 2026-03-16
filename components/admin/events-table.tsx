@@ -84,8 +84,8 @@ export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
       accessor: (row) => row.title,
       render: (row) => (
         <div>
-          <p className="font-medium text-slate-100">{row.title}</p>
-          <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-400">
+          <p className="font-medium text-slate-800 dark:text-slate-100">{row.title}</p>
+          <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
             <span>{formatEventKind(row.event_kind)}</span>
             <span>{formatEventType(row.event_type)}</span>
             <span>{formatEventVisibility(row.visibility)}</span>
@@ -134,8 +134,8 @@ export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
       accessor: (row) => row.approved_registrations,
       render: (row) => (
         <div>
-          <p className="font-medium text-slate-100">{row.approved_registrations}</p>
-          <p className="text-xs text-slate-400">{row.pending_registrations} pendentes</p>
+          <p className="font-medium text-slate-800 dark:text-slate-100">{row.approved_registrations}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{row.pending_registrations} pendentes</p>
         </div>
       ),
     },
@@ -144,7 +144,7 @@ export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
       header: "Premiação",
       sortable: true,
       accessor: (row) => row.prize_description ?? "",
-      render: (row) => <span className="line-clamp-2 text-xs text-slate-300">{row.prize_description ?? "-"}</span>,
+      render: (row) => <span className="line-clamp-2 text-xs text-slate-600 dark:text-slate-300">{row.prize_description ?? "-"}</span>,
     },
     {
       key: "actions",
@@ -170,7 +170,7 @@ export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
             </Link>
             <button
               type="button"
-              className="rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-2 py-1 text-xs text-cyan-100 hover:bg-cyan-300/20"
+              className="rounded-lg border border-cyan-300/30 bg-cyan-100 dark:bg-cyan-300/10 px-2 py-1 text-xs text-cyan-900 dark:text-cyan-100 hover:bg-cyan-300/20"
               onClick={() =>
                 startTransition(async () => {
                   const result = await duplicateEvent(row.id);
@@ -220,7 +220,7 @@ export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
             {(row.status === "published" || row.status === "active") ? (
               <button
                 type="button"
-                className="rounded-lg border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs text-amber-100 hover:bg-amber-300/20"
+                className="rounded-lg border border-amber-300/30 bg-amber-100 dark:bg-amber-300/10 px-2 py-1 text-xs text-amber-900 dark:text-amber-100 hover:bg-amber-300/20"
                 onClick={() =>
                   startTransition(async () => {
                     const result = await pauseEvent(row.id);
@@ -267,14 +267,14 @@ export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
   return (
     <section className="space-y-4">
       <div className="admin-surface flex flex-wrap items-end gap-3 rounded-2xl p-4">
-        <label className="flex min-w-[260px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex min-w-[260px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Buscar por nome
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nome do evento" className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100 outline-none" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nome do evento" className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none" />
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Status
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100">
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             {EVENT_STATUS_VALUES.map((status) => (
               <option key={status} value={status}>{EVENT_STATUS_LABELS[status]}</option>
@@ -282,9 +282,9 @@ export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Data
-          <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value as typeof dateFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100">
+          <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value as typeof dateFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todas</option>
             <option value="7">Próximos 7 dias</option>
             <option value="30">Próximos 30 dias</option>
@@ -292,9 +292,9 @@ export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Subtipo
-          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as typeof typeFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100">
+          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as typeof typeFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             <option value="special">Evento Especial</option>
             <option value="scrimmage">Scrimmage</option>
@@ -302,18 +302,18 @@ export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Visibilidade
-          <select value={visibilityFilter} onChange={(event) => setVisibilityFilter(event.target.value as typeof visibilityFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100">
+          <select value={visibilityFilter} onChange={(event) => setVisibilityFilter(event.target.value as typeof visibilityFilter)} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todas</option>
             <option value="public">Pública</option>
             <option value="private">Privada</option>
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Página
-          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-100">
+          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
@@ -331,7 +331,7 @@ export function EventsTable({ rows }: { rows: AdminEventRow[] }) {
 
       <AdminModal open={Boolean(deleteTarget)} title="Excluir evento" onClose={() => setDeleteTarget(null)}>
         <div className="space-y-4">
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Esta ação remove o evento e os dados relacionados, incluindo inscrições, partidas e notificações.
           </p>
           <p className="rounded-xl border border-rose-300/20 bg-rose-300/10 px-4 py-3 text-sm text-rose-100">

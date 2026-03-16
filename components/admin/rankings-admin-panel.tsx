@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { Download, RefreshCcw } from "lucide-react";
+import { useMemo, useState, useTransition, useEffect, useRef } from "react";
+import { Download, RefreshCcw, User, Users } from "lucide-react";
+import { globalSearchAction, type SearchResult } from "@/app/actions/search-actions";
 
 import {
   adjustRankingPoints,
@@ -61,6 +62,23 @@ export function RankingsAdminPanel({
   const [gameType, setGameType] = useState<"all" | "tournament" | "special" | "scrimmage">("all");
   const [search, setSearch] = useState("");
   const [adjustEntityId, setAdjustEntityId] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (adjustEntityId.length >= 2 && !adjustEntityId.includes("-") && !adjustEntityId.match(/^[0-9a-f]{8}-/i)) {
+        setIsSearching(true);
+        const res = await globalSearchAction(adjustEntityId, "all");
+        setSearchResults(res.filter(r => r.type === "user" || r.type === "team"));
+        setIsSearching(false);
+      } else {
+        setSearchResults([]);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [adjustEntityId]);
   const [adjustPoints, setAdjustPoints] = useState(0);
   const [adjustReason, setAdjustReason] = useState("");
   const [seasonName, setSeasonName] = useState("");
@@ -94,7 +112,7 @@ export function RankingsAdminPanel({
       header: "Avatar",
       render: (row) => row.avatar_url
         ? <img src={row.avatar_url} alt={row.name} className="h-8 w-8 rounded-full object-cover" />
-        : <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-xs">{row.name.slice(0, 1)}</span>,
+        : <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 text-xs">{row.name.slice(0, 1)}</span>,
     },
     { key: "name", header: "Nome", sortable: true, accessor: (row) => row.name, render: (row) => <span>{row.name}</span> },
     { key: "xbox", header: "Xbox", sortable: true, accessor: (row) => row.xbox ?? "", render: (row) => <span>{row.xbox ?? "-"}</span> },
@@ -111,7 +129,7 @@ export function RankingsAdminPanel({
       header: "Logo",
       render: (row) => row.logo_url
         ? <img src={row.logo_url} alt={row.team_name} className="h-8 w-8 rounded-full object-cover" />
-        : <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-xs">{row.team_name.slice(0, 1)}</span>,
+        : <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 text-xs">{row.team_name.slice(0, 1)}</span>,
     },
     { key: "name", header: "Nome", sortable: true, accessor: (row) => row.team_name, render: (row) => <span>{row.team_name}</span> },
     { key: "captain", header: "Capitão", sortable: true, accessor: (row) => row.captain_name, render: (row) => <span>{row.captain_name}</span> },
@@ -132,19 +150,19 @@ export function RankingsAdminPanel({
 
   return (
     <section className="space-y-5">
-      <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4 lg:grid-cols-5">
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+      <div className="grid gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-4 lg:grid-cols-5">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Período
-          <select value={period} onChange={(event) => setPeriod(event.target.value as typeof period)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={period} onChange={(event) => setPeriod(event.target.value as typeof period)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="general">Geral</option>
             <option value="weekly">Semanal</option>
             <option value="monthly">Mensal</option>
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Tipo de jogo
-          <select value={gameType} onChange={(event) => setGameType(event.target.value as typeof gameType)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={gameType} onChange={(event) => setGameType(event.target.value as typeof gameType)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             <option value="tournament">Torneio</option>
             <option value="special">Especial</option>
@@ -152,31 +170,31 @@ export function RankingsAdminPanel({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400 lg:col-span-2">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 lg:col-span-2">
           Busca
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Jogador, Xbox, equipe ou capitão" className="rounded-xl border border-slate-300 dark:border-white/10 bg-transparent dark:bg-black/20 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none" />
         </label>
 
         <div className="flex items-end gap-2">
-          <a href="/admin/rankings/export?scope=players&format=csv" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10">
+          <a href="/admin/rankings/export?scope=players&format=csv" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-white/10">
             <Download className="h-4 w-4" /> CSV
           </a>
-          <a href="/admin/rankings/export?scope=players&format=svg" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10">
+          <a href="/admin/rankings/export?scope=players&format=svg" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-white/10">
             <Download className="h-4 w-4" /> Imagem
           </a>
         </div>
       </div>
 
-      <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4 lg:grid-cols-6">
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400 lg:col-span-2">
+      <div className="grid gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-4 lg:grid-cols-6">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 lg:col-span-2">
           Entity ID (jogador/equipe)
           <input value={adjustEntityId} onChange={(event) => setAdjustEntityId(event.target.value)} className="rounded-xl border border-slate-300 dark:border-white/10 bg-transparent dark:bg-black/20 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none" />
         </label>
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Pontos (+/-)
           <input type="number" value={adjustPoints} onChange={(event) => setAdjustPoints(Number(event.target.value))} className="rounded-xl border border-slate-300 dark:border-white/10 bg-transparent dark:bg-black/20 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none" />
         </label>
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400 lg:col-span-2">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 lg:col-span-2">
           Motivo
           <input value={adjustReason} onChange={(event) => setAdjustReason(event.target.value)} className="rounded-xl border border-slate-300 dark:border-white/10 bg-transparent dark:bg-black/20 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none" />
         </label>
@@ -207,12 +225,12 @@ export function RankingsAdminPanel({
       </div>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-white">Ranking de Jogadores</h2>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Ranking de Jogadores</h2>
         <AdminTable data={filteredPlayers} columns={playerColumns} pageSize={20} emptyText="Sem jogadores ranqueados." />
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-white">Ranking de Equipes</h2>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Ranking de Equipes</h2>
         <AdminTable data={filteredTeams} columns={teamColumns} pageSize={20} emptyText="Sem equipes ranqueadas." />
       </section>
     </section>

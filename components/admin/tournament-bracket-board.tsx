@@ -90,18 +90,18 @@ export function TournamentBracketBoard({
 
   return (
     <section className="space-y-5">
-      <header className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Bracket Admin</p>
-        <h1 className="mt-1 text-2xl font-bold text-white">{eventTitle}</h1>
+      <header className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
+        <p className="text-xs uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Bracket Admin</p>
+        <h1 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{eventTitle}</h1>
         <div className="mt-3 flex flex-wrap gap-2">
           <AdminBadge tone="info">{`Progresso: ${finishedCount}/${matches.length} partidas`}</AdminBadge>
           <AdminBadge tone="pending">{`Formato: ${format}`}</AdminBadge>
         </div>
       </header>
 
-      <section className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+      <section className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-4">
         <div className="flex flex-wrap gap-2">
-          <select value={format} onChange={(event) => setFormat(event.target.value as BracketFormat)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={format} onChange={(event) => setFormat(event.target.value as BracketFormat)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="single_elimination">Single Elimination</option>
             <option value="double_elimination">Double Elimination</option>
             <option value="round_robin">Round Robin</option>
@@ -137,15 +137,15 @@ export function TournamentBracketBoard({
             <RefreshCcw className="h-4 w-4" />
             Resetar chaveamento
           </AdminButton>
-          <Link href={`/admin/tournaments/${eventId}/bracket/export`} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/10">
+          <Link href={`/admin/tournaments/${eventId}/bracket/export`} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-white/10">
             <Download className="h-4 w-4" />
             Exportar imagem (SVG)
           </Link>
-          <Link href={`/admin/tournaments/${eventId}/bracket/export?format=pdf`} target="_blank" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/10">
+          <Link href={`/admin/tournaments/${eventId}/bracket/export?format=pdf`} target="_blank" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-white/10">
             <Download className="h-4 w-4" />
             Exportar PDF
           </Link>
-          <label className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-300">
+          <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-600 dark:text-slate-300">
             Zoom
             <input
               type="range"
@@ -171,7 +171,7 @@ export function TournamentBracketBoard({
         <div className="flex min-w-max gap-6" style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top left" }}>
           {rounds.map((round) => (
             <div key={round} className="w-[320px] shrink-0 space-y-3">
-              <h2 className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-cyan-200">
+              <h2 className="rounded-xl border border-slate-200 dark:border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-cyan-200">
                 Rodada {round}
               </h2>
 
@@ -186,7 +186,7 @@ export function TournamentBracketBoard({
                     swapInRound(round, dragState.id, match.id);
                     setDragState(null);
                   }}
-                  className="rounded-2xl border border-white/10 bg-slate-950/60 p-4"
+                  className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-4"
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="text-xs text-slate-500">{match.bracket_position ?? "-"}</span>
@@ -196,13 +196,13 @@ export function TournamentBracketBoard({
                   </div>
 
                   <div className="space-y-2">
-                    <div className={`rounded-lg border px-3 py-2 text-sm ${match.winner_id === match.team_a_id ? "border-emerald-400/35 bg-emerald-400/10 text-emerald-200" : "border-white/10 bg-white/5 text-slate-200"}`}>
+                    <div className={`rounded-lg border px-3 py-2 text-sm ${match.winner_id === match.team_a_id ? "border-emerald-400/35 bg-emerald-400/10 text-emerald-200" : "border-slate-200 dark:border-white/10 bg-white/5 text-slate-700 dark:text-slate-200"}`}>
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate">{match.team_a_name}</span>
                         <span className="font-bold">{match.score_a}</span>
                       </div>
                     </div>
-                    <div className={`rounded-lg border px-3 py-2 text-sm ${match.winner_id === match.team_b_id ? "border-emerald-400/35 bg-emerald-400/10 text-emerald-200" : "border-white/10 bg-white/5 text-slate-200"}`}>
+                    <div className={`rounded-lg border px-3 py-2 text-sm ${match.winner_id === match.team_b_id ? "border-emerald-400/35 bg-emerald-400/10 text-emerald-200" : "border-slate-200 dark:border-white/10 bg-white/5 text-slate-700 dark:text-slate-200"}`}>
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate">{match.team_b_name}</span>
                         <span className="font-bold">{match.score_b}</span>
@@ -215,7 +215,7 @@ export function TournamentBracketBoard({
                     {match.status === "finished" && match.winner_id ? (
                       <button
                         type="button"
-                        className="rounded-lg border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs text-amber-100 hover:bg-amber-300/20"
+                        className="rounded-lg border border-amber-300/30 bg-amber-100 dark:bg-amber-300/10 px-2 py-1 text-xs text-amber-900 dark:text-amber-100 hover:bg-amber-300/20"
                         onClick={() =>
                           startTransition(async () => {
                             const result = await advanceWinner(match.id);

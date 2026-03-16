@@ -26,6 +26,7 @@ import {
   TOURNAMENT_FORMAT_LABELS,
   TOURNAMENT_FORMAT_VALUES,
   toDatetimeLocalValue,
+  getTeamSizeLabel,
 } from "@/lib/events";
 
 const formSchema = z.object({
@@ -188,11 +189,11 @@ export function EventForm({
   }
 
   return (
-    <section className="space-y-6 rounded-2xl border border-white/10 bg-slate-950/60 p-6">
+    <section className="space-y-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Admin</p>
-          <h1 className="mt-1 text-2xl font-bold text-white">
+          <p className="text-xs uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Admin</p>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
             {mode === "create" ? "Novo cadastro" : "Editar cadastro"}
           </h1>
         </div>
@@ -203,16 +204,16 @@ export function EventForm({
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-4 lg:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm text-slate-200 lg:col-span-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Nome do evento</span>
-            <input {...register("title")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" />
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200 lg:col-span-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Nome do evento</span>
+            <input {...register("title")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
             {errors.title ? <span className="text-xs text-rose-300">{errors.title.message}</span> : null}
           </label>
 
           {!fixedKind ? (
-            <label className="flex flex-col gap-1 text-sm text-slate-200">
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Categoria</span>
-              <select {...register("event_kind")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none">
+            <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Categoria</span>
+              <select {...register("event_kind")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
                 {EVENT_KIND_VALUES.map((value) => (
                   <option key={value} value={value}>{EVENT_KIND_LABELS[value]}</option>
                 ))}
@@ -220,94 +221,94 @@ export function EventForm({
             </label>
           ) : null}
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Status</span>
-            <select {...register("status")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Status</span>
+            <select {...register("status")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
               {EVENT_STATUS_VALUES.map((value) => (
                 <option key={value} value={value}>{EVENT_STATUS_LABELS[value]}</option>
               ))}
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Subtipo</span>
-            <select {...register("event_type")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" disabled={(fixedKind ?? eventKind) === "tournament"}>
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Subtipo</span>
+            <select {...register("event_type")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" disabled={(fixedKind ?? eventKind) === "tournament"}>
               {EVENT_TYPE_VALUES.map((value) => (
                 <option key={value} value={value}>{EVENT_TYPE_LABELS[value]}</option>
               ))}
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Visibilidade</span>
-            <select {...register("visibility")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Visibilidade</span>
+            <select {...register("visibility")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
               {EVENT_VISIBILITY_VALUES.map((value) => (
                 <option key={value} value={value}>{EVENT_VISIBILITY_LABELS[value]}</option>
               ))}
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Início</span>
-            <input type="datetime-local" {...register("start_date")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" />
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Início</span>
+            <input type="datetime-local" {...register("start_date")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
             {errors.start_date ? <span className="text-xs text-rose-300">{errors.start_date.message}</span> : null}
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Término</span>
-            <input type="datetime-local" {...register("end_date")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" />
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Término</span>
+            <input type="datetime-local" {...register("end_date")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Limite de inscrições</span>
-            <input type="datetime-local" {...register("registration_deadline")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" />
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Limite de inscrições</span>
+            <input type="datetime-local" {...register("registration_deadline")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Tipo</span>
-            <select {...register("team_size")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Tipo</span>
+            <select {...register("team_size")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
               {TEAM_SIZE_VALUES.map((size) => (
-                <option key={size} value={size}>{size}v{size}</option>
+                <option key={size} value={size}>{getTeamSizeLabel(size)}</option>
               ))}
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200 lg:col-span-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Premiação</span>
-            <textarea {...register("prize_description")} rows={3} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" />
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200 lg:col-span-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Premiação</span>
+            <textarea {...register("prize_description")} rows={3} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Logo</span>
-            <input {...register("logo_url")} placeholder="https://..." className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" />
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Logo</span>
+            <input {...register("logo_url")} placeholder="https://..." className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Banner</span>
-            <input {...register("banner_url")} placeholder="https://..." className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" />
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Banner</span>
+            <input {...register("banner_url")} placeholder="https://..." className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
           </label>
         </div>
 
         <RichTextEditor label="Descrição" value={description} onChange={setDescription} placeholder="Resumo do evento, formato e informações gerais." />
         <RichTextEditor label="Regras" value={rules} onChange={setRules} placeholder="Regras detalhadas, critérios de desempate e condutas." />
 
-        <section className="space-y-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+        <section className="space-y-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 p-4">
           <div>
-            <h2 className="text-lg font-semibold text-white">Pontuação</h2>
-            <p className="text-sm text-slate-400">Usada no recálculo automático do ranking ao finalizar o evento.</p>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Pontuação</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Usada no recálculo automático do ranking ao finalizar o evento.</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <label className="flex flex-col gap-1 text-sm text-slate-200">
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Vitória</span>
-              <input type="number" {...register("scoring_win")} className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm outline-none" />
+            <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Vitória</span>
+              <input type="number" {...register("scoring_win")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 px-4 py-3 text-sm outline-none" />
             </label>
-            <label className="flex flex-col gap-1 text-sm text-slate-200">
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Derrota</span>
-              <input type="number" {...register("scoring_loss")} className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm outline-none" />
+            <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Derrota</span>
+              <input type="number" {...register("scoring_loss")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 px-4 py-3 text-sm outline-none" />
             </label>
-            <label className="flex flex-col gap-1 text-sm text-slate-200">
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Empate</span>
-              <input type="number" {...register("scoring_draw")} className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm outline-none" />
+            <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Empate</span>
+              <input type="number" {...register("scoring_draw")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 px-4 py-3 text-sm outline-none" />
             </label>
           </div>
         </section>
@@ -315,33 +316,33 @@ export function EventForm({
         {(fixedKind === "tournament" || eventKind === "tournament") ? (
           <section className="space-y-4 rounded-2xl border border-amber-300/20 bg-amber-300/5 p-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">Configuração de torneio</h2>
-              <p className="text-sm text-slate-400">Formato, rounds e cabeceamento do chaveamento.</p>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Configuração de torneio</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Formato, rounds e cabeceamento do chaveamento.</p>
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
-              <label className="flex flex-col gap-1 text-sm text-slate-200">
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Formato</span>
-                <select {...register("tournament_format")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none">
+              <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Formato</span>
+                <select {...register("tournament_format")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
                   {TOURNAMENT_FORMAT_VALUES.map((value) => (
                     <option key={value} value={value}>{TOURNAMENT_FORMAT_LABELS[value]}</option>
                   ))}
                 </select>
               </label>
-              <label className="flex flex-col gap-1 text-sm text-slate-200">
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Rounds</span>
-                <input type="number" {...register("rounds_count")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" />
+              <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Rounds</span>
+                <input type="number" {...register("rounds_count")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
               </label>
-              <label className="flex flex-col gap-1 text-sm text-slate-200">
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Seeding</span>
-                <select {...register("seeding_method")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none">
+              <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Seeding</span>
+                <select {...register("seeding_method")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
                   {SEEDING_METHOD_VALUES.map((value) => (
                     <option key={value} value={value}>{SEEDING_METHOD_LABELS[value]}</option>
                   ))}
                 </select>
               </label>
-              <label className="flex flex-col gap-1 text-sm text-slate-200">
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Máximo de equipes</span>
-                <input type="number" {...register("max_teams")} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" />
+              <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Máximo de equipes</span>
+                <input type="number" {...register("max_teams")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
               </label>
             </div>
           </section>

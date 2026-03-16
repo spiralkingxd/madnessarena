@@ -38,7 +38,7 @@ const columns: AdminTableColumn<ActivityRow>[] = [
     header: "Data",
     sortable: true,
     accessor: (row) => row.created_at,
-    render: (row) => <span className="text-slate-300">{dateFmt.format(new Date(row.created_at))}</span>,
+    render: (row) => <span className="text-slate-600 dark:text-slate-300">{dateFmt.format(new Date(row.created_at))}</span>,
   },
 ];
 

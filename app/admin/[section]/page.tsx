@@ -34,10 +34,10 @@ export default async function AdminSectionPlaceholderPage({ params }: Props) {
 
   return (
     <section className="space-y-5">
-      <header className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Admin</p>
-        <h1 className="mt-1 text-2xl font-bold text-white">{title}</h1>
-        <p className="mt-2 text-sm text-slate-400">
+      <header className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
+        <p className="text-xs uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Admin</p>
+        <h1 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{title}</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Estrutura base criada. Nesta etapa, a navegação e o layout já estão prontos para evoluir cada módulo.
         </p>
         <div className="mt-3">
@@ -45,9 +45,9 @@ export default async function AdminSectionPlaceholderPage({ params }: Props) {
         </div>
       </header>
 
-      <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <p className="text-sm text-slate-300">Use o dashboard para visão geral e atalhos administrativos.</p>
-        <Link href="/admin/dashboard" className="mt-4 inline-flex rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-300/20">
+      <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
+        <p className="text-sm text-slate-600 dark:text-slate-300">Use o dashboard para visão geral e atalhos administrativos.</p>
+        <Link href="/admin/dashboard" className="mt-4 inline-flex rounded-xl border border-cyan-300/30 bg-cyan-100 dark:bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-900 dark:text-cyan-100 hover:bg-cyan-300/20">
           Voltar para Dashboard
         </Link>
       </div>

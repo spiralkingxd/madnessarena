@@ -85,7 +85,7 @@ export function MatchesTable({
       header: "Evento",
       sortable: true,
       accessor: (row) => row.event_title,
-      render: (row) => <span className="text-xs text-slate-300">{row.event_title}</span>,
+      render: (row) => <span className="text-xs text-slate-600 dark:text-slate-300">{row.event_title}</span>,
     },
     {
       key: "round",
@@ -151,7 +151,7 @@ export function MatchesTable({
           {row.status !== "finished" && row.team_a_id && row.team_b_id ? (
             <button
               type="button"
-              className="rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-2 py-1 text-xs text-cyan-100 hover:bg-cyan-300/20"
+              className="rounded-lg border border-cyan-300/30 bg-cyan-100 dark:bg-cyan-300/10 px-2 py-1 text-xs text-cyan-900 dark:text-cyan-100 hover:bg-cyan-300/20"
               onClick={() =>
                 startTransition(async () => {
                   const winner = row.score_a === row.score_b ? "draw" : row.score_a > row.score_b ? row.team_a_id! : row.team_b_id!;
@@ -168,7 +168,7 @@ export function MatchesTable({
           {row.status === "finished" ? (
             <button
               type="button"
-              className="rounded-lg border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs text-amber-100 hover:bg-amber-300/20"
+              className="rounded-lg border border-amber-300/30 bg-amber-100 dark:bg-amber-300/10 px-2 py-1 text-xs text-amber-900 dark:text-amber-100 hover:bg-amber-300/20"
               onClick={() =>
                 startTransition(async () => {
                   const result = await advanceWinner(row.id);
@@ -190,15 +190,15 @@ export function MatchesTable({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-        <label className="flex min-w-[220px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-4">
+        <label className="flex min-w-[220px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Buscar equipe
-          <input value={search} onChange={(event) => setSearch(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100 outline-none" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none" />
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Evento
-          <select value={eventFilter} onChange={(event) => setEventFilter(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={eventFilter} onChange={(event) => setEventFilter(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             {events.map((event) => (
               <option key={event.id} value={event.id}>{event.title}</option>
@@ -206,9 +206,9 @@ export function MatchesTable({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Round
-          <select value={roundFilter} onChange={(event) => setRoundFilter(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={roundFilter} onChange={(event) => setRoundFilter(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             {rounds.map((round) => (
               <option key={round} value={String(round)}>R{round}</option>
@@ -216,9 +216,9 @@ export function MatchesTable({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Status
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             <option value="pending">Pendente</option>
             <option value="in_progress">Em andamento</option>
@@ -227,18 +227,18 @@ export function MatchesTable({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Data
-          <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value as typeof dateFilter)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value as typeof dateFilter)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todas</option>
             <option value="7">7 dias</option>
             <option value="30">30 dias</option>
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Página
-          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
@@ -257,36 +257,36 @@ export function MatchesTable({
 
       <AdminModal open={createOpen} title="Criar partida" onClose={() => setCreateOpen(false)}>
         <div className="space-y-4">
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             Evento
-            <select value={newMatch.eventId} onChange={(event) => setNewMatch((prev) => ({ ...prev, eventId: event.target.value }))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
+            <select value={newMatch.eventId} onChange={(event) => setNewMatch((prev) => ({ ...prev, eventId: event.target.value }))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm">
               {events.map((event) => <option key={event.id} value={event.id}>{event.title}</option>)}
             </select>
           </label>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm text-slate-200">
+            <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
               Equipe A
-              <select value={newMatch.teamAId} onChange={(event) => setNewMatch((prev) => ({ ...prev, teamAId: event.target.value }))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
+              <select value={newMatch.teamAId} onChange={(event) => setNewMatch((prev) => ({ ...prev, teamAId: event.target.value }))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm">
                 {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm text-slate-200">
+            <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
               Equipe B
-              <select value={newMatch.teamBId} onChange={(event) => setNewMatch((prev) => ({ ...prev, teamBId: event.target.value }))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
+              <select value={newMatch.teamBId} onChange={(event) => setNewMatch((prev) => ({ ...prev, teamBId: event.target.value }))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm">
                 {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
               </select>
             </label>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm text-slate-200">
+            <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
               Round
-              <input type="number" min={1} value={newMatch.round} onChange={(event) => setNewMatch((prev) => ({ ...prev, round: Number(event.target.value) }))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm" />
+              <input type="number" min={1} value={newMatch.round} onChange={(event) => setNewMatch((prev) => ({ ...prev, round: Number(event.target.value) }))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm" />
             </label>
-            <label className="flex flex-col gap-1 text-sm text-slate-200">
+            <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
               Data agendada
-              <input type="datetime-local" value={newMatch.scheduledAt} onChange={(event) => setNewMatch((prev) => ({ ...prev, scheduledAt: event.target.value }))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm" />
+              <input type="datetime-local" value={newMatch.scheduledAt} onChange={(event) => setNewMatch((prev) => ({ ...prev, scheduledAt: event.target.value }))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm" />
             </label>
           </div>
 

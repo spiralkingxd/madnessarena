@@ -64,16 +64,16 @@ export default async function AdminMembersPage() {
 
   return (
     <section className="space-y-5">
-      <header className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Admin</p>
-        <h1 className="mt-1 inline-flex items-center gap-2 text-2xl font-bold text-white">
+      <header className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
+        <p className="text-xs uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Admin</p>
+        <h1 className="mt-1 inline-flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
           <Users className="h-6 w-6 text-cyan-300" />
           Gerenciamento de Membros
         </h1>
-        <p className="mt-2 text-sm text-slate-400">Administre roles, status e participação em equipes.</p>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Administre roles, status e participação em equipes.</p>
       </header>
 
-      <div className="space-y-12"> <div> <h2 className="mb-4 text-xl font-semibold text-white">Equipe de Administração</h2> <MembersTable rows={rows.filter(r => r.role === "admin" || r.role === "owner")} currentAdminId={adminProfile?.id ?? user?.id ?? ""} currentAdminRole={adminProfile?.role === "owner" ? "owner" : "admin"} /> </div> <div> <h2 className="mb-4 text-xl font-semibold text-white">Membros Comuns</h2> <MembersTable rows={rows.filter(r => r.role === "user")} currentAdminId={adminProfile?.id ?? user?.id ?? ""} currentAdminRole={adminProfile?.role === "owner" ? "owner" : "admin"} /> </div> </div>
+      <div className="space-y-12"> <div> <h2 className="mb-4 text-xl font-semibold text-slate-900 dark:text-white">Equipe de Administração</h2> <MembersTable rows={rows.filter(r => r.role === "admin" || r.role === "owner")} currentAdminId={adminProfile?.id ?? user?.id ?? ""} currentAdminRole={adminProfile?.role === "owner" ? "owner" : "admin"} /> </div> <div> <h2 className="mb-4 text-xl font-semibold text-slate-900 dark:text-white">Membros Comuns</h2> <MembersTable rows={rows.filter(r => r.role === "user")} currentAdminId={adminProfile?.id ?? user?.id ?? ""} currentAdminRole={adminProfile?.role === "owner" ? "owner" : "admin"} /> </div> </div>
     </section>
   );
 }

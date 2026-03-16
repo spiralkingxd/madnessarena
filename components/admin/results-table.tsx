@@ -124,23 +124,23 @@ export function ResultsTable({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-        <label className="flex min-w-[240px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-4">
+        <label className="flex min-w-[240px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Buscar equipe
-          <input value={search} onChange={(event) => setSearch(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100 outline-none" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none" />
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Evento
-          <select value={eventFilter} onChange={(event) => setEventFilter(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={eventFilter} onChange={(event) => setEventFilter(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             {events.map((event) => <option key={event.id} value={event.id}>{event.title}</option>)}
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Data
-          <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value as typeof dateFilter)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value as typeof dateFilter)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todas</option>
             <option value="7">7 dias</option>
             <option value="30">30 dias</option>
@@ -148,9 +148,9 @@ export function ResultsTable({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Página
-          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
@@ -159,18 +159,18 @@ export function ResultsTable({
       </div>
 
       <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-slate-200">Partidas finalizadas: <span className="font-semibold text-white">{stats.total}</span></div>
-        <div className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-slate-200">Eventos: <span className="font-semibold text-white">{stats.eventsCount}</span></div>
-        <div className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-slate-200">Gols totais: <span className="font-semibold text-white">{stats.goals}</span></div>
-        <div className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-slate-200">Média por partida: <span className="font-semibold text-white">{stats.avgGoals}</span></div>
+        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">Partidas finalizadas: <span className="font-semibold text-slate-900 dark:text-white">{stats.total}</span></div>
+        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">Eventos: <span className="font-semibold text-slate-900 dark:text-white">{stats.eventsCount}</span></div>
+        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">Gols totais: <span className="font-semibold text-slate-900 dark:text-white">{stats.goals}</span></div>
+        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">Média por partida: <span className="font-semibold text-slate-900 dark:text-white">{stats.avgGoals}</span></div>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <a href="/admin/results/export?format=csv" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/10">
+        <a href="/admin/results/export?format=csv" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-white/10">
           <Download className="h-4 w-4" />
           Exportar CSV
         </a>
-        <a href="/admin/results/export?format=json" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/10">
+        <a href="/admin/results/export?format=json" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-white/10">
           <Download className="h-4 w-4" />
           Exportar JSON
         </a>

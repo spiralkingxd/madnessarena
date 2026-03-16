@@ -164,7 +164,7 @@ export default async function AdminDashboardPage() {
 
       <section className="admin-surface space-y-4 rounded-2xl p-6">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">Alertas do Sistema</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Alertas do Sistema</h2>
           <Link href="/admin/teams" className="text-xs uppercase tracking-[0.14em] text-cyan-300 hover:text-cyan-200">
             Abrir gerenciamento
           </Link>
@@ -180,7 +180,7 @@ export default async function AdminDashboardPage() {
                 : "Nenhuma equipe abaixo de 2 membros."
             }
             action={
-              <Link href="/admin/teams" className="text-xs font-semibold text-cyan-200 hover:text-cyan-100">
+              <Link href="/admin/teams" className="text-xs font-semibold text-cyan-200 hover:text-cyan-900 dark:text-cyan-100">
                 Ver equipes
               </Link>
             }
@@ -195,7 +195,7 @@ export default async function AdminDashboardPage() {
                 : "Sem solicitacoes antigas pendentes."
             }
             action={
-              <Link href="/admin/teams" className="text-xs font-semibold text-cyan-200 hover:text-cyan-100">
+              <Link href="/admin/teams" className="text-xs font-semibold text-cyan-200 hover:text-cyan-900 dark:text-cyan-100">
                 Revisar
               </Link>
             }
@@ -210,7 +210,7 @@ export default async function AdminDashboardPage() {
                 : "Nenhuma partida atrasada identificada."
             }
             action={
-              <Link href="/admin/matches" className="text-xs font-semibold text-cyan-200 hover:text-cyan-100">
+              <Link href="/admin/matches" className="text-xs font-semibold text-cyan-200 hover:text-cyan-900 dark:text-cyan-100">
                 Abrir partidas
               </Link>
             }
@@ -225,7 +225,7 @@ export default async function AdminDashboardPage() {
                 : "Nenhum indicio relevante de contas duplicadas."
             }
             action={
-              <Link href="/admin/members" className="text-xs font-semibold text-cyan-200 hover:text-cyan-100">
+              <Link href="/admin/members" className="text-xs font-semibold text-cyan-200 hover:text-cyan-900 dark:text-cyan-100">
                 Auditar usuarios
               </Link>
             }
@@ -237,7 +237,7 @@ export default async function AdminDashboardPage() {
         <div className="xl:col-span-3">
           <section className="admin-surface space-y-4 rounded-2xl p-6">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-white">Atividades Recentes</h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Atividades Recentes</h2>
               <Link href="/admin/logs" className="text-xs uppercase tracking-[0.14em] text-cyan-300 hover:text-cyan-200">
             Ver trilha completa
           </Link>
@@ -245,40 +245,40 @@ export default async function AdminDashboardPage() {
 
         <div className="grid gap-4 xl:grid-cols-3">
           <div className="admin-surface-muted space-y-2 rounded-xl p-4">
-            <p className="text-xs uppercase tracking-[0.14em] text-slate-400">Ultimos 5 usuarios cadastrados</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Ultimos 5 usuarios cadastrados</p>
             <div className="space-y-2">
               {activity.latestUsers.length > 0 ? (
                 activity.latestUsers.map((item) => (
                   <ActivityItem key={item.id} icon={<UserPlus className="h-4 w-4" />} title={item.title} createdAt={item.createdAt} href={item.href} />
                 ))
               ) : (
-                <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-400">Sem registros.</p>
+                <p className="rounded-lg border border-slate-200 dark:border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-500 dark:text-slate-400">Sem registros.</p>
               )}
             </div>
           </div>
 
           <div className="admin-surface-muted space-y-2 rounded-xl p-4">
-            <p className="text-xs uppercase tracking-[0.14em] text-slate-400">Ultimas 3 equipes criadas</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Ultimas 3 equipes criadas</p>
             <div className="space-y-2">
               {activity.latestTeams.length > 0 ? (
                 activity.latestTeams.map((item) => (
                   <ActivityItem key={item.id} icon={<Shield className="h-4 w-4" />} title={item.title} createdAt={item.createdAt} href={item.href} />
                 ))
               ) : (
-                <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-400">Sem registros.</p>
+                <p className="rounded-lg border border-slate-200 dark:border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-500 dark:text-slate-400">Sem registros.</p>
               )}
             </div>
           </div>
 
           <div className="admin-surface-muted space-y-2 rounded-xl p-4">
-            <p className="text-xs uppercase tracking-[0.14em] text-slate-400">Ultimas 5 acoes administrativas</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Ultimas 5 acoes administrativas</p>
             <div className="space-y-2">
               {activity.latestAdminActions.length > 0 ? (
                 activity.latestAdminActions.map((item) => (
                   <ActivityItem key={item.id} icon={<AlertCircle className="h-4 w-4" />} title={item.title} createdAt={item.createdAt} href={item.href} />
                 ))
               ) : (
-                <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-400">Sem registros.</p>
+                <p className="rounded-lg border border-slate-200 dark:border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-500 dark:text-slate-400">Sem registros.</p>
               )}
             </div>
           </div>

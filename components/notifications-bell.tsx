@@ -146,27 +146,27 @@ export function NotificationsBell() {
       {toast && (
         <div className="fixed bottom-4 right-4 z-[999] bg-[#0b141e] rounded-xl pr-2 flex items-center shadow-xl">
            <ActionToast message={toast.message} tone={toast.tone} />
-           <button onClick={() => setToast(null)} className="ml-2 rounded-md p-1 hover:bg-white/10 text-white"><X className="h-4 w-4" /></button>
+           <button onClick={() => setToast(null)} className="ml-2 rounded-md p-1 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-900 dark:text-white"><X className="h-4 w-4" /></button>
         </div>
       )}
 
       <button
         onClick={handleToggle}
-        className="relative rounded-full p-2 text-slate-400 transition hover:bg-white/10 hover:text-slate-100"
+        className="relative rounded-full p-2 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-100"
         aria-label="Notificações"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white">
+          <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-slate-900 dark:text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[120%] z-50 w-80 sm:w-96 rounded-2xl border border-white/10 bg-[#0b141e]/95 p-4 shadow-xl shadow-black/50 backdrop-blur-xl">
+        <div className="absolute right-0 top-[120%] z-50 w-80 sm:w-96 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0b141e]/95 p-4 shadow-xl shadow-black/50 backdrop-blur-xl">
           <div className="flex items-center justify-between border-b border-white/5 pb-3">
-            <h3 className="text-sm font-bold text-white">Notificações</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Notificações</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
@@ -197,11 +197,11 @@ export function NotificationsBell() {
                     key={notif.id}
                     className={cn(
                       "group relative flex flex-col gap-2 rounded-xl p-3 text-left transition",
-                      notif.read ? "opacity-70 hover:opacity-100" : "bg-white/5"
+                      notif.read ? "opacity-70 hover:opacity-100" : "bg-slate-100 dark:bg-white/5"
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="shrink-0 rounded-full bg-white/5 p-2">
+                      <div className="shrink-0 rounded-full bg-slate-100 dark:bg-white/5 p-2">
                          {isInvite ? (
                            <Users className="h-4 w-4 text-emerald-400" />
                          ) : isDanger ? (

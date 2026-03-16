@@ -110,7 +110,7 @@ export function DeleteUserAccountControl({
 
       <AdminModal open={open} title="Deletar Conta de Usuario" onClose={() => (!isPending ? setOpen(false) : null)}>
         <div className="space-y-4">
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/20 p-3">
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white dark:bg-black/20 p-3">
             {target.avatarUrl ? (
               <img src={target.avatarUrl} alt={displayName} className="h-12 w-12 rounded-full border border-slate-300 dark:border-white/20 object-cover" />
             ) : (
@@ -134,24 +134,24 @@ export function DeleteUserAccountControl({
             <p className="text-sm">Equipes vinculadas podem ser transferidas ou dissolvidas.</p>
           </div>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs uppercase tracking-[0.12em] text-slate-400">Confirmacao</span>
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Confirmacao</span>
             <input
               value={confirmation}
               onChange={(event) => setConfirmation(event.target.value)}
               placeholder={`Digite ${expectedLabel}`}
-              className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100 outline-none"
+              className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs uppercase tracking-[0.12em] text-slate-400">Motivo (opcional)</span>
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Motivo (opcional)</span>
             <textarea
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               rows={3}
               placeholder={reasonPlaceholder}
-              className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100 outline-none"
+              className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none"
             />
           </label>
 

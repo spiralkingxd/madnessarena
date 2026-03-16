@@ -69,7 +69,7 @@ export function AdminTable<T>({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={cn("px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-400", column.className)}
+                  className={cn("px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400", column.className)}
                 >
                   {column.sortable ? (
                     <button
@@ -92,7 +92,7 @@ export function AdminTable<T>({
               visible.map((row, idx) => (
                 <tr key={idx} className="hover:bg-white/6">
                   {columns.map((column) => (
-                    <td key={column.key} className={cn("px-4 py-3 text-sm text-slate-200", column.className)}>
+                    <td key={column.key} className={cn("px-4 py-3 text-sm text-slate-700 dark:text-slate-200", column.className)}>
                       {column.render(row)}
                     </td>
                   ))}
@@ -100,7 +100,7 @@ export function AdminTable<T>({
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-slate-400">
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
                   {emptyText}
                 </td>
               </tr>
@@ -109,8 +109,8 @@ export function AdminTable<T>({
         </table>
       </div>
 
-      <div className="flex items-center justify-between border-t border-white/10 px-4 py-3">
-        <p className="text-xs text-slate-400">
+      <div className="flex items-center justify-between border-t border-slate-200 dark:border-white/10 px-4 py-3">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Página {safePage} de {totalPages}
         </p>
         <div className="flex items-center gap-2">

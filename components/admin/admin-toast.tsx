@@ -57,7 +57,7 @@ function ToastView({ toast, onClose }: { toast: ToastItem; onClose: () => void }
       ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-100"
       : toast.tone === "error"
         ? "border-rose-300/30 bg-rose-300/10 text-rose-100"
-        : "border-cyan-300/30 bg-cyan-300/10 text-cyan-100";
+        : "border-cyan-300/30 bg-cyan-100 dark:bg-cyan-300/10 text-cyan-900 dark:text-cyan-100";
 
   return (
     <div className={`pointer-events-auto rounded-xl border px-3 py-2.5 text-sm shadow-xl ${classes}`}>

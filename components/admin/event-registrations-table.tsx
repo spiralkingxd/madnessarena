@@ -88,8 +88,8 @@ export function EventRegistrationsTable({
       accessor: (row) => row.team_name,
       render: (row) => (
         <div>
-          <p className="font-medium text-slate-100">{row.team_name}</p>
-          <p className="text-xs text-slate-400">Capitão: {row.captain_name}</p>
+          <p className="font-medium text-slate-800 dark:text-slate-100">{row.team_name}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Capitão: {row.captain_name}</p>
         </div>
       ),
     },
@@ -114,7 +114,7 @@ export function EventRegistrationsTable({
       header: "Origem",
       sortable: true,
       accessor: (row) => row.source,
-      render: (row) => <span className="text-xs text-slate-300">{row.source === "wildcard" ? "Wildcard" : "Equipe"}</span>,
+      render: (row) => <span className="text-xs text-slate-600 dark:text-slate-300">{row.source === "wildcard" ? "Wildcard" : "Equipe"}</span>,
     },
     {
       key: "created",
@@ -147,7 +147,7 @@ export function EventRegistrationsTable({
           {row.status !== "rejected" ? (
             <button
               type="button"
-              className="rounded-lg border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs text-amber-100 hover:bg-amber-300/20"
+              className="rounded-lg border border-amber-300/30 bg-amber-100 dark:bg-amber-300/10 px-2 py-1 text-xs text-amber-900 dark:text-amber-100 hover:bg-amber-300/20"
               onClick={() => {
                 setReasonModal({ teamId: row.team_id, bulk: false });
                 setReason(row.rejection_reason ?? "Fora dos critérios do evento.");
@@ -198,15 +198,15 @@ export function EventRegistrationsTable({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-        <label className="flex min-w-[240px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-4">
+        <label className="flex min-w-[240px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Buscar equipe
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Equipe ou capitão" className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100 outline-none" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Equipe ou capitão" className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none" />
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Status
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             <option value="pending">Pendentes</option>
             <option value="approved">Aprovadas</option>
@@ -215,9 +215,9 @@ export function EventRegistrationsTable({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Página
-          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
@@ -242,16 +242,16 @@ export function EventRegistrationsTable({
           <Download className="h-4 w-4" />
           Exportar CSV
         </AdminButton>
-        <span className="self-center text-xs text-slate-400">Selecionados: {selectedIds.length}</span>
+        <span className="self-center text-xs text-slate-500 dark:text-slate-400">Selecionados: {selectedIds.length}</span>
       </div>
 
       <AdminTable data={filtered} columns={columns} pageSize={pageSize} emptyText="Nenhuma inscrição encontrada." />
 
       <AdminModal open={reasonModal.teamId !== null || reasonModal.bulk} title="Rejeitar inscrição" onClose={() => setReasonModal({ teamId: null, bulk: false })}>
         <div className="space-y-4">
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs uppercase tracking-[0.12em] text-slate-400">Motivo</span>
-            <textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={4} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none" />
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Motivo</span>
+            <textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={4} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
           </label>
           <div className="flex justify-end gap-3">
             <AdminButton type="button" variant="ghost" onClick={() => setReasonModal({ teamId: null, bulk: false })}>
@@ -281,9 +281,9 @@ export function EventRegistrationsTable({
 
       <AdminModal open={wildcardOpen} title="Adicionar equipe manualmente" onClose={() => setWildcardOpen(false)}>
         <div className="space-y-4">
-          <label className="flex flex-col gap-1 text-sm text-slate-200">
-            <span className="text-xs uppercase tracking-[0.12em] text-slate-400">Equipe</span>
-            <select value={wildcardTeamId} onChange={(event) => setWildcardTeamId(event.target.value)} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Equipe</span>
+            <select value={wildcardTeamId} onChange={(event) => setWildcardTeamId(event.target.value)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
               {availableTeams.map((team) => (
                 <option key={team.id} value={team.id}>{team.name} · {team.captain_name}</option>
               ))}
@@ -312,7 +312,7 @@ export function EventRegistrationsTable({
 
       <AdminModal open={Boolean(deleteTarget)} title="Remover inscrição" onClose={() => setDeleteTarget(null)}>
         <div className="space-y-4">
-          <p className="text-sm text-slate-300">A equipe será removida da lista de inscritos deste evento.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">A equipe será removida da lista de inscritos deste evento.</p>
           <p className="rounded-xl border border-rose-300/20 bg-rose-300/10 px-4 py-3 text-sm text-rose-100">
             {deleteTarget?.team_name}
           </p>

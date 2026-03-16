@@ -36,10 +36,10 @@ export function RichTextEditor({
   }, [value]);
 
   return (
-    <label className="flex flex-col gap-2 text-sm text-slate-200">
-      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</span>
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
-        <div className="flex flex-wrap gap-1 border-b border-white/10 p-2">
+    <label className="flex flex-col gap-2 text-sm text-slate-700 dark:text-slate-200">
+      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{label}</span>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20">
+        <div className="flex flex-wrap gap-1 border-b border-slate-200 dark:border-white/10 p-2">
           {[
             { icon: <Bold className="h-4 w-4" />, command: "bold", title: "Negrito" },
             { icon: <Italic className="h-4 w-4" />, command: "italic", title: "Itálico" },
@@ -51,7 +51,7 @@ export function RichTextEditor({
               key={item.title}
               type="button"
               title={item.title}
-              className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:bg-white/10"
+              className="rounded-lg border border-slate-200 dark:border-white/10 bg-white/5 p-2 text-slate-700 dark:text-slate-200 transition hover:bg-white/10"
               onClick={() => {
                 if (item.command === "formatBlock") {
                   const doc = document as Document & {
@@ -73,7 +73,7 @@ export function RichTextEditor({
           contentEditable
           suppressContentEditableWarning
           className={cn(
-            "prose prose-invert max-w-none px-4 py-3 text-sm text-slate-100 outline-none",
+            "prose prose-invert max-w-none px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none",
             !value && "empty:before:text-slate-500 empty:before:content-[attr(data-placeholder)]",
           )}
           data-placeholder={placeholder ?? "Digite aqui..."}

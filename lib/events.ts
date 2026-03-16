@@ -107,3 +107,11 @@ export function toDatetimeLocalValue(value: string | null | undefined) {
   const local = new Date(date.getTime() - offset * 60_000);
   return local.toISOString().slice(0, 16);
 }
+
+
+export function getTeamSizeLabel(size: number): string {
+  if (size === 1 || size === 2) return `Chalupa ${size}v${size}`;
+  if (size === 3) return `Bergantim ${size}v${size}`;
+  if (size === 4) return `Galeão ${size}v${size}`;
+  return `${size}v${size}`;
+}

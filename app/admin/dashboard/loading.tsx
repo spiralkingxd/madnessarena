@@ -1,9 +1,9 @@
 function SkeletonCard() {
-  return <div className="h-36 animate-pulse rounded-2xl border border-white/10 bg-slate-900/60" />;
+  return <div className="h-36 animate-pulse rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-900/60" />;
 }
 
 function SkeletonPanel({ heightClass }: { heightClass: string }) {
-  return <div className={`${heightClass} animate-pulse rounded-2xl border border-white/10 bg-slate-900/60`} />;
+  return <div className={`${heightClass} animate-pulse rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-900/60`} />;
 }
 
 export default function LoadingDashboard() {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, Shield, ShieldCheck, UserCheck, UserCog } from "lucide-react";
+import { Ban, Shield, Eye, EyeOff, ShieldCheck, UserCheck, UserCog } from "lucide-react";
 
 import { banUser, bulkManageMembers, unbanUser, updateUserRole } from "@/app/admin/member-actions";
 import { AdminBadge } from "@/components/admin/admin-badge";
@@ -49,6 +49,7 @@ export function MembersTable({
   const [tableRows, setTableRows] = useState<MemberRow[]>(rows);
 
   const [search, setSearch] = useState("");
+  const [showEmails, setShowEmails] = useState(false);
   const [roleFilter, setRoleFilter] = useState<"all" | MemberRow["role"]>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "banned">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "7" | "30">("all");
@@ -104,7 +105,7 @@ export function MembersTable({
             type="checkbox"
             checked={Boolean(selected[row.id])}
             onChange={(e) => setSelected((prev) => ({ ...prev, [row.id]: e.target.checked }))}
-            className="h-4 w-4 rounded border-white/20 bg-black/20"
+            className="h-4 w-4 rounded border-white/20 bg-slate-100 dark:bg-black/20"
             aria-label={`Selecionar ${row.display_name}`}
           />
         ),
@@ -116,8 +117,8 @@ export function MembersTable({
         accessor: (row) => row.display_name,
         render: (row) => (
           <div className="flex flex-col">
-            <span className="font-medium text-slate-100">{row.display_name}</span>
-            <span className="text-xs text-slate-400">@{row.username}</span>
+            <span className="font-medium text-slate-800 dark:text-slate-100">{row.display_name}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">@{row.username}</span>
           </div>
         ),
       },
@@ -126,7 +127,7 @@ export function MembersTable({
         header: "Email",
         sortable: true,
         accessor: (row) => row.email ?? "",
-        render: (row) => <span className="text-xs text-slate-300">{row.email ?? "-"}</span>,
+        render: (row) => <span className="text-xs text-slate-600 dark:text-slate-300">{row.email ? (showEmails ? row.email : row.email.substring(0,3) + "***@***.com") : "-"}</span>,
       },
       {
         key: "role",
@@ -183,7 +184,7 @@ export function MembersTable({
             {row.role === "user" ? (
               <button
                 type="button"
-                className="rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-2 py-1 text-xs text-cyan-100 hover:bg-cyan-300/20"
+                className="rounded-lg border border-cyan-300/30 bg-cyan-100 dark:bg-cyan-300/10 px-2 py-1 text-xs text-cyan-900 dark:text-cyan-100 hover:bg-cyan-300/20"
                 onClick={() =>
                   startTransition(async () => {
                     const result = await updateUserRole(row.id, "admin");
@@ -199,7 +200,7 @@ export function MembersTable({
             {row.role === "admin" ? (
               <button
                 type="button"
-                className="rounded-lg border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs text-amber-100 hover:bg-amber-300/20"
+                className="rounded-lg border border-amber-300/30 bg-amber-100 dark:bg-amber-300/10 px-2 py-1 text-xs text-amber-900 dark:text-amber-100 hover:bg-amber-300/20"
                 onClick={() =>
                   startTransition(async () => {
                     const result = await updateUserRole(row.id, "user");
@@ -303,20 +304,20 @@ export function MembersTable({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-        <label className="flex min-w-[240px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-4">
+        <label className="flex min-w-[240px] flex-1 flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Buscar
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Nome, username, Discord ID, email ou Xbox"
-            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100 outline-none"
+            className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none"
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Role
-          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todas</option>
             <option value="user">User</option>
             <option value="admin">Admin</option>
@@ -324,27 +325,27 @@ export function MembersTable({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Status
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todos</option>
             <option value="active">Ativo</option>
             <option value="banned">Banido</option>
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Data
-          <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value="all">Todas</option>
             <option value="7">Ultimos 7 dias</option>
             <option value="30">Ultimos 30 dias</option>
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-400">
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
           Pagina
-          <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-100">
+          <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
@@ -389,7 +390,7 @@ export function MembersTable({
         >
           Exportar JSON
         </AdminButton>
-        <span className="text-xs text-slate-400">Selecionados: {selectedIds.length}</span>
+        <span className="text-xs text-slate-500 dark:text-slate-400">Selecionados: {selectedIds.length}</span>
       </div>
 
       <AdminTable data={filtered} columns={columns} pageSize={pageSize} emptyText="Nenhum membro encontrado." />

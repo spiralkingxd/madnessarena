@@ -167,13 +167,13 @@ export default async function AdminRankingsPage() {
 
   return (
     <section className="space-y-5">
-      <header className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Admin</p>
+      <header className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-6">
+        <p className="text-xs uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Admin</p>
         <div className="mt-2 flex items-center gap-3">
           <Trophy className="h-6 w-6 text-amber-300" />
-          <h1 className="text-2xl font-bold text-white">Gerenciamento de Rankings</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Gerenciamento de Rankings</h1>
         </div>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Controle completo de rankings de jogadores e equipes, com ajustes manuais e gestão de temporadas.
         </p>
       </header>
