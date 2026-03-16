@@ -55,9 +55,9 @@ export function GlobalSearch({ dict }: { dict?: any }) {
   };
 
   const parseQueryForFilter = (text: string) => {
-    if (text.startsWith("user:")) {
+    if (text.startsWith("usuario:") || text.startsWith("user:")) {
       setFilter("user");
-      setQuery(text.replace("user:", ""));
+      setQuery(text.replace("usuario:", "").replace("user:", ""));
     } else if (text.startsWith("torneio:")) {
       setFilter("tournament");
       setQuery(text.replace("torneio:", ""));
@@ -94,7 +94,7 @@ export function GlobalSearch({ dict }: { dict?: any }) {
           
           {filter !== "all" && (
             <span className="flex shrink-0 items-center justify-center bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ml-2">
-              {filter === "user" ? "user:" : filter === "tournament" ? "torneio:" : "equipe:"}
+              {filter === "user" ? "usuario:" : filter === "tournament" ? "torneio:" : "equipe:"}
               <button 
                 onClick={(e) => { e.stopPropagation(); setFilter("all"); inputRef.current?.focus(); }}
                 className="ml-1 hover:text-red-500"
@@ -110,7 +110,7 @@ export function GlobalSearch({ dict }: { dict?: any }) {
             placeholder={
               filter === "all"
                 ? (isOpen
-                    ? (dict?.search?.placeholderOpen ?? "Buscar... (ex: user:)")
+                    ? (dict?.search?.placeholderOpen ?? "Buscar... (ex: usuario:)")
                     : (dict?.search?.placeholder ?? "Buscar..."))
                 : ""
             }
@@ -201,7 +201,7 @@ export function GlobalSearch({ dict }: { dict?: any }) {
                     >
                       <User className="h-4 w-4 text-slate-500" />
                       De um usuário específico 
-                      <span className="ml-auto text-xs text-slate-400 font-mono">user:</span>
+                      <span className="ml-auto text-xs text-slate-400 font-mono">usuario:</span>
                     </button>
                     <button 
                       onClick={() => { setFilter("tournament"); inputRef.current?.focus(); }}

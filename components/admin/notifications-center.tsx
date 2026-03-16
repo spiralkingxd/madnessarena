@@ -429,7 +429,7 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
         </article>
       </div>
 
-      <article className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
+      <article id="custom-in-app" className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
         <h2 className="mb-3 text-lg font-semibold text-white">Historico de notificacoes</h2>
         <AdminTable data={history} columns={columns} pageSize={25} emptyText="Nenhuma notificacao registrada." />
       </article>

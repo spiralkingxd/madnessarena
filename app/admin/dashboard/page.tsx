@@ -310,6 +310,12 @@ export default async function AdminDashboardPage() {
               Revisar solicitacoes
             </AdminButton>
           </Link>
+          <Link href="/admin/notifications#custom-in-app">
+            <AdminButton type="button" variant="ghost">
+              <AlertCircle className="h-4 w-4" />
+              Notificação personalizada
+            </AdminButton>
+          </Link>
         </div>
       </section>
     </section>

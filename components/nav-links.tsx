@@ -21,7 +21,6 @@ export function NavLinks({ dict }: { dict: any }) {
       isDropdown: true,
       children: [
         { href: "/teams", label: dict?.navlinks?.viewTeams ?? "Ver Equipes" },
-        { href: "/my-team", label: dict?.navlinks?.myTeams ?? "Minhas Equipes" },
         { href: "/regras", label: dict?.navlinks?.rules ?? "Regras" },
       ],
     },

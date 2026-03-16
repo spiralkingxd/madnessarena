@@ -67,18 +67,20 @@ function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, syst
           <span className="rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
             {(dict?.teams?.teamsCountLabel || "Equipes")} ({teamsCount}/1)
           </span>
-          <button
-            type="button"
-            title={reachedLimit ? (dict?.teams?.teamLimitReached || "Você já participa de uma equipe") : (dict?.teams?.createTeam || "Fundar nova equipe")}
-            disabled={reachedLimit || isLaunching}
-            onClick={() => {
-              startTransition(() => setOpen(true));
-            }}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4" />
-            {isLaunching ? "..." : (dict?.teams?.createTeam || "Fundar nova equipe")}
-          </button>
+          {!shouldShowTeamChoice ? (
+            <button
+              type="button"
+              title={reachedLimit ? (dict?.teams?.teamLimitReached || "Você já participa de uma equipe") : (dict?.teams?.createTeam || "Fundar nova equipe")}
+              disabled={reachedLimit || isLaunching}
+              onClick={() => {
+                startTransition(() => setOpen(true));
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" />
+              {isLaunching ? "..." : (dict?.teams?.createTeam || "Fundar nova equipe")}
+            </button>
+          ) : null}
         </div>
       </div>
 
