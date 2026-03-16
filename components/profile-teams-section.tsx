@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Anchor, Plus, Shield, Swords, Users } from "lucide-react";
@@ -21,23 +22,21 @@ type Props = {
   userId: string;
   userXboxGamertag: string | null;
   teams: UserTeamCard[];
-  teamsError?: string | null;
+  teamsError?: string | null; systemMaxMembers?: number;
 };
 
 const teamDateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "medium" });
 
-export function ProfileTeamsSection({ userId, userXboxGamertag, teams, teamsError }: Props) {
+function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, systemMaxMembers = 10 }: Props) {
   const [open, setOpen] = useState(false);
   const [isLaunching, startTransition] = useTransition();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const sp = new URLSearchParams(window.location.search);
-      if (sp.get("action") === "new-team") {
-        setOpen(true);
-      }
+    if (searchParams.get("action") === "new-team") {
+      setOpen(true);
     }
-  }, []);
+  }, [searchParams]);
 
   const teamsCount = teams.length;
   const reachedLimit = teamsCount >= 1;
@@ -97,7 +96,7 @@ export function ProfileTeamsSection({ userId, userXboxGamertag, teams, teamsErro
                 className="group rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/4 p-4 transition hover:border-amber-400/50 dark:hover:border-amber-400/30 hover:bg-amber-50 dark:hover:bg-amber-400/6"
               >
                 <div className="flex items-start gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"> {team.logo_url ? ( <img src={team.logo_url} alt={team.name} className="h-full w-full object-cover" /> ) : ( <Anchor className="h-5 w-5 text-amber-400/70" /> )} </span>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"> {team.logo_url ? ( <img src={team.logo_url} alt={team.name} className="h-full w-full object-contain bg-black/10 dark:bg-black/40" /> ) : ( <Anchor className="h-5 w-5 text-amber-400/70" /> )} </span>
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white">
@@ -141,8 +140,16 @@ export function ProfileTeamsSection({ userId, userXboxGamertag, teams, teamsErro
         </div>
       )}
 
-      {open ? <CreateTeamModal userId={userId} userXboxGamertag={userXboxGamertag} hasReachedTeamLimit={reachedLimit} onClose={() => setOpen(false)} /> : null}
+      {open ? <CreateTeamModal userId={userId} userXboxGamertag={userXboxGamertag} hasReachedTeamLimit={reachedLimit} onClose={() => setOpen(false)} systemMaxMembers={systemMaxMembers} /> : null}
     </section>
+  );
+}
+
+export function ProfileTeamsSection(props: Props) {
+  return (
+    <Suspense fallback={<div className="h-40 rounded-3xl md:col-span-2 xl:col-span-3 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/60 p-6 flex items-center justify-center">Carregando equipes...</div>}>
+      <ProfileTeamsContent {...props} />
+    </Suspense>
   );
 }
 

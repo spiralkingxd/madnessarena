@@ -780,7 +780,7 @@ export async function getBans(filters?: {
 
 export async function updateBanDuration(banId: string, durationDays: number | null): Promise<ActionResult> {
   const parsed = updateBanDurationSchema.safeParse({ banId, durationDays });
-  if (!parsed.success) return { error: "Dados invÃ¡lidos." };
+  if (!parsed.success) return { error: "Dados invÝ¡lidos." };
 
   try {
     const { supabase, adminId } = await assertAdminAccess();
@@ -795,14 +795,14 @@ export async function updateBanDuration(banId: string, durationDays: number | nu
       .eq("id", parsed.data.banId)
       .maybeSingle<{ id: string; user_id: string; duration: number | null; expires_at: string | null }>();
 
-    if (!banRow) return { error: "Banimento nÃ£o encontrado." };
+    if (!banRow) return { error: "Banimento nÝ£o encontrado." };
 
     const { error } = await supabase
       .from("bans")
       .update({ duration: parsed.data.durationDays, expires_at: expiresAt })
       .eq("id", parsed.data.banId);
 
-    if (error) return { error: "Falha ao atualizar duraÃ§Ã£o." };
+    if (error) return { error: "Falha ao atualizar duraÝ§Ý£o." };
 
     await logAdminTables(supabase, {
       adminId,
@@ -814,9 +814,9 @@ export async function updateBanDuration(banId: string, durationDays: number | nu
     });
 
     revalidateMemberPaths(banRow.user_id);
-    return { success: "DuraÃ§Ã£o atualizada com sucesso." };
+    return { success: "DuraÝ§Ý£o atualizada com sucesso." };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Falha ao atualizar duraÃ§Ã£o." };
+    return { error: error instanceof Error ? error.message : "Falha ao atualizar duraÝ§Ý£o." };
   }
 }
 

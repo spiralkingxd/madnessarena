@@ -6,6 +6,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { unstable_cache } from "next/cache";
+import { getDictionary } from "@/lib/i18n";
 
 type TeamListRow = {
   id: string;
@@ -109,6 +110,7 @@ async function getData() {
 }
 
 export default async function TeamsPage() {
+  const dict = await getDictionary();
   const { teams, userId } = await getData();
 
   return (
@@ -119,13 +121,13 @@ export default async function TeamsPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300/80">
-              Equipes
+              {dict.teams.badge}
             </p>
-            <h1 className="mt-1 text-3xl font-bold text-white">Tripulações da Arena</h1>
+            <h1 className="mt-1 text-3xl font-bold text-white">{dict.teams.title}</h1>
             <p className="mt-2 text-sm text-slate-400">
               {teams.length > 0
                 ? `${teams.length} equipe${teams.length !== 1 ? "s" : ""} registrada${teams.length !== 1 ? "s" : ""}`
-                : "Nenhuma equipe cadastrada ainda"}
+                : "{dict.teams.empty}"}
             </p>
           </div>
         </div>
@@ -162,7 +164,7 @@ export default async function TeamsPage() {
                       </p>
                       <p className="mt-1 flex items-center gap-1 text-xs text-slate-400">
                         <Crown className="h-3 w-3" />
-                        Capitão: {team.captain?.display_name ?? "Não identificado"}
+                        {dict.teams.captain}: {team.captain?.display_name ?? "Unknown"}
                       </p>
                       <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
                         <Calendar className="h-3 w-3" />
@@ -172,11 +174,11 @@ export default async function TeamsPage() {
                       <div className="mt-3 flex items-center gap-2">
                         {team.is_user_member ? (
                           <span className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-200">
-                            Sua equipe
+                            Your team
                           </span>
                         ) : null}
                         <span className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-300">
-                          {userId && !team.is_user_member ? "Solicitar entrada" : "Ver equipe"}
+                          {userId && !team.is_user_member ? "Request Join" : "View Team"}
                         </span>
                       </div>
                     </div>
@@ -188,7 +190,7 @@ export default async function TeamsPage() {
             <div className="rounded-2xl border border-dashed border-white/10 px-6 py-16 text-center">
               <Anchor className="mx-auto h-10 w-10 text-slate-500" />
               <p className="mt-4 text-sm text-slate-400">
-                Nenhuma equipe ainda. Seja o primeiro a fundar uma!
+                {dict.teams.empty}
               </p>
             </div>
           )}

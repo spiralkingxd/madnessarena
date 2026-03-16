@@ -8,6 +8,7 @@ import { formatTeamSize } from "@/lib/events";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cn } from "@/lib/utils";
+import { getDictionary } from "@/lib/i18n";
 
 type EventRow = {
   id: string;
@@ -69,6 +70,7 @@ async function getEventsData(status: StatusFilter | null) {
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function EventsPage({ searchParams }: Props) {
+  const dict = await getDictionary();
   const params = await searchParams;
   const rawStatus = Array.isArray(params.status) ? params.status[0] : params.status;
   const status = VALID_STATUSES.includes(rawStatus as StatusFilter)
@@ -87,27 +89,26 @@ export default async function EventsPage({ searchParams }: Props) {
         <div className="relative mx-auto flex max-w-7xl flex-col gap-6 px-6 py-14 lg:px-10 lg:py-20">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-400/25 bg-amber-400/8 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.25em] text-amber-300">
             <Trophy className="h-3.5 w-3.5" />
-            Competições Oficiais
+            {dict.events.badge}
           </div>
 
           <div>
             <h1 className="text-4xl font-extrabold tracking-tight text-white lg:text-5xl">
-              Torneios da Arena
+              {dict.events.title}
             </h1>
             <p className="mt-3 max-w-xl text-base text-slate-400">
-              Todos os torneios de Sea of Thieves organizados pela MadnessArena.
-              Inscreva sua equipe e compita pela glória dos mares.
+              {dict.events.desc}
             </p>
           </div>
 
           {/* Stats strip */}
           <div className="flex flex-wrap gap-3">
             {[
-              { label: "Total", value: stats.total, color: "text-white" },
-              { label: "Em andamento", value: stats.active, color: "text-emerald-400" },
-              { label: "Publicados", value: stats.upcoming, color: "text-amber-400" },
-              { label: "Pausados", value: stats.paused, color: "text-sky-400" },
-              { label: "Finalizados", value: stats.finished, color: "text-slate-400" },
+              { label: dict.events.stats.total, value: stats.total, color: "text-white" },
+              { label: dict.events.stats.active, value: stats.active, color: "text-emerald-400" },
+              { label: dict.events.stats.published, value: stats.upcoming, color: "text-amber-400" },
+              { label: dict.events.stats.paused, value: stats.paused, color: "text-sky-400" },
+              { label: dict.events.stats.finished, value: stats.finished, color: "text-slate-400" },
             ]
               .filter(({ label, value }) => Number(value) > 0 || label === "Total")
               .map(({ label, value, color }) => (
@@ -167,7 +168,7 @@ export default async function EventsPage({ searchParams }: Props) {
                   </span>
                   {event.end_date && (
                     <span className="flex items-center gap-1">
-                      até {fmt.format(new Date(event.end_date))}
+                      until {fmt.format(new Date(event.end_date))}
                     </span>
                   )}
                   <span className="rounded-full border border-white/10 px-2 py-1 text-[11px] text-slate-400">
@@ -198,18 +199,18 @@ export default async function EventsPage({ searchParams }: Props) {
         ) : (
           <div className="rounded-2xl border border-dashed border-white/10 px-6 py-24 text-center">
             <Search className="mx-auto h-10 w-10 text-slate-600" />
-            <p className="mt-4 font-semibold text-slate-400">Nenhum torneio encontrado</p>
+            <p className="mt-4 font-semibold text-slate-400">{dict.events.noTournament}</p>
             <p className="mt-1 text-sm text-slate-600">
               {status
                 ? `Nenhum evento com status "${STATUS_LABELS[status]}" encontrado.`
-                : "Nenhum evento cadastrado ainda."}
+                : "{dict.events.noEventYet}"}
             </p>
             {status && (
               <Link
                 href="/events"
                 className="mt-5 inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/8"
               >
-                Limpar filtro
+                {dict.events.clearFilter}
               </Link>
             )}
           </div>

@@ -6,6 +6,7 @@ import { Calendar, Trophy, Target, Clock, AtSign, Crown, Shield } from "lucide-r
 
 import { createClient } from "@/lib/supabase/server";
 import { XboxStatusTag } from "@/components/xbox-status-tag";
+import { getDictionary } from "@/lib/i18n";
 
 type PublicProfile = {
   id: string;
@@ -27,6 +28,7 @@ type PublicProfile = {
 type Props = { params: Promise<{ id: string }> };
 
 export default async function PublicProfilePage({ params }: Props) {
+  const dict = await getDictionary();
   const { id } = await params;
   const supabase = await createClient();
 
@@ -49,7 +51,7 @@ export default async function PublicProfilePage({ params }: Props) {
           href="/"
           className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-slate-200"
         >
-          ← Voltar para o início
+          {dict.profile.backHome}
         </Link>
 
         <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 shadow-xl dark:shadow-2xl dark:shadow-black/40 backdrop-blur-sm">
@@ -114,11 +116,11 @@ export default async function PublicProfilePage({ params }: Props) {
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">@{profile.username}</span>
             </InfoCard>
 
-            <InfoCard icon={<Calendar className="h-4 w-4 text-cyan-400" />} label="Membro desde">
+            <InfoCard icon={<Calendar className="h-4 w-4 text-cyan-400" />} label="{dict.profile.memberSince}">
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{memberSince}</span>
             </InfoCard>
 
-            <InfoCard icon={<Clock className="h-4 w-4 text-cyan-400" />} label="Última atividade">
+            <InfoCard icon={<Clock className="h-4 w-4 text-cyan-400" />} label="{dict.profile.lastActivity}">
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {profile.updated_at ? new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(profile.updated_at)) : "--"}
               </span>
@@ -127,11 +129,11 @@ export default async function PublicProfilePage({ params }: Props) {
 
           {/* Info grid - Stats Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-slate-200 dark:sm:divide-white/5">
-            <InfoCard icon={<Target className="h-4 w-4 text-emerald-400" />} label="Pontos de Liga">
+            <InfoCard icon={<Target className="h-4 w-4 text-emerald-400" />} label="{dict.profile.leaguePoints}">
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{profile.rankings?.[0]?.points || 0}</span>
             </InfoCard>
 
-            <InfoCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label="Torneios Ganhos">
+            <InfoCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label="{dict.profile.tournamentsWon}">
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{profile.rankings?.[0]?.wins || 0}</span>
             </InfoCard>
           </div>

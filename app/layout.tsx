@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { Navbar } from "@/components/navbar";
 import NextTopLoader from "nextjs-toploader";
+import { getLocale } from "@/lib/i18n";
 
 import "./globals.css";
 
@@ -19,10 +20,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   icons: { icon: '/icon.ico' },
   title: "Madness Arena",
-  description: "Gerenciamento de torneios competitivos de Sea of Thieves.",
+  description: "Gerenciamento de torneios competitivos de Sea of Thieves.",     
   openGraph: {
     title: "Madness Arena",
-    description: "Gerenciamento de torneios competitivos de Sea of Thieves.",
+    description: "Gerenciamento de torneios competitivos de Sea of Thieves.",   
     url: "https://madnessarena.vercel.app/",
     siteName: "Madness Arena",
     locale: "pt_BR",
@@ -30,30 +31,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
   return (
-    <html lang="pt-BR" data-theme="dark" suppressHydrationWarning>
+    <html lang={locale === "en" ? "en" : "pt-BR"} data-theme="dark" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(() => {
-              try {
-                const saved = localStorage.getItem('madness-theme');
-                const theme = saved === 'light' || saved === 'dark'
-                  ? saved
-                  : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-                document.documentElement.setAttribute('data-theme', theme);
-              } catch {}
-            })();`,
-          }}
-        />
+        <script dangerouslySetInnerHTML={{__html: "((() => { try { const saved = localStorage.getItem('madness-theme'); const theme = saved === 'light' || saved === 'dark' ? saved : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'); document.documentElement.setAttribute('data-theme', theme); } catch {} })());"}} />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}   
       >
         <NextTopLoader color="#fbbf24" showSpinner={false} />
         <Navbar />

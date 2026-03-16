@@ -1,0 +1,122 @@
+{
+  "nav": {
+    "login": "Login",
+    "loginDiscord": "Login com Discord",
+    "home": "Madness Arena"
+  },
+  "home": {
+    "heroSubtitle": "Sea of Thieves Temporada competitiva",
+    "heroTitle1": "A arena dos mares.",
+    "heroTitle2": "Prove seu valor.",
+    "heroDesc": "Competições oficiais de Sea of Thieves. Monte sua tripulação, participe de torneios e conquiste o topo dos mares.",
+    "heroBtnEvents": "Ver torneios",
+    "heroBtnTeam": "Criar equipe",
+    "quickActions": "Ações rápidas",
+    "startHere": "Comece por aqui",
+    "createTeam": "Montar equipe",
+    "createTeamDesc": "Crie ou organize sua tripulação para entrar nos campeonatos.",
+    "openTeams": "Abrir equipes",
+    "chooseTournament": "Escolher torneio",
+    "chooseTournamentDesc": "Veja eventos publicados e selecione o torneio certo para seu time.",
+    "openEvents": "Ver eventos",
+    "trackRanking": "Acompanhar ranking",
+    "trackRankingDesc": "Monitore sua evolução e compare desempenho com outras equipes.",
+    "openRanking": "Ver ranking",
+    "nextTournament": "Próximo Torneio",
+    "highlightArena": "Destaque da Arena",
+    "until": "até",
+    "prize": "Premiação",
+    "seeDetails": "Ver detalhes",
+    "noActiveTornament": "Nenhum torneio ativo no momento",
+    "noActiveTornamentDesc": "Fique de olho  novos torneios são anunciados em breve.",
+    "eventHistory": "Ver histórico de torneios",
+    "history": "Histórico",
+    "lastTournaments": "Últimos Torneios",
+    "seeAll": "Ver todos",
+    "noFinishedTourney": "Nenhum torneio finalizado ainda. O primeiro está por vir.",
+    "readyForBattle": "Pronto para a batalha?",
+    "readyForBattleDesc": "Forme sua tripulação, inscreva-se nos torneios e comprove quem domina os mares. Cada partida conta para o ranking."
+  },
+  "status": {
+    "active": "Em andamento",
+    "published": "Publicado",
+    "finished": "Finalizado"
+  },
+  "ranking": {
+    "badge": "Ranking Geral",
+    "title": "Classificação dos Piratas",
+    "desc": "Ordenado por pontos e vitórias em cada categoria.",
+    "tabs": {
+      "all": "Geral",
+      "sloop": "Sloop (Duo)",
+      "brigantine": "Brigantine (Trio)",
+      "galleon": "Galleon (Squad)"
+    },
+    "empty": "Ainda não há pontuação registrada para esta categoria.",
+    "table": {
+      "pos": "Posição",
+      "pirate": "Pirata",
+      "xbox": "Xbox",
+      "points": "Pontos",
+      "winLoss": "V / D"
+    },
+    "unlinked": "Não vinculado",
+    "player": "Jogador",
+    "position1": "1º",
+    "position2": "2º",
+    "position3": "3º"
+  },
+  "teams": {
+    "badge": "Central de Equipes",
+    "title": "Guildas e Tripulações",
+    "desc": "Encontre equipes ativas, veja seus membros ou crie sua própria história nos mares.",
+    "createBtn": "Criar Equipe",
+    "unnamed": "Equipe sem nome",
+    "empty": "Nenhuma equipe registrada ainda.",
+    "members": "membros",
+    "captain": "Capitão",
+    "search": "Buscar equipe por nome ou tag...",
+    "noResults": "Nenhuma equipe encontrada com essa busca."
+  },
+  "streams": {
+    "badge": "Ao Vivo",
+    "title": "Transmissões e VODs",
+    "desc": "Acompanhe as partidas ao vivo ou assista aos melhores momentos dos últimos torneios.",
+    "liveNow": "Canais da Comunidade Ao Vivo",
+    "noStreams": "Nenhuma transmissão online no momento.",
+    "recentVods": "Últimos VODs Oficiais",
+    "noVods": "Nenhum VOD disponível no momento.",
+    "vod": "VOD"
+  },
+  "rules": {
+    "badge": "Documentação Oficial",
+    "title": "Regras e Conduta",
+    "desc": "Leia atentamente as diretrizes que mantêm a Madness Arena justa e competitiva para todos."
+  },
+  "events": {
+    "badge": "Competições Oficiais",
+    "title": "Torneios da Arena",
+    "desc": "Todos os torneios de Sea of Thieves organizados pela MadnessArena. Inscreva sua equipe e compita pela glória dos mares.",
+    "stats": {
+      "total": "Total",
+      "active": "Em andamento",
+      "published": "Publicados",
+      "paused": "Pausados",
+      "finished": "Finalizados"
+    },
+    "viewDetails": "Ver detalhes",
+    "noTournament": "Nenhum torneio encontrado",
+    "noEventStatus": "Nenhum evento com status encontrada.",
+    "noEventYet": "Nenhum evento cadastrado ainda.",
+    "clearFilter": "Limpar filtro"
+  },
+  "profile": {
+    "backHome": "← Voltar para o início",
+    "username": "Username",
+    "memberSince": "Membro desde",
+    "lastActivity": "Última atividade",
+    "leaguePoints": "Pontos de Liga",
+    "tournamentsWon": "Torneios Ganhos",
+    "loadTeamsError": "Não foi possível carregar suas equipes agora."
+  }
+}

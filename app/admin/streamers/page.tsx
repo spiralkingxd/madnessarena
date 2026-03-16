@@ -78,7 +78,7 @@ export default async function AdminStreamersPage() {
         <div><h1 className="text-3xl font-bold text-white tracking-tight">Streamers</h1><p className="text-slate-400 mt-2">Gerencie os streamers da Madness Arena.</p></div>
         <div className="mt-8 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center text-red-400">
           <ShieldAlert className="mx-auto h-8 w-8 mb-2" />
-          <p className="font-semibold">A tabela de streamers nÃo foi encontrada no banco de dados.</p>
+          <p className="font-semibold">A tabela de streamers nÝo foi encontrada no banco de dados.</p>
           <p className="text-sm mt-1">Por favor, execute o script SQL `supabase_streamers_schema.sql` no painel do Supabase.</p>
         </div>
       </div>

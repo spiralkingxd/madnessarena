@@ -1,0 +1,122 @@
+{
+  "nav": {
+    "login": "Login",
+    "loginDiscord": "Login with Discord",
+    "home": "Madness Arena"
+  },
+  "home": {
+    "heroSubtitle": "Sea of Thieves Competitive Season",
+    "heroTitle1": "The arena of the seas.",
+    "heroTitle2": "Prove your worth.",
+    "heroDesc": "Official Sea of Thieves competitions. Gather your crew, join tournaments and conquer the top of the seas.",
+    "heroBtnEvents": "View tournaments",
+    "heroBtnTeam": "Create team",
+    "quickActions": "Quick actions",
+    "startHere": "Start here",
+    "createTeam": "Assemble team",
+    "createTeamDesc": "Create or organize your crew to enter the championships.",
+    "openTeams": "Open teams",
+    "chooseTournament": "Choose tournament",
+    "chooseTournamentDesc": "See published events and select the right tournament for your team.",
+    "openEvents": "View events",
+    "trackRanking": "Track ranking",
+    "trackRankingDesc": "Monitor your evolution and compare performance with other teams.",
+    "openRanking": "View ranking",
+    "nextTournament": "Next Tournament",
+    "highlightArena": "Arena Highlight",
+    "until": "until",
+    "prize": "Prize",
+    "seeDetails": "See details",
+    "noActiveTornament": "No active tournaments at the moment",
+    "noActiveTornamentDesc": "Keep an eye out  new tournaments will be announced soon.",
+    "eventHistory": "View tournament history",
+    "history": "History",
+    "lastTournaments": "Last Tournaments",
+    "seeAll": "See all",
+    "noFinishedTourney": "No finished tournaments yet. The first one is coming soon.",
+    "readyForBattle": "Ready for battle?",
+    "readyForBattleDesc": "Assemble your crew, sign up for tournaments and prove who rules the seas. Every match counts for the ranking."
+  },
+  "status": {
+    "active": "Ongoing",
+    "published": "Published",
+    "finished": "Finished"
+  },
+  "ranking": {
+    "badge": "Global Ranking",
+    "title": "Pirates Leaderboard",
+    "desc": "Ordered by points and wins in each category.",
+    "tabs": {
+      "all": "Overall",
+      "sloop": "Sloop (Duo)",
+      "brigantine": "Brigantine (Trio)",
+      "galleon": "Galleon (Squad)"
+    },
+    "empty": "No scores registered for this category yet.",
+    "table": {
+      "pos": "Position",
+      "pirate": "Pirate",
+      "xbox": "Xbox",
+      "points": "Points",
+      "winLoss": "W / L"
+    },
+    "unlinked": "Not linked",
+    "player": "Player",
+    "position1": "1st",
+    "position2": "2nd",
+    "position3": "3rd"
+  },
+  "teams": {
+    "badge": "Teams Hub",
+    "title": "Guilds & Crews",
+    "desc": "Find active teams, check their members, or start your own journey across the seas.",
+    "createBtn": "Create Team",
+    "unnamed": "Unnamed Team",
+    "empty": "No teams registered yet.",
+    "members": "members",
+    "captain": "Captain",
+    "search": "Search team by name or tag...",
+    "noResults": "No teams found with this search."
+  },
+  "streams": {
+    "badge": "Live",
+    "title": "Broadcasts & VODs",
+    "desc": "Watch live games or catch the highlights from the latest tournaments.",
+    "liveNow": "Live Community Channels",
+    "noStreams": "No online streams right now.",
+    "recentVods": "Recent Official VODs",
+    "noVods": "No VODs available at the moment.",
+    "vod": "VOD"
+  },
+  "rules": {
+    "badge": "Official Documentation",
+    "title": "Rules & Conduct",
+    "desc": "Carefully read the guidelines that keep Madness Arena fair and competitive for everyone."
+  },
+  "events": {
+    "badge": "Official Competitions",
+    "title": "Arena Tournaments",
+    "desc": "All Sea of Thieves tournaments organized by MadnessArena. Register your team and compete for the glory of the seas.",
+    "stats": {
+      "total": "Total",
+      "active": "Active",
+      "published": "Upcoming",
+      "paused": "Paused",
+      "finished": "Finished"
+    },
+    "viewDetails": "View details",
+    "noTournament": "No tournaments found",
+    "noEventStatus": "No events with this status found.",
+    "noEventYet": "No events registered yet.",
+    "clearFilter": "Clear filter"
+  },
+  "profile": {
+    "backHome": "← Back to home",
+    "username": "Username",
+    "memberSince": "Member since",
+    "lastActivity": "Last activity",
+    "leaguePoints": "League Points",
+    "tournamentsWon": "Tournaments Won",
+    "loadTeamsError": "Could not load your teams right now."
+  }
+}

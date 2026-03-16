@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProfileTeamsSection } from "@/components/profile-teams-section";
 import { XboxStatusTag } from "@/components/xbox-status-tag";
 import { ProfileSettingsForm } from "@/components/profile-settings-form";
+import { getDictionary } from "@/lib/i18n";
 
 type ProfileRow = {
   id: string;
@@ -47,6 +48,7 @@ type UserTeamCard = {
 };
 
 export default async function MyProfilePage() {
+  const dict = await getDictionary();
   const supabase = await createClient();
   const {
     data: { user },
@@ -79,7 +81,7 @@ export default async function MyProfilePage() {
   }
 
   let teamsError: string | null = null;
-  let userTeams: UserTeamCard[] = [];
+  let maxTeamSize = 5; let userTeams: UserTeamCard[] = [];
 
   const { data: membershipsRaw, error: membershipsError } = await supabase
     .from("team_members")
@@ -87,7 +89,7 @@ export default async function MyProfilePage() {
     .eq("user_id", user.id);
 
   if (membershipsError) {
-    teamsError = "Não foi possível carregar suas equipes agora.";
+    teamsError = "{dict.profile.loadTeamsError}";
   } else {
     const memberships = (membershipsRaw ?? []) as TeamMemberRow[];
     const teamIds = Array.from(new Set(memberships.map((m) => m.team_id)));
@@ -100,10 +102,10 @@ export default async function MyProfilePage() {
       : { data: [] as TeamRow[], error: null };
 
     if (teamsLoadError) {
-      teamsError = "Não foi possível carregar suas equipes agora.";
+      teamsError = "{dict.profile.loadTeamsError}";
     }
 
-    const teamMap = new Map<string, TeamRow>();
+    const { data: sysSettings } = await supabase.from("system_settings").select("tournament").eq("id", 1).maybeSingle(); maxTeamSize = Number((sysSettings?.tournament as any)?.max_team_size ?? 5); const teamMap = new Map<string, TeamRow>();
     for (const team of teamsRaw ?? []) {
       teamMap.set(team.id as string, {
         id: team.id as string,
@@ -223,30 +225,30 @@ export default async function MyProfilePage() {
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">@{profile.username}</span>
             </InfoCard>
 
-            <InfoCard icon={<Calendar className="h-4 w-4 text-cyan-400" />} label="Membro desde">
+            <InfoCard icon={<Calendar className="h-4 w-4 text-cyan-400" />} label="{dict.profile.memberSince}">
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{memberSince}</span>
             </InfoCard>
 
-            <InfoCard icon={<Clock className="h-4 w-4 text-cyan-400" />} label="Última atividade">
+            <InfoCard icon={<Clock className="h-4 w-4 text-cyan-400" />} label="{dict.profile.lastActivity}">
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {profile.updated_at ? new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(profile.updated_at)) : "--"}
               </span>
             </InfoCard>
           </div>
 
-          {/* Info grid - Stats Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-slate-200 dark:sm:divide-white/5 pb-6">
-            <InfoCard icon={<Target className="h-4 w-4 text-emerald-400" />} label="Pontos de Liga">
+          {/* Info grid - Stats Row */}1
+          <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-slate-200 dark:sm:divide-white/5">
+            <InfoCard icon={<Target className="h-4 w-4 text-emerald-400" />} label="{dict.profile.leaguePoints}">
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{profile.rankings?.[0]?.points || 0}</span>
             </InfoCard>
 
-            <InfoCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label="Torneios Ganhos">
+            <InfoCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label="{dict.profile.tournamentsWon}">
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{profile.rankings?.[0]?.wins || 0}</span>
             </InfoCard>
           </div>
         </div>
 
-        <ProfileTeamsSection
+        <ProfileTeamsSection systemMaxMembers={maxTeamSize}
           userId={user.id}
           userXboxGamertag={profile.xbox_gamertag}
           teams={userTeams}

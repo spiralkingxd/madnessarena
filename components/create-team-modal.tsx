@@ -57,7 +57,6 @@ type FormValues = {
 
 type Member = SearchUsersResult[number];
 
-const MAX_MEMBERS = 10;
 const SEARCH_DEBOUNCE = 500;
 
 // ---------------------------------------------------------------------------
@@ -112,7 +111,8 @@ function Avatar({
 // Modal principal
 // ---------------------------------------------------------------------------
 
-interface CreateTeamModalProps { userId: string; userXboxGamertag: string | null; hasReachedTeamLimit?: boolean; onClose?: () => void; } export function CreateTeamModal({ userId, userXboxGamertag, hasReachedTeamLimit = false, onClose }: CreateTeamModalProps) {
+interface CreateTeamModalProps { userId: string; userXboxGamertag: string | null; hasReachedTeamLimit?: boolean; onClose?: () => void; systemMaxMembers: number; }
+export function CreateTeamModal({ userId, userXboxGamertag, hasReachedTeamLimit = false, onClose, systemMaxMembers }: CreateTeamModalProps) {
   const router = useRouter();
   const overlayRef = useRef<HTMLDivElement>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -234,7 +234,7 @@ interface CreateTeamModalProps { userId: string; userXboxGamertag: string | null
 
   function addMember(member: Member) {
     if (
-      selectedMembers.length >= MAX_MEMBERS - 1 ||
+      selectedMembers.length >= systemMaxMembers - 1 ||
       selectedMembers.find((m) => m.id === member.id)
     )
       return;
@@ -396,13 +396,13 @@ interface CreateTeamModalProps { userId: string; userXboxGamertag: string | null
                 </label>
                 <span
                   className={`flex items-center gap-1 text-xs font-semibold ${
-                    totalMembers >= MAX_MEMBERS
+                    totalMembers >= systemMaxMembers
                       ? "text-rose-400"
                       : "text-slate-400"
                   }`}
                 >
                   <Users className="h-3.5 w-3.5" />
-                  {totalMembers}/{MAX_MEMBERS}
+                  {totalMembers}/{systemMaxMembers}
                 </span>
               </div>
 
@@ -446,7 +446,7 @@ interface CreateTeamModalProps { userId: string; userXboxGamertag: string | null
               )}
 
               {/* Campo de busca de membros */}
-              {totalMembers < MAX_MEMBERS && (
+              {totalMembers < systemMaxMembers && (
                 <div ref={searchRef} className="relative">
                   <div className="flex items-center rounded-xl border border-white/10 bg-black/20 px-4 py-3 focus-within:ring focus-within:ring-amber-300/40">
                     {searching ? (
@@ -505,9 +505,9 @@ interface CreateTeamModalProps { userId: string; userXboxGamertag: string | null
                 </div>
               )}
 
-              {totalMembers >= MAX_MEMBERS && (
+              {totalMembers >= systemMaxMembers && (
                 <p className="mt-2 text-xs text-slate-500">
-                  Limite de {MAX_MEMBERS} membros atingido.
+                  Limite de {systemMaxMembers} membros atingido.
                 </p>
               )}
             </div>

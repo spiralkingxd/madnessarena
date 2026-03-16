@@ -11,6 +11,10 @@ import { UserDropdown } from "@/components/user-dropdown";
 import { UserDropdownSkeleton } from "@/components/user-dropdown-skeleton";
 import { upsertProfileFromOAuth } from "@/lib/auth/profile";
 
+import { NotificationsBell } from "@/components/notifications-bell";
+
+import { LanguageSwitcher } from "@/components/language-switcher";
+
 type ProfileNavbarRow = {
   display_name: string;
   username: string;
@@ -103,7 +107,7 @@ export async function Navbar() {
 
   return (
     <header className="site-topbar sticky top-0 z-50">
-      <div className="relative mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-10">
+      <div className="relative mx-auto flex h-[72px] w-full max-w-[1920px] items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-10">
         <Link
           href="/"
           className="shrink-0 text-[13px] sm:text-[15px] md:text-base font-black uppercase tracking-[0.15em] sm:tracking-[0.25em] bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 bg-clip-text text-transparent transition-transform hover:scale-[1.03] drop-shadow-sm"
@@ -114,7 +118,7 @@ export async function Navbar() {
         <NavLinks />
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          <GlobalSearch /> <ThemeToggle />
+          <GlobalSearch /> <LanguageSwitcher /> <ThemeToggle />
           
           {!isConfigured ? (
             <Link
@@ -125,9 +129,12 @@ export async function Navbar() {
               <span className="hidden sm:inline">Login com Discord</span>
             </Link>
           ) : hasAuthCookie ? (
-            <Suspense fallback={<UserDropdownSkeleton />}>
-              <UserSection />
-            </Suspense>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <NotificationsBell />
+              <Suspense fallback={<UserDropdownSkeleton />}>
+                <UserSection />
+              </Suspense>
+            </div>
           ) : (
             <Link
               href="/auth/login"

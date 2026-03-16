@@ -28,12 +28,12 @@ export function TeamManageButton({
   team,
   members,
   pendingRequests,
-  historyRequests,
+  historyRequests, systemMaxMembers,
 }: {
   team: TeamInfo;
   members: MemberRow[];
   pendingRequests: JoinRequestPendingItem[];
-  historyRequests: JoinRequestHistoryItem[];
+  historyRequests: JoinRequestHistoryItem[]; systemMaxMembers?: number;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -53,7 +53,7 @@ export function TeamManageButton({
           team={team}
           initialMembers={members}
           initialPendingRequests={pendingRequests}
-          initialHistoryRequests={historyRequests}
+          initialHistoryRequests={historyRequests} systemMaxMembers={systemMaxMembers}
           onClose={() => setOpen(false)}
         />
       ) : null}

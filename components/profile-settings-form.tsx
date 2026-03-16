@@ -165,6 +165,24 @@ export function ProfileSettingsForm({
                   />
                 </div>
 
+                {!initialXboxGamertag && (
+                  <div className="space-y-1.5">
+                    <label htmlFor="xbox_gamertag" className="text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                       Gamertag Xbox
+                       <span className="text-[10px] bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded border border-rose-500/20">IRREVERSÍVEL</span>
+                    </label>
+                    <input
+                      id="xbox_gamertag"
+                      name="xbox_gamertag"
+                      placeholder="Sua gamertag (ex: PirateLegend)"
+                      className={inputClass}
+                    />
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Atenção: Ao vincular sua gamertag Xbox, essa ação não poderá ser desfeita e a opção sumirá.
+                    </p>
+                  </div>
+                )}
+
                 
 
                 <div className="space-y-1.5">

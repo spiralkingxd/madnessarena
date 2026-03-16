@@ -87,7 +87,7 @@ export default async function TeamDetailPage({ params }: Props) {
     currentUserTeamCount = count ?? 0;
   }
 
-  const { data: team } = await supabase
+  const { data: sysSettings } = await supabase.from("system_settings").select("tournament").eq("id", 1).maybeSingle(); const systemMaxMembers = Number((sysSettings?.tournament as any)?.max_team_size ?? 5); const { data: team } = await supabase
     .from("teams")
     .select("id, name, logo_url, captain_id, max_members, created_at")
     .eq("id", id)
@@ -362,7 +362,7 @@ export default async function TeamDetailPage({ params }: Props) {
                   }}
                   members={memberList}
                   pendingRequests={pendingRequestsForCaptain}
-                  historyRequests={historyRequestsForCaptain}
+                  historyRequests={historyRequestsForCaptain} systemMaxMembers={systemMaxMembers}
                 />
               </div>
             ) : null}

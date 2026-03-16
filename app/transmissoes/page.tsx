@@ -53,7 +53,7 @@ async function StreamList() {
       <div className="mt-12 text-center py-24 bg-white/5 border border-white/10 rounded-2xl">
         <Video className="mx-auto h-12 w-12 text-slate-500 mb-4 opacity-50" />
         <h3 className="text-xl font-bold text-white mb-2">Nenhum streamer cadastrado</h3>
-        <p className="text-slate-400 max-w-md mx-auto">Ainda nao temos transmissÃµes registradas. Volte em breve!</p>
+        <p className="text-slate-400 max-w-md mx-auto">Ainda nao temos transmissÝµes registradas. Volte em breve!</p>
       </div>
     );
   }

@@ -28,7 +28,7 @@ export default async function AdminSettingsPage() {
           <h1 className="text-2xl font-bold text-[color:var(--text-strong)]">Configurações do Sistema</h1>
         </div>
         <p className="mt-2 text-sm text-[color:var(--text-muted)]">
-          Centralize parâmetros globais da plataforma, eventos, ranking e integrações operacionais.
+          Centralize parmetros globais da plataforma, eventos, ranking e integrações operacionais.
         </p>
       </header>
 
