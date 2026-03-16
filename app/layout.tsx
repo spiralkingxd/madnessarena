@@ -19,7 +19,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   icons: { icon: '/icon.ico' },
-  title: "Madness Arena",
+  title: {
+    default: "Madness Arena | Início",
+    template: "Madness Arena | %s",
+  },
   description: "Gerenciamento de torneios competitivos de Sea of Thieves.",     
   openGraph: {
     title: "Madness Arena",

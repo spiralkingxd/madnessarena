@@ -2,7 +2,7 @@
 import { getDictionary } from "@/lib/i18n";
 
 export const metadata = {
-  title: "Regras - Madness Arena",
+  title: "Regras",
   description: "Conheça as regras dos campeonatos da Madness Arena",
 };
 

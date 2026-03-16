@@ -8,7 +8,7 @@ import { AdminButton as Button } from "@/components/admin/admin-button";
 
 
 export const metadata = {
-  title: "Streamers | Admin | Madness Arena",
+  title: "Admin - Streamers",
 };
 
 async function getStreamers() {

@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getTwitchStreams, getTwitchUsers } from "@/lib/twitch";
 
 export const metadata = {
-  title: "Transmissoes | Madness Arena",
+  title: "Transmissões",
   description: "Acompanhe as transmissoes ao vivo dos campeonatos e da nossa comunidade.",
 };
 
