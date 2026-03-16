@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/events", label: "Torneios" },
   { href: "/teams", label: "Equipes" },
   { href: "/ranking", label: "Ranking" },
+  { href: "/transmissoes", label: "Transmissões" },
 ];
 
 export function NavLinks() {

@@ -14,6 +14,7 @@ import {
   Swords,
   Trophy,
   Users,
+  Video,
   X,
 } from "lucide-react";
 
@@ -33,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/teams", label: "Equipes", icon: <Shield className="h-4 w-4" /> },
   { href: "/admin/matches", label: "Partidas", icon: <Swords className="h-4 w-4" /> },
   { href: "/admin/results", label: "Resultados", icon: <BarChart3 className="h-4 w-4" /> },
+  { href: "/admin/streamers", label: "Streamers", icon: <Video className="h-4 w-4" /> },
   { href: "/admin/notifications", label: "Notificações", icon: <Bell className="h-4 w-4" /> },
   { href: "/admin/rankings", label: "Rankings", icon: <BarChart3 className="h-4 w-4" /> },
   { href: "/admin/settings", label: "Configurações", icon: <Settings className="h-4 w-4" /> },

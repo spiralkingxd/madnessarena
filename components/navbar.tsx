@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { Suspense } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -7,6 +8,7 @@ import { NavLinks } from "@/components/nav-links";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { GlobalSearch } from "@/components/global-search";
 import { UserDropdown } from "@/components/user-dropdown";
+import { UserDropdownSkeleton } from "@/components/user-dropdown-skeleton";
 import { upsertProfileFromOAuth } from "@/lib/auth/profile";
 
 type ProfileNavbarRow = {
@@ -20,66 +22,7 @@ type ProfileNavbarRow = {
 const PROFILE_SELECT =
   "display_name, username, avatar_url, xbox_gamertag, role";
 
-export async function Navbar() {
-  if (!isSupabaseConfigured()) {
-    return (
-      <header className="site-topbar sticky top-0 z-50">
-        <div className="relative mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between gap-4 px-6 lg:px-10">
-          <Link
-            href="/"
-            className="shrink-0 text-[15px] md:text-base font-black uppercase tracking-[0.25em] bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 bg-clip-text text-transparent transition-transform hover:scale-[1.03] drop-shadow-sm"
-          >
-            Madness Arena
-          </Link>
-
-          <NavLinks />
-
-          <div className="flex shrink-0 items-center gap-2">
-            <GlobalSearch /> <ThemeToggle />
-            <Link
-              href="/auth/login"
-              className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
-            >
-              Login com Discord
-            </Link>
-          </div>
-        </div>
-      </header>
-    );
-  }
-
-  const cookieStore = await cookies();
-  const hasAuthCookie = cookieStore
-    .getAll()
-    .some((cookie) => cookie.name.includes("-auth-token"));
-
-  if (!hasAuthCookie) {
-    return (
-      <header className="site-topbar sticky top-0 z-50">
-        <div className="relative mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between gap-4 px-6 lg:px-10">
-          <Link
-            href="/"
-            className="shrink-0 text-[15px] md:text-base font-black uppercase tracking-[0.25em] bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 bg-clip-text text-transparent transition-transform hover:scale-[1.03] drop-shadow-sm"
-          >
-            Madness Arena
-          </Link>
-
-          <NavLinks />
-
-          <div className="flex shrink-0 items-center gap-2">
-            <GlobalSearch /> <ThemeToggle />
-            <Link
-              href="/auth/login"
-              className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
-            >
-              Login com Discord
-            </Link>
-          </div>
-        </div>
-      </header>
-    );
-  }
-
+async function UserSection() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -122,6 +65,41 @@ export async function Navbar() {
   const nickname =
     profile?.display_name ?? profile?.username ?? user?.email ?? "Jogador";
 
+  if (!user) {
+    return (
+      <Link
+        href="/auth/login"
+        className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+      >
+        Login com Discord
+      </Link>
+    );
+  }
+
+  return (
+    <UserDropdown
+      nickname={nickname}
+      username={profile?.username ?? null}
+      avatarUrl={avatarUrl}
+      xboxGamertag={profile?.xbox_gamertag ?? null}
+      teamsCount={teamsCount}
+      role={profile?.role}
+    />
+  );
+}
+
+export async function Navbar() {
+  const isConfigured = isSupabaseConfigured();
+
+  let hasAuthCookie = false;
+  
+  if (isConfigured) {
+    const cookieStore = await cookies();
+    hasAuthCookie = cookieStore
+      .getAll()
+      .some((cookie) => cookie.name.includes("-auth-token"));
+  }
+
   return (
     <header className="site-topbar sticky top-0 z-50">
       <div className="relative mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between gap-4 px-6 lg:px-10">
@@ -136,22 +114,25 @@ export async function Navbar() {
 
         <div className="flex shrink-0 items-center gap-2">
           <GlobalSearch /> <ThemeToggle />
-          {!user ? (
+          
+          {!isConfigured ? (
             <Link
               href="/auth/login"
               className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
             >
               Login com Discord
             </Link>
+          ) : hasAuthCookie ? (
+            <Suspense fallback={<UserDropdownSkeleton />}>
+              <UserSection />
+            </Suspense>
           ) : (
-            <UserDropdown
-              nickname={nickname}
-              username={profile?.username ?? null}
-              avatarUrl={avatarUrl}
-              xboxGamertag={profile?.xbox_gamertag ?? null}
-              teamsCount={teamsCount}
-              role={profile?.role}
-            />
+            <Link
+              href="/auth/login"
+              className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+            >
+              Login com Discord
+            </Link>
           )}
         </div>
       </div>

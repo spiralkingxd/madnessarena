@@ -17,23 +17,6 @@ export function GlobalSearch() {
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Keyboard shortcut Ctrl+K to focus search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        inputRef.current?.focus();
-        setIsOpen(true);
-      }
-      if (e.key === "Escape") {
-        inputRef.current?.blur();
-        setIsOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
   // Click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -132,12 +115,6 @@ export function GlobalSearch() {
           />
 
           {isPending && <Loader2 className="h-3.5 w-3.5 text-slate-400 animate-spin mr-1 shrink-0" />}
-
-          {!isOpen && (
-            <kbd className="shrink-0 hidden rounded border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-1.5 font-mono text-[10px] text-slate-500 sm:inline-block">
-              <span className="text-xs">⌘</span>K
-            </kbd>
-          )}
 
           {isOpen && query.length > 0 && (
             <button onClick={() => setQuery("")} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0">
