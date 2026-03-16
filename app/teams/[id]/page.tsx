@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Anchor, Calendar, Crown, Scroll, Users } from "lucide-react";
 
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -105,7 +105,12 @@ export default async function TeamDetailPage({ params, searchParams }: PageProps
     .is("dissolved_at", null)
     .single<TeamDetailRow>();
 
-  if (!team) notFound();
+  if (!team) {
+    if (isBackToProfile) {
+      redirect("/profile/me?action=team-choice#teams");
+    }
+    redirect("/teams");
+  }
 
   const { data: memberLinks } = await supabase
     .from("team_members")
