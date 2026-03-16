@@ -225,11 +225,11 @@ export default async function MyProfilePage() {
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">@{profile.username}</span>
             </InfoCard>
 
-            <InfoCard icon={<Calendar className="h-4 w-4 text-cyan-400" />} label={profile.memberSince}>
+            <InfoCard icon={<Calendar className="h-4 w-4 text-cyan-400" />} label={dict.profile.memberSince}>
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{memberSince}</span>
             </InfoCard>
 
-            <InfoCard icon={<Clock className="h-4 w-4 text-cyan-400" />} label={profile.lastActivity}>
+            <InfoCard icon={<Clock className="h-4 w-4 text-cyan-400" />} label={dict.profile.lastActivity}>
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {profile.updated_at ? new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(profile.updated_at)) : "--"}
               </span>
@@ -238,11 +238,11 @@ export default async function MyProfilePage() {
 
           {/* Info grid - Stats Row */}1
           <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-slate-200 dark:sm:divide-white/5">
-            <InfoCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={profile.leaguePoints}>
+            <InfoCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={dict.profile.leaguePoints}>
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{profile.rankings?.[0]?.points || 0}</span>
             </InfoCard>
 
-            <InfoCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label={profile.tournamentsWon}>
+            <InfoCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label={dict.profile.tournamentsWon}>
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{profile.rankings?.[0]?.wins || 0}</span>
             </InfoCard>
           </div>

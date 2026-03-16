@@ -76,8 +76,8 @@ async function UserSection() {
         href="/auth/login"
         className="action-primary inline-flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition"
       >
-        <span className="sm:hidden">{dict.nav.login}</span>
-        <span className="hidden sm:inline">{dict.nav.loginDiscord}</span>
+        <span className="sm:hidden">Login</span>
+        <span className="hidden sm:inline">Login com Discord</span>
       </Link>
     );
   }
@@ -127,8 +127,8 @@ export async function Navbar() {
               href="/auth/login"
               className="action-primary inline-flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition"
             >
-              <span className="sm:hidden">{dict.nav.login}</span>
-              <span className="hidden sm:inline">{dict.nav.loginDiscord}</span>
+              <span className="sm:hidden">Login</span>
+              <span className="hidden sm:inline">Login com Discord</span>
             </Link>
           ) : hasAuthCookie ? (
             <div className="flex items-center gap-2 sm:gap-4">
@@ -142,8 +142,8 @@ export async function Navbar() {
               href="/auth/login"
               className="action-primary inline-flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition"
             >
-              <span className="sm:hidden">{dict.nav.login}</span>
-              <span className="hidden sm:inline">{dict.nav.loginDiscord}</span>
+              <span className="sm:hidden">Login</span>
+              <span className="hidden sm:inline">Login com Discord</span>
             </Link>
           )}
         </div>
