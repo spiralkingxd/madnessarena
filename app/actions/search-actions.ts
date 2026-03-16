@@ -35,7 +35,7 @@ export async function globalSearchAction(query: string, filter?: "user" | "tourn
         title: u.display_name || u.username || "Usuário",
         subtitle: u.xbox_gamertag || "@" + u.username,
         imageUrl: u.avatar_url,
-        url: `/profile/${u.username || u.id}`
+        url: `/profile/${u.id}`
       }));
     }
   }
