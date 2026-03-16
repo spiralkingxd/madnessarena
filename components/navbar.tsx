@@ -69,9 +69,10 @@ async function UserSection() {
     return (
       <Link
         href="/auth/login"
-        className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+        className="action-primary inline-flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition"
       >
-        Login com Discord
+        <span className="sm:hidden">Login</span>
+        <span className="hidden sm:inline">Login com Discord</span>
       </Link>
     );
   }
@@ -102,25 +103,26 @@ export async function Navbar() {
 
   return (
     <header className="site-topbar sticky top-0 z-50">
-      <div className="relative mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between gap-4 px-6 lg:px-10">
+      <div className="relative mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-10">
         <Link
           href="/"
-          className="shrink-0 text-[15px] md:text-base font-black uppercase tracking-[0.25em] bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 bg-clip-text text-transparent transition-transform hover:scale-[1.03] drop-shadow-sm"
+          className="shrink-0 text-[13px] sm:text-[15px] md:text-base font-black uppercase tracking-[0.15em] sm:tracking-[0.25em] bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 bg-clip-text text-transparent transition-transform hover:scale-[1.03] drop-shadow-sm"
         >
           Madness Arena
         </Link>
 
         <NavLinks />
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <GlobalSearch /> <ThemeToggle />
           
           {!isConfigured ? (
             <Link
               href="/auth/login"
-              className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+              className="action-primary inline-flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition"
             >
-              Login com Discord
+              <span className="sm:hidden">Login</span>
+              <span className="hidden sm:inline">Login com Discord</span>
             </Link>
           ) : hasAuthCookie ? (
             <Suspense fallback={<UserDropdownSkeleton />}>
@@ -129,9 +131,10 @@ export async function Navbar() {
           ) : (
             <Link
               href="/auth/login"
-              className="action-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+              className="action-primary inline-flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition"
             >
-              Login com Discord
+              <span className="sm:hidden">Login</span>
+              <span className="hidden sm:inline">Login com Discord</span>
             </Link>
           )}
         </div>

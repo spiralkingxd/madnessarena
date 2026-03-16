@@ -78,14 +78,14 @@ export default async function Home() {
     <main className="page-shell">
 
       <section className="hero-shell relative overflow-hidden border-b border-white/10">
-        <div className="relative mx-auto grid max-w-7xl gap-8 px-6 py-14 lg:grid-cols-[1.15fr_0.85fr] lg:px-10 lg:py-20">
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 py-10 sm:py-14 lg:grid-cols-[1.15fr_0.85fr] lg:px-10 lg:py-20">
           <div className="space-y-5">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/8 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-200/90">
-              <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
-              Sea of Thieves · Temporada competitiva
+            <div className="inline-flex max-w-full text-left sm:w-fit items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/8 px-3.5 py-1.5 text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider sm:tracking-[0.22em] text-cyan-200/90">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300" />
+              <span className="truncate whitespace-normal">Sea of Thieves · Temporada competitiva</span>
             </div>
 
-            <h1 className="max-w-3xl text-5xl font-extrabold leading-[1.04] tracking-tight text-white sm:text-6xl lg:text-7xl">
+            <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.04] tracking-tight text-white sm:text-6xl lg:text-7xl">
               A arena dos mares.
               <br />
               <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-300 bg-clip-text text-transparent">
@@ -99,24 +99,24 @@ export default async function Home() {
             </p>
 
             <div className="flex flex-wrap gap-3">
-              <Link href="/events" className="action-primary inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition">
+              <Link href="/events" className="action-primary inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2.5 sm:py-3 text-sm font-bold transition">
                 <Flame className="h-4 w-4" />
                 Ver torneios
               </Link>
-              <Link href="/profile/me?action=new-team#teams" className="action-secondary inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition"> <Users className="h-4 w-4" /> Criar equipe
+              <Link href="/profile/me?action=new-team#teams" className="action-secondary inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold transition"> <Users className="h-4 w-4" /> Criar equipe
               </Link>
             </div>
           </div>
 
-          <aside className="glass-card soft-ring h-fit rounded-2xl p-6 lg:p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Resumo rápido</p>
+          <aside className="glass-card soft-ring h-fit rounded-2xl p-5 sm:p-6 lg:p-7 overflow-hidden"> 
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] sm:tracking-[0.22em] text-cyan-300">Resumo rápido</p>
             <div className="mt-4 grid gap-3">
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Status atual</p>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-wider sm:tracking-[0.2em] text-slate-400">Status atual</p>
                 <p className="mt-1 text-sm font-semibold text-white">{featuredEvent ? "Torneio ativo/publicado" : "Sem torneio ativo"}</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Histórico</p>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-wider sm:tracking-[0.2em] text-slate-400">Histórico</p>
                 <p className="mt-1 text-sm font-semibold text-white">{finishedEvents.length} finalizado{finishedEvents.length === 1 ? "" : "s"}</p>
               </div>
             </div>
@@ -124,7 +124,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-7xl space-y-20 px-6 py-16 lg:px-10">
+      <div className="mx-auto w-full max-w-7xl space-y-16 sm:space-y-20 px-4 sm:px-6 py-12 sm:py-16 lg:px-10">
 
         <section>
           <SectionHeader eyebrow="Ações rápidas" title="Comece por aqui" />
@@ -203,7 +203,7 @@ export default async function Home() {
                   </span>
                   <Link
                     href={`/events/${featuredEvent.id}`}
-                    className="action-primary inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition"
+                    className="action-primary inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2.5 sm:py-3 text-sm font-bold transition"
                   >
                     <Trophy className="h-4 w-4" />
                     Ver detalhes
@@ -286,9 +286,9 @@ export default async function Home() {
             Cada partida conta para o ranking.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Link href="/profile/me?action=new-team#teams" className="action-primary inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition"> <Anchor className="h-4 w-4" /> Criar equipe
+            <Link href="/profile/me?action=new-team#teams" className="action-primary inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2.5 sm:py-3 text-sm font-bold transition"> <Anchor className="h-4 w-4" /> Criar equipe
             </Link>
-            <Link href="/ranking" className="action-secondary inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition">
+            <Link href="/ranking" className="action-secondary inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold transition">
               <Trophy className="h-4 w-4" />
               Ver ranking
             </Link>
