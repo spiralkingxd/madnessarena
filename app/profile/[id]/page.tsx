@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Calendar, Trophy, Target, Clock, AtSign } from "lucide-react";
+import { Calendar, Trophy, Target, Clock, AtSign, Crown, Shield } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { XboxStatusTag } from "@/components/xbox-status-tag";
@@ -15,6 +15,7 @@ type PublicProfile = {
   xbox_gamertag: string | null;
   custom_status: string | null;
   boat_role: string | null;
+  role: string;
   created_at: string;
   updated_at: string;
   rankings?: {
@@ -31,7 +32,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, username, avatar_url, xbox_gamertag, custom_status, boat_role, created_at, updated_at, rankings(wins, points)")
+    .select("id, display_name, username, avatar_url, xbox_gamertag, custom_status, boat_role, role, created_at, updated_at, rankings(wins, points)")
     .eq("id", id)
     .maybeSingle<PublicProfile>();
 
@@ -76,7 +77,15 @@ export default async function PublicProfilePage({ params }: Props) {
 
             {/* Display name */}
             <h1 className="text-2xl font-bold tracking-wide text-slate-900 dark:text-white flex flex-col items-center">
-              {profile.display_name}
+              <span className="flex items-center gap-2">
+                {profile.display_name}
+                {profile.role === "owner" && (
+                  <Crown className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                )}
+                {profile.role === "admin" && (
+                  <Shield className="h-6 w-6 text-cyan-500 fill-cyan-500" />
+                )}
+              </span>
               {profile.custom_status && (
                 <span className="text-sm font-normal text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-green-500"></span>

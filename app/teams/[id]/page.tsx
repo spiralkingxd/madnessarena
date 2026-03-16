@@ -318,14 +318,13 @@ export default async function TeamDetailPage({ params }: Props) {
         {/* Team header */}
         <section className="rounded-[2rem] border border-white/10 bg-white/4 p-8">
           <div className="flex flex-wrap items-start gap-6">
-            <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+            <span className="flex h-20 w-20 shrink-0 overflow-hidden items-center justify-center rounded-2xl border border-white/10 bg-white/5">
               {team.logo_url ? (
-                <Image
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
                   src={team.logo_url}
                   alt={team.name}
-                  width={80}
-                  height={80}
-                  className="rounded-2xl object-cover"
+                  className="h-full w-full object-cover"
                 />
               ) : (
                 <Anchor className="h-8 w-8 text-amber-400/70" />

@@ -142,12 +142,11 @@ export default async function TeamsPage() {
                   <div className="flex items-start gap-4">
                     <span className="flex h-12 w-12 shrink-0 overflow-hidden items-center justify-center rounded-xl border border-white/10 bg-white/5 text-xl">
                       {team.logo_url ? (
-                        <Image
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
                           src={team.logo_url}
                           alt={team.name}
-                          width={48}
-                          height={48}
-                          className="rounded-xl object-cover"
+                          className="h-full w-full object-cover"
                         />
                       ) : (
                         <Anchor className="h-5 w-5 text-amber-400/60" />

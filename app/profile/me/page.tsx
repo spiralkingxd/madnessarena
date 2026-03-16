@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { AtSign, Calendar, Clock, Target, Trophy } from "lucide-react";
+import { AtSign, Calendar, Clock, Target, Trophy, Crown, Shield } from "lucide-react";
 
 import { upsertProfileFromOAuth } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -17,6 +17,7 @@ type ProfileRow = {
   avatar_url: string | null;
   custom_status: string | null;
   boat_role: string | null;
+  role: string;
   created_at: string;
   updated_at: string;
   rankings?: { wins: number; points: number; }[] | null;
@@ -57,7 +58,7 @@ export default async function MyProfilePage() {
 
   let { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, username, xbox_gamertag, avatar_url, custom_status, boat_role, created_at, updated_at, rankings(wins, points)")
+    .select("id, display_name, username, xbox_gamertag, avatar_url, custom_status, boat_role, role, created_at, updated_at, rankings(wins, points)")
     .eq("id", user.id)
     .maybeSingle<ProfileRow>();
 
@@ -66,7 +67,7 @@ export default async function MyProfilePage() {
 
     const { data: recoveredProfile } = await supabase
       .from("profiles")
-      .select("id, display_name, username, xbox_gamertag, avatar_url, custom_status, boat_role, created_at, updated_at, rankings(wins, points)")
+      .select("id, display_name, username, xbox_gamertag, avatar_url, custom_status, boat_role, role, created_at, updated_at, rankings(wins, points)")
       .eq("id", user.id)
       .maybeSingle<ProfileRow>();
 
@@ -180,7 +181,11 @@ export default async function MyProfilePage() {
 
             {/* Display name */}
             <h1 className="text-2xl font-bold tracking-wide text-slate-900 dark:text-white flex flex-col items-center">
-              {profile.display_name}
+              <div className="flex items-center gap-2">
+                {profile.role === 'owner' && <Crown className="h-5 w-5 text-yellow-500" />}
+                {profile.role === 'admin' && <Shield className="h-5 w-5 text-cyan-500" />}
+                {profile.display_name}
+              </div>
               {profile.custom_status && (
                 <span className="text-sm font-normal text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-green-500"></span>
