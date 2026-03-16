@@ -151,11 +151,11 @@ async function StreamList() {
 
                   {isOnline ? (
                     <div className="mt-1 flex flex-col md:flex-row md:items-center gap-1 md:gap-3 text-sm text-slate-300">
-                      <p className="font-medium text-slate-200 line-clamp-1">{streamer.streamInfo.title}</p>
+                      <p className="font-medium text-slate-200 line-clamp-1">{streamer.streamInfo?.title}</p>
                       <span className="hidden md:inline text-slate-600">&bull;</span>
                       <p className="flex shrink-0 items-center gap-1 text-red-400 font-semibold">
                         <Radio className="h-3.5 w-3.5" />
-                        {streamer.streamInfo.viewer_count.toLocaleString("pt-BR")} Espectadores
+                        {streamer.streamInfo?.viewer_count.toLocaleString("pt-BR")} Espectadores
                       </p>
                     </div>
                   ) : (

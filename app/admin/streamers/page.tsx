@@ -77,7 +77,7 @@ export default async function AdminStreamersPage() {
       <div className="p-6">
         <div><h1 className="text-3xl font-bold text-white tracking-tight">Streamers</h1><p className="text-slate-400 mt-2">Gerencie os streamers da Madness Arena.</p></div>
         <div className="mt-8 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center text-red-400">
-          <ShieldAlert className="mx-auto h-8 w-8 mb-2"
+          <ShieldAlert className="mx-auto h-8 w-8 mb-2" />
           <p className="font-semibold">A tabela de streamers nÃo foi encontrada no banco de dados.</p>
           <p className="text-sm mt-1">Por favor, execute o script SQL `supabase_streamers_schema.sql` no painel do Supabase.</p>
         </div>
@@ -99,10 +99,10 @@ export default async function AdminStreamersPage() {
             name="username" 
             placeholder="Username da Twitch (ex: gaules, hwmalk)" 
             required
-            className="flex flex-1 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder-slate-500 focus-within:border-cyan-500/50"
+            className="flex flex-1 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder-slate-500 focus-within:border-cyan-500/50" />
 
           <Button type="submit" variant="primary">
-            <Plus className="h-4 w-4 mr-2"
+            <Plus className="h-4 w-4 mr-2" />
             Adicionar
           </Button>
         </form>
@@ -124,7 +124,7 @@ export default async function AdminStreamersPage() {
                     <span className="font-semibold">{s.username}</span>
                     {s.is_official && (
                       <span className="flex items-center gap-1 text-[10px] uppercase font-bold text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full">
-                        <Star className="h-3 w-3" fill="currentColor"Oficial
+                        <Star className="h-3 w-3" fill="currentColor" /> Oficial
                       </span>
                     )}
                   </div>
@@ -133,31 +133,31 @@ export default async function AdminStreamersPage() {
 
                 <div className="flex items-center gap-2">
                   <form action={toggleOfficial}>
-                    <input type="hidden" name="id" value={s.id}
-                    <input type="hidden" name="username" value={s.username}
-                    <input type="hidden" name="isOfficial" value={s.is_official.toString()}
+                    <input type="hidden" name="id" value={s.id} />
+                    <input type="hidden" name="username" value={s.username} />
+                    <input type="hidden" name="isOfficial" value={s.is_official.toString()} />
                     <Button 
                       type="submit" 
                       variant="ghost" 
-                      size="sm"
+
                       disabled={s.username.toLowerCase() === "hwmalk"}
                       title={s.is_official ? "Remover cargo oficial" : "Tornar oficial"}
                     >
-                      <Star className={`h-4 w-4 ${s.is_official ? "text-yellow-400" : "text-slate-500"}`}
+                      <Star className={`h-4 w-4 ${s.is_official ? "text-yellow-400" : "text-slate-500"}`} />
                     </Button>
                   </form>
 
                   <form action={removeStreamer}>
-                    <input type="hidden" name="id" value={s.id}
-                    <input type="hidden" name="username" value={s.username}
+                    <input type="hidden" name="id" value={s.id} />
+                    <input type="hidden" name="username" value={s.username} />
                     <Button 
                       type="submit" 
                       variant="ghost" 
-                      size="sm"
+
                       className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
                       disabled={s.username.toLowerCase() === "hwmalk"}
                     >
-                      <Trash2 className="h-4 w-4"
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </form>
                 </div>
