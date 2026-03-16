@@ -126,22 +126,12 @@ export function UserDropdown({
               href="/admin/dashboard"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-xl px-3 py-2 text-[color:var(--accent-amber)] transition hover:bg-[color:var(--accent-amber)]/10"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-[color:var(--accent-amber)] transition hover:bg-black/5 dark:hover:bg-white/10"
             >
               <Shield className="h-4 w-4" />
               Painel Admin
             </Link>
           ) : null}
-
-          <Link
-            href="/my-team?from=profile"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 rounded-xl px-3 py-2 text-[color:var(--text-base)] transition hover:bg-black/5 dark:hover:bg-white/10 hover:text-[color:var(--text-strong)]"
-          >
-            <Gamepad2 className="h-4 w-4" />
-            Minhas Equipes ({teamsCount}/1)
-          </Link>
 
           <Link
             href="/profile/me"
@@ -151,6 +141,16 @@ export function UserDropdown({
           >
             <User className="h-4 w-4" />
             Perfil
+          </Link>
+
+          <Link
+            href="/my-team?from=profile"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-[color:var(--text-base)] transition hover:bg-black/5 dark:hover:bg-white/10 hover:text-[color:var(--text-strong)]"
+          >
+            <Gamepad2 className="h-4 w-4" />
+            Minhas Equipes ({teamsCount}/1)
           </Link>
 
           <form action={logout}>
