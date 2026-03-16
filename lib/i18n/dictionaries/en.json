@@ -118,5 +118,15 @@
     "leaguePoints": "League Points",
     "tournamentsWon": "Tournaments Won",
     "loadTeamsError": "Could not load your teams right now."
+  },
+  "navlinks": {
+    "home": "Home",
+    "events": "Events",
+    "teams": "Teams",
+    "viewTeams": "View Teams",
+    "myTeams": "My Teams",
+    "rules": "Rules",
+    "ranking": "Ranking",
+    "streams": "Streams"
   }
 }

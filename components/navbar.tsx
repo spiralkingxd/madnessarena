@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { getDictionary } from "@/lib/i18n";
 import { Suspense } from "react";
 
 import { createClient } from "@/lib/supabase/server";
@@ -75,8 +76,8 @@ async function UserSection() {
         href="/auth/login"
         className="action-primary inline-flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition"
       >
-        <span className="sm:hidden">Login</span>
-        <span className="hidden sm:inline">Login com Discord</span>
+        <span className="sm:hidden">{dict.nav.login}</span>
+        <span className="hidden sm:inline">{dict.nav.loginDiscord}</span>
       </Link>
     );
   }
@@ -94,6 +95,7 @@ async function UserSection() {
 }
 
 export async function Navbar() {
+  const dict = await getDictionary();
   const isConfigured = isSupabaseConfigured();
 
   let hasAuthCookie = false;
@@ -115,7 +117,7 @@ export async function Navbar() {
           Madness Arena
         </Link>
 
-        <NavLinks />
+        <NavLinks dict={dict} />
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <GlobalSearch /> <LanguageSwitcher /> <ThemeToggle />
@@ -125,8 +127,8 @@ export async function Navbar() {
               href="/auth/login"
               className="action-primary inline-flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition"
             >
-              <span className="sm:hidden">Login</span>
-              <span className="hidden sm:inline">Login com Discord</span>
+              <span className="sm:hidden">{dict.nav.login}</span>
+              <span className="hidden sm:inline">{dict.nav.loginDiscord}</span>
             </Link>
           ) : hasAuthCookie ? (
             <div className="flex items-center gap-2 sm:gap-4">
@@ -140,8 +142,8 @@ export async function Navbar() {
               href="/auth/login"
               className="action-primary inline-flex items-center rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition"
             >
-              <span className="sm:hidden">Login</span>
-              <span className="hidden sm:inline">Login com Discord</span>
+              <span className="sm:hidden">{dict.nav.login}</span>
+              <span className="hidden sm:inline">{dict.nav.loginDiscord}</span>
             </Link>
           )}
         </div>

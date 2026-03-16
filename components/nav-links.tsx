@@ -7,25 +7,27 @@ import { ChevronDown, Menu, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-const LINKS = [
-  { href: "/", label: "Início" },
-  { href: "/events", label: "Torneios" },
-  {
-    label: "Equipes",
-    isDropdown: true,
-    children: [
-      { href: "/teams", label: "Ver Equipes" },
-      { href: "/profile/me#teams", label: "Minhas Equipes" },
-      { href: "/regras", label: "Regras" },
-    ],
-  },
-  { href: "/ranking", label: "Ranking" },
-  { href: "/transmissoes", label: "Transmissões" },
-];
 
-export function NavLinks() {
+
+export function NavLinks({ dict }: { dict: any }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+
+  const LINKS = [
+    { href: "/", label: dict?.navlinks?.home ?? "Início" },
+    { href: "/events", label: dict?.navlinks?.events ?? "Torneios" },
+    {
+      label: dict?.navlinks?.teams ?? "Equipes",
+      isDropdown: true,
+      children: [
+        { href: "/teams", label: dict?.navlinks?.viewTeams ?? "Ver Equipes" },
+        { href: "/profile/me#teams", label: dict?.navlinks?.myTeams ?? "Minhas Equipes" },
+        { href: "/regras", label: dict?.navlinks?.rules ?? "Regras" },
+      ],
+    },
+    { href: "/ranking", label: dict?.navlinks?.ranking ?? "Ranking" },
+    { href: "/transmissoes", label: dict?.navlinks?.streams ?? "Transmissões" },
+  ];
 
   function isActive(href: string) {
     if (!href) return false;

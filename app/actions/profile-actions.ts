@@ -11,7 +11,8 @@ export async function updateProfileFeatures(prevState: any, formData: FormData) 
     return { error: "Não autenticado" };
   }
 
-  const customStatus = formData.get("custom_status"); const boatRole = formData.get("boat_role"); const avatarBase64 = formData.get("avatar_base64") as string | null; const xboxGamertag = formData.get("xbox_gamertag") as string | null; if (xboxGamertag?.trim()) { const { data: existingProfile } = await supabase.from("profiles").select("xbox_gamertag").eq("id", user.id).single(); if (existingProfile && existingProfile.xbox_gamertag) { return { error: "A conta Xbox já foi vinculada e não pode ser alterada. Contate um admin." }; } } const updates: any = {}; if (customStatus !== null) updates.custom_status = String(customStatus).trim().substring(0, 50); if (boatRole !== null) updates.boat_role = String(boatRole); if (xboxGamertag && xboxGamertag.trim()) updates.xbox_gamertag = xboxGamertag.trim();
+  const customStatus = formData.get("custom_status"); const boatRoleArray = formData.getAll("boat_role_array");
+  const boatRole = boatRoleArray.length > 0 ? boatRoleArray.join(", ") : formData.get("boat_role"); const avatarBase64 = formData.get("avatar_base64") as string | null; const xboxGamertag = formData.get("xbox_gamertag") as string | null; if (xboxGamertag?.trim()) { const { data: existingProfile } = await supabase.from("profiles").select("xbox_gamertag").eq("id", user.id).single(); if (existingProfile && existingProfile.xbox_gamertag) { return { error: "A conta Xbox já foi vinculada e não pode ser alterada. Contate um admin." }; } } const updates: any = {}; if (customStatus !== null) updates.custom_status = String(customStatus).trim().substring(0, 50); if (boatRole !== null) updates.boat_role = String(boatRole); if (xboxGamertag && xboxGamertag.trim()) updates.xbox_gamertag = xboxGamertag.trim();
 
   if (avatarBase64 && avatarBase64.startsWith('data:image')) {
     try {

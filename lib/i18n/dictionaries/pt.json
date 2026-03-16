@@ -118,5 +118,15 @@
     "leaguePoints": "Pontos de Liga",
     "tournamentsWon": "Torneios Ganhos",
     "loadTeamsError": "Não foi possível carregar suas equipes agora."
+  },
+  "navlinks": {
+    "home": "Início",
+    "events": "Torneios",
+    "teams": "Equipes",
+    "viewTeams": "Ver Equipes",
+    "myTeams": "Minhas Equipes",
+    "rules": "Regras",
+    "ranking": "Ranking",
+    "streams": "Transmissões"
   }
 }
