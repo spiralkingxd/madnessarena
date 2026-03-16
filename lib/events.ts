@@ -4,7 +4,7 @@ export const EVENT_TYPE_VALUES = ["tournament", "special", "scrimmage"] as const
 export const EVENT_VISIBILITY_VALUES = ["public", "private"] as const;
 export const TOURNAMENT_FORMAT_VALUES = ["single_elimination", "double_elimination", "round_robin"] as const;
 export const SEEDING_METHOD_VALUES = ["random", "manual", "ranking"] as const;
-export const TEAM_SIZE_VALUES = [1, 2, 3, 4, 5, 6, 8, 10] as const;
+export const TEAM_SIZE_VALUES = [1, 2, 3, 4] as const;
 
 export type EventStatus = (typeof EVENT_STATUS_VALUES)[number];
 export type EventKind = (typeof EVENT_KIND_VALUES)[number];
@@ -86,7 +86,7 @@ export function formatSeedingMethod(method: string | null) {
 
 export function formatTeamSize(size: number | null | undefined) {
   if (!size || size < 1) return "-";
-  return `${size}v${size}`;
+  return getTeamSizeLabel(size);
 }
 
 export function isEventVisible(status: string) {
@@ -110,8 +110,9 @@ export function toDatetimeLocalValue(value: string | null | undefined) {
 
 
 export function getTeamSizeLabel(size: number): string {
-  if (size === 1 || size === 2) return `Chalupa ${size}v${size}`;
-  if (size === 3) return `Bergantim ${size}v${size}`;
-  if (size === 4) return `Galeão ${size}v${size}`;
-  return `${size}v${size}`;
+  if (size === 1) return "Chalupa Solo";
+  if (size === 2) return "Chalupa Duo";
+  if (size === 3) return "Bergantim";
+  if (size === 4) return "Galeão";
+  return `Equipe ${size}`;
 }

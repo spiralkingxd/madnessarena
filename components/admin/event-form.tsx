@@ -38,7 +38,7 @@ const formSchema = z.object({
   event_kind: z.enum(EVENT_KIND_VALUES),
   event_type: z.enum(EVENT_TYPE_VALUES),
   visibility: z.enum(EVENT_VISIBILITY_VALUES),
-  team_size: z.coerce.number().int().min(1).max(10),
+  team_size: z.coerce.number().int().min(1).max(4),
   prize_description: z.string().optional(),
   rules: z.string().optional(),
   logo_url: z.string().optional(),
@@ -290,7 +290,9 @@ export function EventForm({
         </div>
 
         <RichTextEditor label="Descrição" value={description} onChange={setDescription} placeholder="Resumo do evento, formato e informações gerais." />
-        <RichTextEditor label="Regras" value={rules} onChange={setRules} placeholder="Regras detalhadas, critérios de desempate e condutas." />
+        {(fixedKind === "tournament" || eventKind === "tournament") ? null : (
+          <RichTextEditor label="Regras" value={rules} onChange={setRules} placeholder="Regras detalhadas, critérios de desempate e condutas." />
+        )}
 
         <section className="space-y-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 p-4">
           <div>

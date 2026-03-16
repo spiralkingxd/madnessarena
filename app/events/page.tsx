@@ -8,7 +8,6 @@ import { formatTeamSize } from "@/lib/events";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cn } from "@/lib/utils";
-import { getTeamSizeLabel } from "@/lib/events";
 import { getDictionary } from "@/lib/i18n";
 
 type EventRow = {
@@ -204,7 +203,7 @@ export default async function EventsPage({ searchParams }: Props) {
             <p className="mt-1 text-sm text-slate-600">
               {status
                 ? `Nenhum evento com status "${STATUS_LABELS[status]}" encontrado.`
-                : "{dict.events.noEventYet}"}
+                : dict.events.noEventYet}
             </p>
             {status && (
               <Link

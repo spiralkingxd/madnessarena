@@ -158,6 +158,118 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
   return (
     <section className="space-y-6">
       <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
+        <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
+          <BellRing className="h-5 w-5 text-cyan-300" />
+          Notificação personalizada (site)
+        </h2>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Envie notificações in-app informativas, de aviso ou alerta para um usuário específico ou para todos.
+        </p>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+            Título
+            <input
+              value={inAppTitle}
+              onChange={(event) => setInAppTitle(event.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+              placeholder="Ex.: Manutenção hoje às 23h"
+              maxLength={150}
+            />
+          </label>
+
+          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+            Tipo visual
+            <select
+              value={inAppSeverity}
+              onChange={(event) => setInAppSeverity(event.target.value as "info" | "warning" | "danger")}
+              className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+            >
+              <option value="info">Informativa</option>
+              <option value="warning">Aviso</option>
+              <option value="danger">Alerta (danger)</option>
+            </select>
+          </label>
+
+          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 md:col-span-2">
+            Mensagem
+            <textarea
+              value={inAppMessage}
+              onChange={(event) => setInAppMessage(event.target.value)}
+              className="mt-1 h-24 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+              placeholder="Mensagem que aparecerá no sino de notificações"
+              maxLength={2000}
+            />
+          </label>
+
+          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+            Destinatário
+            <select
+              value={inAppAudience}
+              onChange={(event) => setInAppAudience(event.target.value as "single" | "all")}
+              className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+            >
+              <option value="single">Usuário específico</option>
+              <option value="all">Todos os usuários</option>
+            </select>
+          </label>
+
+          {inAppAudience === "single" ? (
+            <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+              Usuário
+              <select
+                value={inAppUserId}
+                onChange={(event) => setInAppUserId(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+              >
+                <option value="">Selecione</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.display_name} (@{user.username})
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+        </div>
+
+        <div className="mt-4">
+          <AdminButton
+            type="button"
+            disabled={
+              isPending ||
+              inAppTitle.trim().length < 3 ||
+              inAppMessage.trim().length < 3 ||
+              (inAppAudience === "single" && !inAppUserId)
+            }
+            onClick={() =>
+              startTransition(async () => {
+                const result = await sendCustomInAppNotification({
+                  title: inAppTitle,
+                  message: inAppMessage,
+                  severity: inAppSeverity,
+                  audience: inAppAudience,
+                  userId: inAppAudience === "single" ? inAppUserId : undefined,
+                });
+
+                pushToast(result.error ? "error" : "success", result.error ?? result.success ?? "Concluído.");
+                if (!result.error) {
+                  setInAppTitle("");
+                  setInAppMessage("");
+                  setInAppSeverity("info");
+                  setInAppAudience("single");
+                  setInAppUserId("");
+                }
+                refresh();
+              })
+            }
+          >
+            Enviar notificação in-app
+          </AdminButton>
+        </div>
+      </article>
+
+      <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
           <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
             <ShieldCheck className="h-5 w-5 text-cyan-300" />
             Configuracao de Webhooks
@@ -434,118 +546,6 @@ export function NotificationsCenter({ templates, history, settings, users, isOwn
       <article id="custom-in-app" className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
         <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Historico de notificacoes</h2>
         <AdminTable data={history} columns={columns} pageSize={25} emptyText="Nenhuma notificacao registrada." />
-      </article>
-
-      <article className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 p-5">
-        <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-          <BellRing className="h-5 w-5 text-cyan-300" />
-          Notificação personalizada (site)
-        </h2>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Envie notificações in-app informativas, de aviso ou alerta para um usuário específico ou para todos.
-        </p>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
-            Título
-            <input
-              value={inAppTitle}
-              onChange={(event) => setInAppTitle(event.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
-              placeholder="Ex.: Manutenção hoje às 23h"
-              maxLength={150}
-            />
-          </label>
-
-          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
-            Tipo visual
-            <select
-              value={inAppSeverity}
-              onChange={(event) => setInAppSeverity(event.target.value as "info" | "warning" | "danger")}
-              className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
-            >
-              <option value="info">Informativa</option>
-              <option value="warning">Aviso</option>
-              <option value="danger">Alerta (danger)</option>
-            </select>
-          </label>
-
-          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 md:col-span-2">
-            Mensagem
-            <textarea
-              value={inAppMessage}
-              onChange={(event) => setInAppMessage(event.target.value)}
-              className="mt-1 h-24 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
-              placeholder="Mensagem que aparecerá no sino de notificações"
-              maxLength={2000}
-            />
-          </label>
-
-          <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
-            Destinatário
-            <select
-              value={inAppAudience}
-              onChange={(event) => setInAppAudience(event.target.value as "single" | "all")}
-              className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
-            >
-              <option value="single">Usuário específico</option>
-              <option value="all">Todos os usuários</option>
-            </select>
-          </label>
-
-          {inAppAudience === "single" ? (
-            <label className="block text-xs uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
-              Usuário
-              <select
-                value={inAppUserId}
-                onChange={(event) => setInAppUserId(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
-              >
-                <option value="">Selecione</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.display_name} (@{user.username})
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-        </div>
-
-        <div className="mt-4">
-          <AdminButton
-            type="button"
-            disabled={
-              isPending ||
-              inAppTitle.trim().length < 3 ||
-              inAppMessage.trim().length < 3 ||
-              (inAppAudience === "single" && !inAppUserId)
-            }
-            onClick={() =>
-              startTransition(async () => {
-                const result = await sendCustomInAppNotification({
-                  title: inAppTitle,
-                  message: inAppMessage,
-                  severity: inAppSeverity,
-                  audience: inAppAudience,
-                  userId: inAppAudience === "single" ? inAppUserId : undefined,
-                });
-
-                pushToast(result.error ? "error" : "success", result.error ?? result.success ?? "Concluído.");
-                if (!result.error) {
-                  setInAppTitle("");
-                  setInAppMessage("");
-                  setInAppSeverity("info");
-                  setInAppAudience("single");
-                  setInAppUserId("");
-                }
-                refresh();
-              })
-            }
-          >
-            Enviar notificação in-app
-          </AdminButton>
-        </div>
       </article>
     </section>
   );

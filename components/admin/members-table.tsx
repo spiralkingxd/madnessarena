@@ -49,7 +49,7 @@ export function MembersTable({
   const [tableRows, setTableRows] = useState<MemberRow[]>(rows);
 
   const [search, setSearch] = useState("");
-  const [showEmails, setShowEmails] = useState(false);
+  const [visibleEmails, setVisibleEmails] = useState<Record<string, boolean>>({});
   const [roleFilter, setRoleFilter] = useState<"all" | MemberRow["role"]>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "banned">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "7" | "30">("all");
@@ -127,7 +127,26 @@ export function MembersTable({
         header: "Email",
         sortable: true,
         accessor: (row) => row.email ?? "",
-        render: (row) => <span className="text-xs text-slate-600 dark:text-slate-300">{row.email ? (showEmails ? row.email : row.email.substring(0,3) + "***@***.com") : "-"}</span>,
+        render: (row) => {
+          const visible = Boolean(visibleEmails[row.id]);
+          const masked = row.email ? `${row.email.slice(0, 3)}***@***.com` : "-";
+          return (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-600 dark:text-slate-300">{row.email ? (visible ? row.email : masked) : "-"}</span>
+              {row.email ? (
+                <button
+                  type="button"
+                  onClick={() => setVisibleEmails((prev) => ({ ...prev, [row.id]: !prev[row.id] }))}
+                  className="rounded-md p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
+                  aria-label={visible ? "Ocultar email" : "Mostrar email"}
+                  title={visible ? "Ocultar email" : "Mostrar email"}
+                >
+                  {visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
+              ) : null}
+            </div>
+          );
+        },
       },
       {
         key: "role",
@@ -275,7 +294,7 @@ export function MembersTable({
         ),
       },
     ];
-  }, [currentAdminId, currentAdminRole, pushToast, router, selected, startTransition]);
+  }, [currentAdminId, currentAdminRole, pushToast, router, selected, startTransition, visibleEmails]);
 
   async function runBulkAction(action: "promote" | "demote" | "ban") {
     if (selectedIds.length === 0) {
