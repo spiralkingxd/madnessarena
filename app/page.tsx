@@ -81,17 +81,17 @@ export default async function Home() {
           aria-hidden
           className="absolute inset-0 hidden dark:block bg-[radial-gradient(circle_at_10%_15%,rgba(34,211,238,0.22),transparent_40%),radial-gradient(circle_at_86%_12%,rgba(245,158,11,0.16),transparent_35%),radial-gradient(circle_at_55%_100%,rgba(56,189,248,0.12),transparent_52%),linear-gradient(180deg,rgba(4,16,35,0.92)_0%,rgba(3,11,26,0.96)_55%,rgba(2,8,20,1)_100%)]"
         />
-        <div aria-hidden className="absolute inset-0 opacity-[0.08] dark:opacity-[0.05] [background-image:linear-gradient(rgba(148,163,184,0.35)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.35)_1px,transparent_1px)] [background-size:56px_56px]" />
+        <div aria-hidden className="absolute inset-0 opacity-[0.05] dark:opacity-[0.03] [background-image:linear-gradient(rgba(148,163,184,0.35)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.35)_1px,transparent_1px)] [background-size:56px_56px]" />
         <div aria-hidden className="absolute inset-0">
           <Image
             src={madnessArenaBackground}
             alt=""
             fill
             priority
-            className="object-cover object-center opacity-35 dark:opacity-25"
+            className="object-cover object-center scale-[1.03] opacity-55 dark:opacity-60 saturate-[1.14] contrast-[1.08] brightness-[0.88] dark:brightness-[0.76]"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/25 to-transparent dark:from-slate-950/45 dark:via-slate-950/30 dark:to-slate-950/10" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(56,189,248,0.12),transparent_58%)] dark:bg-[radial-gradient(circle_at_50%_35%,rgba(56,189,248,0.16),transparent_62%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,10,22,0.52)_0%,rgba(3,10,22,0.28)_38%,rgba(2,8,20,0.66)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,8,20,0.66)_0%,rgba(2,8,20,0.42)_40%,rgba(2,8,20,0.8)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(56,189,248,0.2),transparent_46%),radial-gradient(circle_at_50%_120%,rgba(2,132,199,0.3),transparent_58%)] dark:bg-[radial-gradient(circle_at_50%_38%,rgba(56,189,248,0.24),transparent_48%),radial-gradient(circle_at_50%_115%,rgba(14,116,144,0.42),transparent_60%)]" />
         </div>
         <div className="relative mx-auto flex flex-col items-center text-center max-w-5xl gap-8 px-4 sm:px-6 py-20 sm:py-28 lg:px-10 lg:py-32">     
           <div className="space-y-6 flex flex-col items-center">
