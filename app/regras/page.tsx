@@ -1,13 +1,73 @@
 ﻿import { Book } from "lucide-react";
 import { getDictionary } from "@/lib/i18n";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Regras",
   description: "Conheça as regras dos campeonatos da Madness Arena",
 };
 
+type RuleItem = {
+  id: string;
+  order: number;
+  title: string;
+  content: string;
+};
+
+const FALLBACK_RULES: RuleItem[] = [
+  {
+    id: "fallback-1",
+    order: 1,
+    title: "Conduta e Fair Play",
+    content:
+      "Todos os participantes devem manter o respeito. Comportamento tóxico, racismo ou qualquer tipo de discriminação resultará em banimento imediato e permanente.",
+  },
+  {
+    id: "fallback-2",
+    order: 2,
+    title: "Inscrições e Equipes",
+    content:
+      "Capitães são responsáveis por inscrever sua equipe nos eventos. Verifique o tamanho exigido da equipe para cada campeonato (Sloop, Brigantine ou Galleon).",
+  },
+  {
+    id: "fallback-3",
+    order: 3,
+    title: "Horários",
+    content:
+      "Tolerância máxima de 10 minutos de atraso para check-in. Caso a equipe não esteja pronta, perderá a partida por W.O.",
+  },
+  {
+    id: "fallback-4",
+    order: 4,
+    title: "Gravação e Provas",
+    content:
+      "É obrigatório que pelo menos um jogador de cada tripulação grave a partida, ou transmita na Twitch, para validação de resultados em caso de disputa.",
+  },
+];
+
+const FALLBACK_FOOTER =
+  "Estas regras estão sujeitas a atualizações antes do início de cada temporada. Mantenha-se informado através do nosso Discord.";
+
 export default async function RegrasPage() {
   const dict = await getDictionary();
+  const supabase = await createClient();
+
+  const [{ data: rulesRaw }, { data: settingsRaw }] = await Promise.all([
+    supabase.from("rules_content").select("id, order, title, content").order("order", { ascending: true }),
+    supabase.from("system_settings").select("general_rules").eq("id", 1).maybeSingle<{ general_rules: string | null }>(),
+  ]);
+
+  const rules: RuleItem[] =
+    (rulesRaw ?? []).map((row) => ({
+      id: String(row.id),
+      order: Number(row.order ?? 0),
+      title: String(row.title ?? ""),
+      content: String(row.content ?? ""),
+    })) ?? [];
+
+  const orderedRules = rules.length > 0 ? rules : FALLBACK_RULES;
+  const footer = settingsRaw?.general_rules?.trim() || FALLBACK_FOOTER;
+
   return (
     <main className="page-shell px-6 py-10 lg:px-10">
       <div className="mx-auto w-full max-w-4xl space-y-8">
@@ -21,30 +81,15 @@ export default async function RegrasPage() {
         </div>
 
         <section className="glass-card soft-ring overflow-hidden rounded-2xl p-6 lg:p-10 prose prose-invert max-w-none">
-          <h2>1. Conduta e Fair Play</h2>
-          <p>
-            Todos os participantes devem manter o respeito. Comportamento tóxico, racismo ou qualquer tipo de discriminação resultará em banimento imediato e permanente.
-          </p>
-
-          <h2>2. Inscrições e Equipes</h2>
-          <p>
-            Capitães são responsáveis por inscrever sua equipe nos eventos. Verifique o tamanho exigido da equipe para cada campeonato (Sloop, Brigantine ou Galleon).
-          </p>
-
-          <h2>3. Horários</h2>
-          <p>
-            Tolerncia máxima de 10 minutos de atraso para check-in. Caso a equipe não esteja pronta, perderá a partida por W.O.
-          </p>
-
-          <h2>4. Gravação e Provas</h2>
-          <p>
-            É obrigatório que pelo menos um jogador de cada tripulação grave a partida, ou transmita na Twitch, para validação de resultados em caso de disputa.
-          </p>
+          {orderedRules.map((rule, index) => (
+            <div key={rule.id}>
+              <h2>{index + 1}. {rule.title}</h2>
+              <p className="whitespace-pre-line">{rule.content}</p>
+            </div>
+          ))}
           
           <hr className="border-white/10 my-8" />
-          <p className="text-sm text-slate-500">
-            Estas regras estão sujeitas a atualizações antes do início de cada temporada. Mantenha-se informado através do nosso Discord.
-          </p>
+          <p className="text-sm text-slate-500 whitespace-pre-line">{footer}</p>
         </section>
       </div>
     </main>
