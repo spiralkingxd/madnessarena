@@ -1,7 +1,8 @@
 ﻿import { Book } from "lucide-react";
 
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
-import { getDictionary } from "@/lib/i18n";
+import { getDictionary, getLocale } from "@/lib/i18n";
+import { translatePtToEnOnTheFly } from "@/lib/i18n/runtime-translate";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -52,6 +53,7 @@ const FALLBACK_FOOTER =
 
 export default async function RegrasPage() {
   const dict = await getDictionary();
+  const locale = await getLocale();
   const supabase = await createClient();
 
   const [{ data: rulesRaw }, { data: settingsRaw }] = await Promise.all([
@@ -69,6 +71,19 @@ export default async function RegrasPage() {
 
   const orderedRules = rules.length > 0 ? rules : FALLBACK_RULES;
   const footer = settingsRaw?.general_rules?.trim() || FALLBACK_FOOTER;
+
+  const localizedRules =
+    locale === "en"
+      ? await Promise.all(
+          orderedRules.map(async (rule) => ({
+            ...rule,
+            title: await translatePtToEnOnTheFly(rule.title),
+            content: await translatePtToEnOnTheFly(rule.content),
+          })),
+        )
+      : orderedRules;
+
+  const localizedFooter = locale === "en" ? await translatePtToEnOnTheFly(footer) : footer;
   const singleDocument = orderedRules.length === 1 && orderedRules[0]?.title.trim().toLowerCase() === "regras";
 
   return (
@@ -81,15 +96,16 @@ export default async function RegrasPage() {
             {dict.rules.title}
           </h1>
           <p className="mt-2 text-sm text-slate-400">{dict.rules.desc}</p>
+          {locale === "en" && <p className="mt-2 text-xs text-cyan-300/80">{dict.rules.runtimeTranslationInfo}</p>}
         </div>
 
         <section className="rounded-xl border border-white/10 bg-slate-900/70 p-6 shadow-xl backdrop-blur-sm md:p-8">
           <div className="space-y-6">
           {singleDocument ? (
-            <MarkdownRenderer className="text-sm text-slate-300" content={orderedRules[0].content} />
+            <MarkdownRenderer className="text-sm text-slate-300" content={localizedRules[0].content} />
           ) : (
             <div className="space-y-6">
-              {orderedRules.map((rule, index) => (
+              {localizedRules.map((rule, index) => (
                 <article key={rule.id}>
                   <h3 className="text-base font-bold text-white">{index + 1}. {rule.title}</h3>
                   <MarkdownRenderer className="mt-3 text-sm text-slate-300" content={rule.content} />
@@ -99,7 +115,7 @@ export default async function RegrasPage() {
           )}
 
             <hr className="border-white/10" />
-            <MarkdownRenderer className="text-sm text-slate-400" content={footer} />
+            <MarkdownRenderer className="text-sm text-slate-400" content={localizedFooter} />
           </div>
         </section>
       </div>

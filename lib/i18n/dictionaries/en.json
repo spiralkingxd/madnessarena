@@ -92,6 +92,20 @@
     "teamLimitReached": "You are already in a team"
   },
   "streams": {
+    "heroBadge": "Live broadcasts",
+    "heroTitlePrefix": "STREAM",
+    "heroTitleAccent": "S",
+    "heroDesc": "Follow our official championships and community live on Twitch.",
+    "loadErrorTitle": "Failed to load the streamer list.",
+    "loadErrorDesc": "The streamers database may not be configured.",
+    "emptyRegisteredTitle": "No streamer registered",
+    "emptyRegisteredDesc": "There are no registered broadcasts yet. Check back soon!",
+    "liveTag": "Live",
+    "organizer": "Organizer",
+    "official": "Official",
+    "viewers": "Viewers",
+    "offlineNow": "Offline right now",
+    "goToTwitch": "Go to Twitch",
     "badge": "Live",
     "title": "Broadcasts & VODs",
     "desc": "Watch live games or catch the highlights from the latest tournaments.",
@@ -105,7 +119,11 @@
   "rules": {
     "badge": "Official Documentation",
     "title": "Rules & Conduct",
-    "desc": "Carefully read the guidelines that keep Madness Arena fair and competitive for everyone."
+    "desc": "Carefully read the guidelines that keep Madness Arena fair and competitive for everyone.",
+    "runtimeTranslationInfo": "Rules below are translated automatically in real time from the latest Portuguese version."
+  },
+  "common": {
+    "loading": "Loading..."
   },
   "events": {
     "badge": "Official Competitions",

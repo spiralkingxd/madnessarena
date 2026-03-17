@@ -92,6 +92,20 @@
     "teamLimitReached": "Você já participa de uma equipe"
   },
   "streams": {
+    "heroBadge": "Transmissões ao vivo",
+    "heroTitlePrefix": "Transmiss",
+    "heroTitleAccent": "ões",
+    "heroDesc": "Acompanhe nossos campeonatos oficiais e a comunidade ao vivo na Twitch.",
+    "loadErrorTitle": "Erro ao carregar a lista de streamers.",
+    "loadErrorDesc": "O banco de dados de streamers pode não estar configurado.",
+    "emptyRegisteredTitle": "Nenhum streamer cadastrado",
+    "emptyRegisteredDesc": "Ainda não temos transmissões registradas. Volte em breve!",
+    "liveTag": "Ao vivo",
+    "organizer": "Organizador",
+    "official": "Oficial",
+    "viewers": "Espectadores",
+    "offlineNow": "Offline no momento",
+    "goToTwitch": "Ir para a Twitch",
     "badge": "Ao Vivo",
     "title": "Transmissões e VODs",
     "desc": "Acompanhe as partidas ao vivo ou assista aos melhores momentos dos últimos torneios.",
@@ -105,7 +119,11 @@
   "rules": {
     "badge": "Documentação Oficial",
     "title": "Regras e Conduta",
-    "desc": "Leia atentamente as diretrizes que mantêm a Madness Arena justa e competitiva para todos."
+    "desc": "Leia atentamente as diretrizes que mantêm a Madness Arena justa e competitiva para todos.",
+    "runtimeTranslationInfo": ""
+  },
+  "common": {
+    "loading": "Carregando..."
   },
   "events": {
     "badge": "Competições Oficiais",
