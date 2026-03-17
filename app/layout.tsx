@@ -5,6 +5,7 @@ import { Navbar } from "@/components/navbar";
 import NextTopLoader from "nextjs-toploader";
 import { getLocale } from "@/lib/i18n";
 
+import "@uiw/react-md-editor/markdown-editor.css";
 import "./globals.css";
 
 const geistSans = Geist({

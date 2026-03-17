@@ -1,4 +1,6 @@
 ﻿import { Book } from "lucide-react";
+
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import { getDictionary } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 
@@ -86,13 +88,13 @@ export default async function RegrasPage() {
               {orderedRules.map((rule, index) => (
                 <article key={rule.id}>
                   <h3 className="text-base font-bold text-white">{index + 1}. {rule.title}</h3>
-                  <p className="mt-1 whitespace-pre-line text-sm text-slate-300">{rule.content}</p>
+                  <MarkdownRenderer className="mt-2 text-sm text-slate-300" content={rule.content} />
                 </article>
               ))}
             </div>
 
             <hr className="my-5 border-white/10" />
-            <p className="whitespace-pre-line text-sm text-slate-400">{footer}</p>
+            <MarkdownRenderer className="text-sm text-slate-400" content={footer} />
           </div>
         </section>
       </div>

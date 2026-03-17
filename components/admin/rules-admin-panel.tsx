@@ -5,7 +5,9 @@ import { ArrowDown, ArrowUp, GripVertical, Plus, Save, Trash2 } from "lucide-rea
 
 import { saveRulesContent } from "@/app/admin/rules-actions";
 import { AdminButton } from "@/components/admin/admin-button";
+import { MarkdownEditor } from "@/components/admin/MarkdownEditor";
 import { useAdminToast } from "@/components/admin/admin-toast";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 
 type RuleItem = {
   id?: string;
@@ -142,13 +144,12 @@ export function RulesAdminPanel({ initialRules, initialFooter }: Props) {
                 </label>
 
                 <label className="space-y-1 text-sm text-[color:var(--text-strong)]">
-                  <span>Conteúdo</span>
-                  <textarea
+                  <MarkdownEditor
+                    label="Conteúdo"
                     value={rule.content}
-                    onChange={(e) => updateRule(index, "content", e.target.value)}
-                    rows={4}
-                    placeholder="Descreva a diretriz com detalhes..."
-                    className="w-full resize-y rounded-xl border border-[color:var(--surface-border)] bg-black/15 px-3 py-2 text-sm text-[color:var(--text-strong)] outline-none focus:border-[color:var(--accent-cyan)]"
+                    onChange={(value) => updateRule(index, "content", value)}
+                    minHeight={340}
+                    placeholder="Descreva a diretriz com Markdown, listas, tabelas, links e blocos de código..."
                   />
                 </label>
               </div>
@@ -184,15 +185,23 @@ export function RulesAdminPanel({ initialRules, initialFooter }: Props) {
             {rules.map((rule, index) => (
               <article key={`preview-${rule.id ?? "new"}-${index}`}>
                 <h3 className="text-base font-bold text-white">{index + 1}. {rule.title || "Título da regra"}</h3>
-                <p className="mt-1 whitespace-pre-line text-sm text-slate-300">{rule.content || "Conteúdo da regra..."}</p>
+                {rule.content ? (
+                  <MarkdownRenderer className="mt-2 text-sm" content={rule.content} />
+                ) : (
+                  <p className="mt-1 text-sm text-slate-400">Conteúdo da regra...</p>
+                )}
               </article>
             ))}
           </div>
 
           <hr className="my-5 border-white/10" />
-          <p className="whitespace-pre-line text-sm text-slate-400">
-            {footer || "Estas regras estão sujeitas a atualizações antes do início de cada temporada. Mantenha-se informado através do nosso Discord."}
-          </p>
+          <MarkdownRenderer
+            className="text-sm text-slate-400"
+            content={
+              footer ||
+              "Estas regras estão sujeitas a atualizações antes do início de cada temporada. Mantenha-se informado através do nosso Discord."
+            }
+          />
         </div>
       </section>
     </div>

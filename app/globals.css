@@ -382,6 +382,198 @@ body::selection {
   box-shadow: inset 4px 0 0 var(--accent-cyan);
 }
 
+.markdown-content {
+  color: inherit;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.markdown-content > * + * {
+  margin-top: 0.95rem;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  color: var(--text-strong);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.markdown-content h1 {
+  font-size: 1.65rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.35rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.1rem;
+}
+
+.markdown-content p,
+.markdown-content li,
+.markdown-content blockquote {
+  color: inherit;
+}
+
+.markdown-content strong {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+.markdown-content em {
+  color: color-mix(in srgb, var(--text-base) 86%, #ffffff 14%);
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  padding-left: 1.4rem;
+}
+
+.markdown-content ul {
+  list-style: disc;
+}
+
+.markdown-content ol {
+  list-style: decimal;
+}
+
+.markdown-content li + li {
+  margin-top: 0.35rem;
+}
+
+.markdown-content li > ul,
+.markdown-content li > ol {
+  margin-top: 0.5rem;
+}
+
+.markdown-content input[type="checkbox"] {
+  margin-right: 0.55rem;
+  accent-color: var(--accent-amber);
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid color-mix(in srgb, var(--accent-amber) 72%, transparent);
+  background: color-mix(in srgb, var(--accent-amber) 10%, transparent);
+  padding: 0.85rem 1rem;
+  border-radius: 0 1rem 1rem 0;
+}
+
+.markdown-content hr {
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--surface-border) 88%, transparent);
+}
+
+.markdown-content pre {
+  margin: 0;
+}
+
+.markdown-content code {
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.markdown-content :not(pre) > code {
+  border: 1px solid color-mix(in srgb, var(--surface-border) 90%, transparent);
+}
+
+.markdown-content table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  border-spacing: 0;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 90%, transparent);
+  border-radius: 1rem;
+}
+
+.markdown-content thead {
+  background: color-mix(in srgb, var(--accent-cyan) 12%, transparent);
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid color-mix(in srgb, var(--surface-border) 90%, transparent);
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-content th {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+.markdown-editor-shell .w-md-editor,
+.markdown-editor-shell .w-md-editor-content,
+.markdown-editor-shell .w-md-editor-input,
+.markdown-editor-shell .w-md-editor-text,
+.markdown-editor-shell .w-md-editor-text-pre,
+.markdown-editor-shell .w-md-editor-text-input {
+  background: transparent !important;
+}
+
+.markdown-editor-shell .w-md-editor {
+  box-shadow: none !important;
+  color: var(--text-base) !important;
+}
+
+.markdown-editor-shell .w-md-editor-toolbar {
+  border-bottom: 1px solid var(--surface-border) !important;
+  background: color-mix(in srgb, var(--topbar-bg) 92%, transparent) !important;
+  padding: 0.6rem !important;
+}
+
+.markdown-editor-shell .w-md-editor-toolbar ul > li > button {
+  border-radius: 0.75rem !important;
+  color: var(--text-base) !important;
+}
+
+.markdown-editor-shell .w-md-editor-toolbar ul > li > button:hover,
+.markdown-editor-shell .w-md-editor-toolbar ul > li.active > button {
+  background: color-mix(in srgb, var(--accent-cyan) 16%, transparent) !important;
+  color: var(--text-strong) !important;
+}
+
+.markdown-editor-shell .w-md-editor-toolbar-divider {
+  background-color: var(--surface-border) !important;
+}
+
+.markdown-editor-shell .w-md-editor-text-pre,
+.markdown-editor-shell .w-md-editor-text-input {
+  font-size: 0.95rem !important;
+  line-height: 1.7 !important;
+  color: var(--text-base) !important;
+  padding: 1rem 1rem 1.2rem !important;
+}
+
+.markdown-editor-shell .w-md-editor-text-input::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.markdown-editor-shell .w-md-editor-text-pre > code,
+.markdown-editor-shell .w-md-editor-text-input {
+  font-family: var(--font-geist-mono), monospace !important;
+}
+
+.markdown-editor-shell .w-md-editor-text {
+  min-height: 320px;
+}
+
+.markdown-editor-shell [data-color-mode="light"] .w-md-editor-toolbar {
+  background: color-mix(in srgb, #ffffff 82%, var(--bg-soft) 18%) !important;
+}
+
+.markdown-editor-shell [data-color-mode="light"] .w-md-editor-toolbar ul > li > button:hover,
+.markdown-editor-shell [data-color-mode="light"] .w-md-editor-toolbar ul > li.active > button {
+  background: rgba(15, 127, 168, 0.12) !important;
+}
+
 @keyframes dashboard-fade-in {
   from {
     opacity: 0;
