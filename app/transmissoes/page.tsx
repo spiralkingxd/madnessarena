@@ -1,6 +1,6 @@
 
 import { Suspense } from "react";
-import { Loader2, Radio, Video, Star, ExternalLink, ShieldAlert } from "lucide-react";
+import { Loader2, Radio, Video, Star, ExternalLink, ShieldAlert, MonitorUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -210,22 +210,29 @@ async function StreamList() {
 
 export default function StreamsPage() {
   return (
-    <main className="container mx-auto px-4 py-12 md:max-w-[1000px]">
-      <div className="mb-10 text-center md:text-left">
-        <div className="mb-4">
+    <main className="container mx-auto px-4 py-10 md:max-w-[1100px]">
+      <div className="mb-10 overflow-hidden rounded-3xl border border-cyan-400/20 bg-gradient-to-b from-cyan-950/25 via-slate-950/40 to-slate-950/10 p-6 text-center md:p-10">
+        <span className="mb-4 inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-cyan-200">
+          Transmissões Ao Vivo
+        </span>
+
+        <h1 className="text-4xl font-black uppercase tracking-tight text-white md:text-6xl">
+          Transmiss<span className="text-cyan-400">oes</span>
+        </h1>
+
+        <p className="mx-auto mt-4 max-w-2xl text-base text-slate-300 md:text-lg">
+          Acompanhe nossos campeonatos oficiais e a comunidade ao vivo na Twitch.
+        </p>
+
+        <div className="mt-7 flex justify-center">
           <Link
             href="/multiview"
-            className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/35 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/20"
+            className="inline-flex items-center gap-2 rounded-2xl border border-cyan-300/45 bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-purple-500/30 px-6 py-3 text-base font-extrabold text-cyan-100 shadow-[0_0_30px_rgba(34,211,238,0.25)] transition hover:scale-[1.02] hover:from-cyan-500/30 hover:to-purple-500/40"
           >
+            <MonitorUp className="h-5 w-5" />
             Abrir Multiview
           </Link>
         </div>
-        <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-white mb-4">
-          Transmiss<span className="text-cyan-400">oes</span>
-        </h1>
-        <p className="text-lg text-slate-400 max-w-2xl">
-          Acompanhe nossos campeonatos oficiais e a comunidade ao vivo na Twitch.
-        </p>
       </div>
 
       <Suspense fallback={
