@@ -68,8 +68,20 @@ export function TwitchMultiviewGrid({ streamers }: { streamers: Streamer[] }) {
   useEffect(() => {
     const timer = setInterval(() => {
       router.refresh();
-    }, 60_000);
-    return () => clearInterval(timer);
+    }, 5_000);
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        router.refresh();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [router]);
 
   useEffect(() => {

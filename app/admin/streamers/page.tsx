@@ -75,19 +75,39 @@ export default async function AdminStreamersPage() {
   async function toggleMultiview(formData: FormData) {
     "use server";
     const id = formData.get("id")?.toString();
-    const isActive = formData.get("isActive") === "true";
+    const isActiveRaw = formData.get("isActive")?.toString();
+    const isActive = isActiveRaw === "true" || isActiveRaw === "1";
     if (!id) return;
 
     const supabase = await createClient();
 
-    const primary = await supabase.from("streamers").update({ is_active: !isActive }).eq("id", id);
-    if (primary.error && primary.error.code === "42703") {
-      await supabase.from("streamers").update({ selected_for_multiview: !isActive }).eq("id", id);
+    const nextValue = !isActive;
+    const { data: currentRow } = await supabase
+      .from("streamers")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    const updates: Record<string, boolean> = {};
+    if (currentRow && typeof currentRow === "object") {
+      if ("is_active" in currentRow) updates.is_active = nextValue;
+      if ("selected_for_multiview" in currentRow) updates.selected_for_multiview = nextValue;
+      if ("active" in currentRow) updates.active = nextValue;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await supabase.from("streamers").update(updates).eq("id", id);
+    } else {
+      const primary = await supabase.from("streamers").update({ is_active: nextValue }).eq("id", id);
+      if (primary.error && primary.error.code === "42703") {
+        await supabase.from("streamers").update({ selected_for_multiview: nextValue }).eq("id", id);
+      }
     }
 
     revalidatePath("/admin/streamers");
     revalidatePath("/transmissoes");
     revalidatePath("/multiview");
+    revalidatePath("/multiview", "page");
   }
 
   if (streamers === null) {
