@@ -94,7 +94,15 @@ async function StreamList() {
     }
   });
 
-  const finalOrder = [...officialOnline, ...online, ...officialOffline, ...offline];
+  const mergedStreamers = [...officialOnline, ...online, ...officialOffline, ...offline];
+  const hwmalkIndex = mergedStreamers.findIndex((s) => s.username.toLowerCase() === "hwmalk");
+
+  if (hwmalkIndex > -1) {
+    const [hwmalk] = mergedStreamers.splice(hwmalkIndex, 1);
+    mergedStreamers.unshift(hwmalk);
+  }
+
+  const finalOrder = mergedStreamers;
 
   return (
     <div className="mt-8 space-y-12">
