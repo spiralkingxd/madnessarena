@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { unstable_cache } from "next/cache";
 import { Anchor, Calendar, Coins, Flame, Trophy, Users } from "lucide-react";   
-import madnessArenaBackground from "../madness_arena_background.png";
+import madnessArenaBackground from "../madness_arena_background4k.png";
 
 import { formatTeamSize } from "@/lib/events";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -88,6 +88,8 @@ export default async function Home() {
             alt=""
             fill
             priority
+            quality={100}
+            sizes="100vw"
             className="object-cover object-[center_22%] scale-[1.01] opacity-62 dark:opacity-68 saturate-[1.16] contrast-[1.08] brightness-[0.94] dark:brightness-[0.84]"
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,10,22,0.42)_0%,rgba(3,10,22,0.18)_38%,rgba(2,8,20,0.56)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,8,20,0.54)_0%,rgba(2,8,20,0.3)_40%,rgba(2,8,20,0.7)_100%)]" />
