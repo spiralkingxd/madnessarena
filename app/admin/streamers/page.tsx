@@ -75,36 +75,57 @@ export default async function AdminStreamersPage() {
   async function toggleMultiview(formData: FormData) {
     "use server";
     const id = formData.get("id")?.toString();
-    const isActiveRaw = formData.get("isActive")?.toString();
-    const isActive = isActiveRaw === "true" || isActiveRaw === "1";
     if (!id) return;
 
     const supabase = await createClient();
 
-    const nextValue = !isActive;
     const { data: currentRow } = await supabase
       .from("streamers")
       .select("*")
       .eq("id", id)
       .maybeSingle();
 
-    const updates: Record<string, boolean> = {};
-    if (currentRow && typeof currentRow === "object") {
-      if ("is_active" in currentRow) updates.is_active = nextValue;
-      if ("selected_for_multiview" in currentRow) updates.selected_for_multiview = nextValue;
-      if ("active" in currentRow) updates.active = nextValue;
-    }
+    const currentValue =
+      typeof currentRow?.is_active === "boolean"
+        ? currentRow.is_active
+        : typeof currentRow?.selected_for_multiview === "boolean"
+          ? currentRow.selected_for_multiview
+          : typeof currentRow?.active === "boolean"
+            ? currentRow.active
+            : true;
 
-    if (Object.keys(updates).length > 0) {
-      await supabase.from("streamers").update(updates).eq("id", id);
-    } else {
-      const primary = await supabase.from("streamers").update({ is_active: nextValue }).eq("id", id);
-      if (primary.error && primary.error.code === "42703") {
-        await supabase.from("streamers").update({ selected_for_multiview: nextValue }).eq("id", id);
+    const nextValue = !currentValue;
+
+    const payloads: Array<Record<string, boolean>> = [
+      { is_active: nextValue, selected_for_multiview: nextValue, active: nextValue },
+      { is_active: nextValue, selected_for_multiview: nextValue },
+      { is_active: nextValue, active: nextValue },
+      { selected_for_multiview: nextValue, active: nextValue },
+      { is_active: nextValue },
+      { selected_for_multiview: nextValue },
+      { active: nextValue },
+    ];
+
+    let updated = false;
+    for (const payload of payloads) {
+      const { error } = await supabase.from("streamers").update(payload).eq("id", id);
+      if (!error) {
+        updated = true;
+        break;
+      }
+
+      if (error.code !== "42703") {
+        console.error("toggleMultiview update error:", error);
       }
     }
 
+    if (!updated) {
+      console.error("toggleMultiview: nenhuma coluna de multiview encontrada na tabela streamers");
+      return;
+    }
+
     revalidatePath("/admin/streamers");
+    revalidatePath("/admin/streamers", "page");
     revalidatePath("/transmissoes");
     revalidatePath("/multiview");
     revalidatePath("/multiview", "page");
@@ -220,7 +241,6 @@ export default async function AdminStreamersPage() {
 
                     <form action={toggleMultiview}>
                       <input type="hidden" name="id" value={s.id} />
-                      <input type="hidden" name="isActive" value={String(isMultiviewEnabled)} />
                       <Button
                         type="submit"
                         variant="ghost"
