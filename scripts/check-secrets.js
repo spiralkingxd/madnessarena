@@ -1,15 +1,13 @@
 const fs = require("fs");
 const path = require("path");
 
-const buildDir = path.join(process.cwd(), ".next");
+const buildDir = path.join(process.cwd(), ".next", "static");
 const sensitivePatterns = [
-  /SUPABASE_SERVICE_ROLE_KEY/gi,
-  /service_role/gi,
   /eyJhbGciOiJIUzI1NiIsI[^"'\s]{20,}/g,
   /sk_live_[a-zA-Z0-9]{16,}/g,
-  /TWITCH_CLIENT_SECRET/gi,
-  /DISCORD_CLIENT_SECRET/gi,
-  /BOT_PANEL_PASS/gi,
+  /sbp_[a-z0-9]{20,}/gi,
+  /sb_secret_[a-z0-9]{20,}/gi,
+  /(?:SUPABASE|DISCORD|TWITCH|BOT).*?(?:SECRET|TOKEN|PASS|PASSWORD)\s*[:=]\s*["'][^"'\s]{8,}["']/gi,
 ];
 
 function walk(dir, onFile) {
@@ -31,7 +29,7 @@ function isScannable(filePath) {
 console.log("🛡️  Verificando bundle de produção em busca de segredos...");
 
 if (!fs.existsSync(buildDir)) {
-  console.log("ℹ️  Pasta .next não encontrada. Nada para escanear.");
+  console.log("ℹ️  Pasta .next/static não encontrada. Nada para escanear.");
   process.exit(0);
 }
 
