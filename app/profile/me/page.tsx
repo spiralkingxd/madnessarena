@@ -222,13 +222,13 @@ export default async function MyProfilePage() {
             <div className="relative px-6 py-6 sm:px-8 sm:py-8">
               <div className="space-y-8">
                 <div className="flex flex-col items-center text-center">
-                  <div className="relative h-28 w-28 overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-200 ring-2 ring-yellow-400/55 ring-offset-1 ring-offset-slate-900 shadow-lg dark:bg-slate-800">
+                  <div className="relative h-32 w-32 overflow-hidden rounded-[2rem] border border-amber-400/35 bg-slate-200 ring-2 ring-amber-400/65 ring-offset-2 ring-offset-slate-900 shadow-lg sm:h-36 sm:w-36 dark:bg-slate-800">
                     {profile.avatar_url ? (
                       <Image
                         src={profile.avatar_url}
                         alt={profile.display_name}
                         fill
-                        sizes="112px"
+                        sizes="(min-width: 640px) 144px, 128px"
                         className="object-cover"
                       />
                     ) : (
@@ -238,17 +238,26 @@ export default async function MyProfilePage() {
                     )}
                   </div>
 
-                  <div className="mt-5 min-w-0 max-w-3xl space-y-4">
-                    <div>
-                      <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/90 dark:text-amber-200">
+                  <div className="mt-5 min-w-0 w-full max-w-3xl space-y-4">
+                    <div className="space-y-3">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/90 dark:text-amber-200">
                         <span className="h-2 w-2 rounded-full bg-amber-400" />
-                        Command center
+                        Command Center
                       </div>
-                      <h1 className="flex flex-wrap items-center gap-2 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+                      <h1 className="flex flex-wrap items-center justify-center gap-2 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
                         <span>{profile.display_name}</span>
                         {profile.role === "owner" ? <Crown className="h-6 w-6 text-yellow-500" /> : null}
                         {profile.role === "admin" ? <Shield className="h-6 w-6 text-cyan-500" /> : null}
                       </h1>
+                    </div>
+
+                    <div className="mx-auto w-full max-w-md rounded-2xl border border-slate-200 bg-slate-50/90 p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                        Conta Xbox
+                      </p>
+                      <div className="mt-2 flex justify-center">
+                        <XboxStatusTag gamertag={profile.xbox_gamertag} emptyLabel={dict.profile.xboxNotLinked} />
+                      </div>
                     </div>
 
                     {profile.custom_status ? (
@@ -258,8 +267,7 @@ export default async function MyProfilePage() {
                       </div>
                     ) : null}
 
-                    <div className="flex flex-wrap items-center justify-center gap-3">
-                      <XboxStatusTag gamertag={profile.xbox_gamertag} emptyLabel={dict.profile.xboxNotLinked} />
+                    <div className="flex flex-wrap items-center justify-center gap-2">
                       {boatRoles.map((role) => (
                         <span key={role} className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-200 capitalize">
                           {role}
