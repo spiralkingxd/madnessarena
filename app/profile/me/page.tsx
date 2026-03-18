@@ -218,25 +218,26 @@ export default async function MyProfilePage() {
   return (
     <main className="min-h-[calc(100vh-72px)] bg-slate-50 dark:bg-[radial-gradient(ellipse_at_top,_#0f2847_0%,_#0b1826_50%,_#050b12_100%)] px-4 py-16 text-slate-900 dark:text-slate-100">
       <div className="mx-auto w-full max-w-6xl space-y-6">
-        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/95 shadow-xl backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/65 dark:shadow-2xl dark:shadow-black/40">
-          <div className="absolute top-4 right-4 z-50">
-            <ProfileSettingsForm
-              initialStatus={profile.custom_status}
-              initialRole={profile.boat_role}
-              initialXboxGamertag={profile.xbox_gamertag}
-            />
-          </div>
+        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/95 shadow-xl backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/65 dark:shadow-2xl dark:shadow-black/30">
 
           <div className="h-1.5 w-full bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600" />
 
           <div className="relative overflow-hidden">
-            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_center_right,rgba(59,130,246,0.12),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.18),transparent_28%)]" />
-            <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-br from-cyan-500/12 via-slate-900/0 to-amber-400/10" />
+            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.08),transparent_24%)]" />
+            <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/5 to-transparent dark:from-cyan-400/5" />
 
-            <div className="relative grid gap-8 px-6 py-8 sm:px-8 sm:py-10 xl:grid-cols-[minmax(0,1.2fr)_420px] xl:items-start">
+            <div className="relative grid gap-8 px-6 py-6 sm:px-8 sm:py-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,360px)] xl:items-start">
               <div className="space-y-6">
+                <div className="flex justify-end xl:hidden">
+                  <ProfileSettingsForm
+                    initialStatus={profile.custom_status}
+                    initialRole={profile.boat_role}
+                    initialXboxGamertag={profile.xbox_gamertag}
+                  />
+                </div>
+
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                  <div className="relative h-28 w-28 overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-200 ring-4 ring-yellow-400/70 ring-offset-2 ring-offset-slate-900 shadow-[0_0_32px_rgba(250,204,21,0.20)] dark:bg-slate-800">
+                  <div className="relative h-28 w-28 overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-200 ring-2 ring-yellow-400/55 ring-offset-1 ring-offset-slate-900 shadow-lg dark:bg-slate-800">
                     {profile.avatar_url ? (
                       <Image
                         src={profile.avatar_url}
@@ -255,7 +256,7 @@ export default async function MyProfilePage() {
                   <div className="min-w-0 flex-1 space-y-4">
                     <div>
                       <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/90 dark:text-amber-200">
-                        <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.9)]" />
+                        <span className="h-2 w-2 rounded-full bg-amber-400" />
                         Command center
                       </div>
                       <h1 className="flex flex-wrap items-center gap-2 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
@@ -276,7 +277,7 @@ export default async function MyProfilePage() {
 
                     {profile.custom_status ? (
                       <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-200">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(34,197,94,0.9)]" />
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
                         {profile.custom_status}
                       </div>
                     ) : null}
@@ -290,21 +291,31 @@ export default async function MyProfilePage() {
                       ))}
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <HighlightStrip label={dict.profile.currentTeams} value={userTeams.length} accent="cyan" />
-                      <HighlightStrip label={dict.profile.winsLosses} value={`${crewVictories}/${crewLosses}`} accent="violet" />
-                      <HighlightStrip label={dict.profile.winRate} value={`${winRate}%`} accent="amber" />
+                    <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                      <CompactMeta>{dict.profile.currentTeams}: {userTeams.length}</CompactMeta>
+                      <CompactMeta>{dict.profile.winsLosses}: {crewVictories}/{crewLosses}</CompactMeta>
+                      <CompactMeta>{dict.profile.winRate}: {winRate}%</CompactMeta>
                     </div>
                   </div>
                 </div>
 
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-2 xl:self-stretch">
+              <div className="space-y-4 xl:pt-1">
+                <div className="hidden justify-end xl:flex">
+                  <ProfileSettingsForm
+                    initialStatus={profile.custom_status}
+                    initialRole={profile.boat_role}
+                    initialXboxGamertag={profile.xbox_gamertag}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-2">
                 <StatCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={dict.profile.leaguePoints} value={playerRanking?.points ?? 0} description="Season pressure" tone="emerald" />
                 <StatCard icon={<Swords className="h-4 w-4 text-cyan-400" />} label={dict.profile.matchWins} value={playerRanking?.wins ?? 0} description="Duel dominance" tone="cyan" />
                 <StatCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label={dict.profile.tournamentsWon} value={tournamentsWon} description="Finals conquered" tone="amber" />
                 <StatCard icon={<Users className="h-4 w-4 text-violet-400" />} label={dict.profile.currentTeams} value={userTeams.length} description="Active rosters" tone="violet" />
+                </div>
               </div>
             </div>
           </div>
@@ -321,12 +332,6 @@ export default async function MyProfilePage() {
             </InfoCard>
           </div>
         </div>
-
-        <section className="grid gap-4 md:grid-cols-3">
-          <StatPanel icon={<Users className="h-4 w-4 text-cyan-400" />} label={dict.profile.currentTeams} value={userTeams.length} helper={dict.profile.activeCrews} />
-          <StatPanel icon={<Trophy className="h-4 w-4 text-amber-400" />} label={dict.profile.tournamentsWon} value={tournamentsWon} helper={dict.profile.profileTrophiesHelper} />
-          <StatPanel icon={<Swords className="h-4 w-4 text-violet-400" />} label={dict.profile.winsLosses} value={`${crewVictories} / ${crewLosses}`} helper={teamResultsHelper} />
-        </section>
 
         <ProfileTeamsSection dict={dict} locale={dateLocale} systemMaxMembers={maxTeamSize}
           userId={user.id}
@@ -368,42 +373,21 @@ function StatCard({ icon, label, value, description, tone }: { icon: ReactNode; 
   } satisfies Record<string, string>;
 
   return (
-    <div className={`relative overflow-hidden rounded-[1.6rem] border border-slate-200 bg-slate-50/90 p-4 text-center shadow-lg before:absolute before:left-4 before:right-4 before:top-0 before:h-px dark:border-white/10 dark:bg-white/5 ${toneClasses[tone]}`}>
+    <div className={`relative overflow-hidden rounded-[1.6rem] border border-slate-200 bg-slate-50/90 p-4 text-center shadow-sm before:absolute before:left-4 before:right-4 before:top-0 before:h-px dark:border-white/10 dark:bg-white/5 ${toneClasses[tone]}`}>
       <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
         {icon}
         <span>{label}</span>
       </div>
       <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
-      <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{description}</p>
+      <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{description}</p>
     </div>
   );
 }
 
-function StatPanel({ icon, label, value, helper }: { icon: ReactNode; label: string; value: string | number; helper: string }) {
+function CompactMeta({ children }: { children: ReactNode }) {
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-lg dark:border-white/10 dark:bg-slate-950/60 dark:shadow-black/20">
-      <div aria-hidden className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <p className="mt-3 text-3xl font-black text-slate-900 dark:text-white">{value}</p>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{helper}</p>
-    </div>
-  );
-}
-
-function HighlightStrip({ label, value, accent }: { label: string; value: string | number; accent: "cyan" | "violet" | "amber" }) {
-  const accentClasses = {
-    cyan: "border-cyan-400/20 bg-cyan-400/10 text-cyan-700 dark:text-cyan-200",
-    violet: "border-violet-400/20 bg-violet-400/10 text-violet-700 dark:text-violet-200",
-    amber: "border-amber-400/20 bg-amber-400/10 text-amber-700 dark:text-amber-200",
-  } satisfies Record<string, string>;
-
-  return (
-    <div className={`rounded-2xl border px-4 py-3 ${accentClasses[accent]}`}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80">{label}</p>
-      <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">{value}</p>
-    </div>
+    <span className="rounded-full border border-white/10 bg-black/5 px-3 py-1.5 dark:bg-white/5">
+      {children}
+    </span>
   );
 }

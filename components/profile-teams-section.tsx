@@ -158,11 +158,10 @@ function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, syst
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <TeamMiniStat label={dict?.profile?.crewVictories || "Vitórias da equipe"} value={team.wins} />
-                  <TeamMiniStat label={dict?.profile?.winsLosses || "Vitórias / Derrotas"} value={`${team.wins}/${team.losses}`} />
-                  <TeamMiniStat label={dict?.profile?.tournamentsWon || "Torneios ganhos"} value={team.tournaments_won} />
-                  <TeamMiniStat label={dict?.profile?.teamPoints || "Pontos"} value={team.points} />
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                  <TeamMetaPill>{dict?.profile?.teamPoints || "Pontos"}: {team.points}</TeamMetaPill>
+                  <TeamMetaPill>{dict?.profile?.winsLosses || "Vitórias / Derrotas"}: {team.wins}/{team.losses}</TeamMetaPill>
+                  <TeamMetaPill>{dict?.profile?.teamMembers || "Membros"}: {team.member_count}/{team.max_members}</TeamMetaPill>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -201,12 +200,11 @@ function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, syst
   );
 }
 
-function TeamMiniStat({ label, value }: { label: string; value: string | number }) {
+function TeamMetaPill({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/10 px-3 py-2 text-center">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-100">{value}</p>
-    </div>
+    <span className="rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/10 px-3 py-1.5">
+      {children}
+    </span>
   );
 }
 
