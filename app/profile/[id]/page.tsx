@@ -192,44 +192,34 @@ export default async function PublicProfilePage({ params }: Props) {
             <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/5 to-transparent dark:from-cyan-400/5" />
 
             <div className="relative px-6 py-6 sm:px-8 sm:py-8">
-              <div className="space-y-8">
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative h-28 w-28 overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-200 ring-2 ring-yellow-400/55 ring-offset-1 ring-offset-slate-900 shadow-lg dark:bg-slate-800">
-                  {profile.avatar_url ? (
-                    <Image src={profile.avatar_url} alt={profile.display_name} fill sizes="112px" className="object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                      {profile.display_name.slice(0, 1).toUpperCase()}
+              <div className="flex flex-col gap-8">
+                {/* Top: Avatar, nome, status, roles, botão configurar perfil */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+                  <div className="flex flex-col items-center sm:items-start text-center sm:text-left gap-3">
+                    <div className="relative h-28 w-28 overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-200 ring-2 ring-yellow-400/55 ring-offset-1 ring-offset-slate-900 shadow-lg dark:bg-slate-800">
+                      {profile.avatar_url ? (
+                        <Image src={profile.avatar_url} alt={profile.display_name} fill sizes="112px" className="object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                          {profile.display_name.slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  </div>
-
-                  <div className="mt-5 min-w-0 max-w-3xl space-y-4">
-                    <div>
-                      <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/90 dark:text-amber-200">
-                        <span className="h-2 w-2 rounded-full bg-amber-400" />
-                        Arena profile
-                      </div>
-                      <h1 className="flex flex-wrap items-center gap-2 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-                        <span>{profile.display_name}</span>
-                        {profile.role === "owner" ? <Crown className="h-6 w-6 text-yellow-500" /> : null}
-                        {profile.role === "admin" ? <Shield className="h-6 w-6 text-cyan-400" /> : null}
-                      </h1>
-                      <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/5 px-3 py-1 dark:bg-white/5">
-                          <Calendar className="h-4 w-4 text-cyan-400" />
-                          {dict.profile.memberSince}: {memberSince}
-                        </span>
-                      </div>
+                    <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/90 dark:text-amber-200">
+                      <span className="h-2 w-2 rounded-full bg-amber-400" />
+                      Arena profile
                     </div>
-
+                    <h1 className="flex flex-wrap items-center gap-2 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+                      <span>{profile.display_name}</span>
+                      {profile.role === "owner" ? <Crown className="h-6 w-6 text-yellow-500" /> : null}
+                      {profile.role === "admin" ? <Shield className="h-6 w-6 text-cyan-400" /> : null}
+                    </h1>
                     {profile.custom_status ? (
                       <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-200">
                         <span className="h-2 w-2 rounded-full bg-emerald-500" />
                         {profile.custom_status}
                       </div>
                     ) : null}
-
                     <div className="flex flex-wrap items-center justify-center gap-3">
                       <XboxStatusTag gamertag={profile.xbox_gamertag} emptyLabel={dict.profile.xboxNotLinked} />
                       {boatRoles.map((role) => (
@@ -239,10 +229,18 @@ export default async function PublicProfilePage({ params }: Props) {
                       ))}
                     </div>
                   </div>
+                  {/* Botão configurar perfil no topo à direita */}
+                  <div className="flex justify-center sm:justify-end w-full sm:w-auto mt-4 sm:mt-0">
+                    <button className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10">
+                      <span className="material-icons text-base">settings</span>
+                      {dict.profile.configureProfile ?? 'Configurar Perfil'}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-                  <div className="grid gap-4 md:grid-cols-2">
+                {/* Painéis de datas e estatísticas lado a lado */}
+                <div className="flex flex-col md:flex-row gap-4 w-full justify-center">
+                  <div className="flex flex-1 gap-4">
                     <InfoPanel
                       title={dict.profile.memberSince}
                       value={memberSince}
@@ -254,8 +252,7 @@ export default async function PublicProfilePage({ params }: Props) {
                       icon={<Clock className="h-4 w-4 text-cyan-400" />}
                     />
                   </div>
-
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1 xl:self-start">
+                  <div className="flex flex-1 gap-4 justify-end">
                     <StatCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={dict.profile.leaguePoints} value={playerRanking?.points ?? 0} description="Season pressure" tone="emerald" />
                     <StatCard icon={<Swords className="h-4 w-4 text-cyan-400" />} label={dict.profile.winsLosses} value={`${crewVictories}/${crewLosses}`} description={`${dict.profile.winRate}: ${winRate}%`} tone="cyan" />
                   </div>
@@ -265,6 +262,7 @@ export default async function PublicProfilePage({ params }: Props) {
           </div>
         </section>
 
+        {/* Times */}
         <section className="rounded-[2rem] border border-slate-200 bg-white/95 p-6 shadow-xl dark:border-white/10 dark:bg-slate-950/60 dark:shadow-black/20">
           <div className="flex items-center justify-between gap-3">
             <div>
