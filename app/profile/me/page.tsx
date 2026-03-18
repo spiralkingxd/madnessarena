@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { AtSign, Calendar, Clock, Target, Trophy, Crown, Shield } from "lucide-react";
+import { AtSign, Calendar, Clock, Crown, Shield, Swords, Target, Trophy, Users } from "lucide-react";
 
-import { upsertProfileFromOAuth } from "@/lib/auth/profile";
-import { createClient } from "@/lib/supabase/server";
+import { ProfileSettingsForm } from "@/components/profile-settings-form";
 import { ProfileTeamsSection } from "@/components/profile-teams-section";
 import { XboxStatusTag } from "@/components/xbox-status-tag";
-import { ProfileSettingsForm } from "@/components/profile-settings-form";
-import { getDictionary } from "@/lib/i18n";
+import { upsertProfileFromOAuth } from "@/lib/auth/profile";
+import { getDictionary, getLocale } from "@/lib/i18n";
+import { createClient } from "@/lib/supabase/server";
 
 type ProfileRow = {
   id: string;
@@ -21,7 +21,7 @@ type ProfileRow = {
   role: string;
   created_at: string;
   updated_at: string;
-  rankings?: { wins: number; points: number; }[] | null;
+  rankings?: { wins: number; losses: number; points: number; }[] | null;
 };
 
 type TeamRow = {
@@ -49,6 +49,7 @@ type UserTeamCard = {
 
 export default async function MyProfilePage() {
   const dict = await getDictionary();
+  const locale = await getLocale();
   const supabase = await createClient();
   const {
     data: { user },
@@ -60,7 +61,7 @@ export default async function MyProfilePage() {
 
   let { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, username, xbox_gamertag, avatar_url, custom_status, boat_role, role, created_at, updated_at, rankings(wins, points)")
+    .select("id, display_name, username, xbox_gamertag, avatar_url, custom_status, boat_role, role, created_at, updated_at, rankings(wins, losses, points)")
     .eq("id", user.id)
     .maybeSingle<ProfileRow>();
 
@@ -69,7 +70,7 @@ export default async function MyProfilePage() {
 
     const { data: recoveredProfile } = await supabase
       .from("profiles")
-      .select("id, display_name, username, xbox_gamertag, avatar_url, custom_status, boat_role, role, created_at, updated_at, rankings(wins, points)")
+      .select("id, display_name, username, xbox_gamertag, avatar_url, custom_status, boat_role, role, created_at, updated_at, rankings(wins, losses, points)")
       .eq("id", user.id)
       .maybeSingle<ProfileRow>();
 
@@ -81,7 +82,9 @@ export default async function MyProfilePage() {
   }
 
   let teamsError: string | null = null;
-  let maxTeamSize = 5; let userTeams: UserTeamCard[] = [];
+  let maxTeamSize = 5;
+  let userTeams: UserTeamCard[] = [];
+  let teamIds: string[] = [];
 
   const { data: membershipsRaw, error: membershipsError } = await supabase
     .from("team_members")
@@ -92,7 +95,7 @@ export default async function MyProfilePage() {
     teamsError = dict.profile.loadTeamsError;
   } else {
     const memberships = (membershipsRaw ?? []) as TeamMemberRow[];
-    const teamIds = Array.from(new Set(memberships.map((m) => m.team_id)));
+    teamIds = Array.from(new Set(memberships.map((m) => m.team_id)));
 
     const { data: teamsRaw, error: teamsLoadError } = teamIds.length
       ? await supabase
@@ -105,7 +108,9 @@ export default async function MyProfilePage() {
       teamsError = dict.profile.loadTeamsError;
     }
 
-    const { data: sysSettings } = await supabase.from("system_settings").select("tournament").eq("id", 1).maybeSingle(); maxTeamSize = Number((sysSettings?.tournament as any)?.max_team_size ?? 5); const teamMap = new Map<string, TeamRow>();
+    const { data: sysSettings } = await supabase.from("system_settings").select("tournament").eq("id", 1).maybeSingle();
+    maxTeamSize = Number((sysSettings?.tournament as any)?.max_team_size ?? 5);
+    const teamMap = new Map<string, TeamRow>();
     for (const team of teamsRaw ?? []) {
       teamMap.set(team.id as string, {
         id: team.id as string,
@@ -153,7 +158,22 @@ export default async function MyProfilePage() {
       });
   }
 
-  const memberSince = new Date(profile.created_at).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const dateLocale = locale === "en" ? "en-US" : "pt-BR";
+  const memberSince = new Intl.DateTimeFormat(dateLocale, { timeZone: "America/Sao_Paulo", dateStyle: "medium" }).format(new Date(profile.created_at));
+  const [teamRankingsResponse, finalWinsResponse] = teamIds.length
+    ? await Promise.all([
+        supabase.from("team_rankings").select("team_id, wins, losses").in("team_id", teamIds),
+        supabase.from("matches").select("event_id, winner_id").in("winner_id", teamIds).is("next_match_id", null),
+      ])
+    : [
+        { data: [] as Array<{ team_id: string; wins: number; losses: number }>, error: null },
+        { data: [] as Array<{ event_id: string; winner_id: string }>, error: null },
+      ];
+
+  const crewVictories = (teamRankingsResponse.data ?? []).reduce((sum, row) => sum + Number(row.wins ?? 0), 0);
+  const crewLosses = (teamRankingsResponse.data ?? []).reduce((sum, row) => sum + Number(row.losses ?? 0), 0);
+  const tournamentsWon = new Set((finalWinsResponse.data ?? []).map((row) => `${row.winner_id}:${row.event_id}`)).size;
+  const playerRanking = profile.rankings?.[0];
 
   return (
     <main className="min-h-[calc(100vh-72px)] bg-slate-50 dark:bg-[radial-gradient(ellipse_at_top,_#0f2847_0%,_#0b1826_50%,_#050b12_100%)] px-4 py-16 text-slate-900 dark:text-slate-100">
@@ -235,19 +255,27 @@ export default async function MyProfilePage() {
 
             <InfoCard icon={<Clock className="h-4 w-4 text-cyan-400" />} label={dict.profile.lastActivity}>
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                {profile.updated_at ? new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(profile.updated_at)) : "--"}
+                {profile.updated_at ? new Intl.DateTimeFormat(dateLocale, { timeZone: "America/Sao_Paulo", dateStyle: "medium", timeStyle: "short" }).format(new Date(profile.updated_at)) : "--"}
               </span>
             </InfoCard>
           </div>
 
-          {/* Info grid - Stats Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-slate-200 dark:sm:divide-white/5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-slate-200 dark:lg:divide-white/5">
             <InfoCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={dict.profile.leaguePoints}>
-              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{profile.rankings?.[0]?.points || 0}</span>
+              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{playerRanking?.points || 0}</span>
+            </InfoCard>
+
+            <InfoCard icon={<Swords className="h-4 w-4 text-cyan-400" />} label={dict.profile.matchWins}>
+              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{playerRanking?.wins || 0}</span>
             </InfoCard>
 
             <InfoCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label={dict.profile.tournamentsWon}>
-              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{profile.rankings?.[0]?.wins || 0}</span>
+              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{tournamentsWon}</span>
+            </InfoCard>
+
+            <InfoCard icon={<Users className="h-4 w-4 text-violet-400" />} label={dict.profile.crewVictories}>
+              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{crewVictories}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{dict.profile.winsLosses}: {crewVictories}/{crewLosses}</span>
             </InfoCard>
           </div>
         </div>

@@ -39,7 +39,15 @@ export async function upsertProfileFromOAuth(options?: UpsertProfileOptions) {
   const displayName =
     metadata.full_name ?? metadata.name ?? metadata.global_name ?? user.email?.split("@")[0] ?? "Pirata";
   const username = resolveUsername(metadata, displayName);
-  const avatarUrl = metadata.avatar_url ?? null;
+  const oauthAvatarUrl = metadata.avatar_url ?? null;
+
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", user.id)
+    .maybeSingle<{ avatar_url: string | null }>();
+
+  const avatarUrl = existingProfile?.avatar_url ?? oauthAvatarUrl;
 
   const tokenFromOption =
     typeof options?.providerAccessToken === "string" && options.providerAccessToken.length > 0

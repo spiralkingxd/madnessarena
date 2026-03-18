@@ -136,7 +136,7 @@ export function NotificationsBell() {
       }
       await fetchNotifications();
       if (result.success) {
-        setToast({ message: "Notificações lidas excluídas.", tone: "success" });
+        setToast({ message: result.deletedCount ? "Notificações lidas excluídas." : "Não havia notificações lidas para excluir.", tone: "success" });
       }
       setTimeout(() => setToast(null), 3000);
     });

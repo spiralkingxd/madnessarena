@@ -68,6 +68,14 @@ export async function GET(request: NextRequest) {
     const avatarUrl =
       typeof metadata.avatar_url === "string" ? metadata.avatar_url : null;
 
+    const { data: existingProfileBeforeSync } = await supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", user.id)
+      .maybeSingle<{ avatar_url: string | null }>();
+
+    const safeAvatarUrl = existingProfileBeforeSync?.avatar_url ?? avatarUrl;
+
     const shouldBeOwner = Boolean(ownerDiscordId && discordId === ownerDiscordId);
 
     console.log(`[auth/callback] Usuario autenticado: ${user.id}`);
@@ -82,7 +90,7 @@ export async function GET(request: NextRequest) {
           display_name: displayName,
           username,
           email: user.email ?? null,
-          avatar_url: avatarUrl,
+          avatar_url: safeAvatarUrl,
           updated_at: nowIso,
         },
         { onConflict: "id" },

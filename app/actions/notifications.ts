@@ -1,6 +1,7 @@
 ﻿"use server";
 
 import { revalidatePath } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { respondToJoinRequest } from "@/app/actions/team-requests";
 
@@ -88,18 +89,30 @@ export async function deleteNotification(notificationId: string) {
 
   if (!user) return { success: false, error: "Não autenticado" };
 
-  const { error } = await supabase
+  let { error } = await supabase
     .from("notifications")
     .delete()
     .eq("id", notificationId)
     .eq("user_id", user.id);
 
   if (error) {
+    const admin = createAdminClient();
+    if (admin) {
+      const fallback = await admin
+        .from("notifications")
+        .delete()
+        .eq("id", notificationId)
+        .eq("user_id", user.id);
+      error = fallback.error;
+    }
+  }
+
+  if (error) {
     return { success: false, error: "Não foi possível excluir a notificação." };
   }
 
   revalidatePath("/");
-  return { success: true };
+  return { success: true, deletedCount: 1 };
 }
 
 export async function deleteReadNotifications() {
@@ -110,18 +123,46 @@ export async function deleteReadNotifications() {
 
   if (!user) return { success: false, error: "Não autenticado" };
 
-  const { error } = await supabase
+  const { data: readItems, error: readItemsError } = await supabase
+    .from("notifications")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("read", true);
+
+  if (readItemsError) {
+    return { success: false, error: "Não foi possível listar as notificações lidas." };
+  }
+
+  const readIds = (readItems ?? []).map((item) => String(item.id)).filter(Boolean);
+
+  if (readIds.length === 0) {
+    return { success: true, deletedCount: 0 };
+  }
+
+  let { error } = await supabase
     .from("notifications")
     .delete()
     .eq("user_id", user.id)
-    .eq("read", true);
+    .in("id", readIds);
+
+  if (error) {
+    const admin = createAdminClient();
+    if (admin) {
+      const fallback = await admin
+        .from("notifications")
+        .delete()
+        .eq("user_id", user.id)
+        .in("id", readIds);
+      error = fallback.error;
+    }
+  }
 
   if (error) {
     return { success: false, error: "Não foi possível excluir as notificações lidas." };
   }
 
   revalidatePath("/");
-  return { success: true };
+  return { success: true, deletedCount: readIds.length };
 }
 
 export async function processInviteAction(notificationId: string, action: "accept" | "decline", teamId: string) {
