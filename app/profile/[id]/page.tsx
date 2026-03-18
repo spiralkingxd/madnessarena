@@ -179,6 +179,11 @@ export default async function PublicProfilePage({ params }: Props) {
   const crewVictories = teams.reduce((sum, team) => sum + team.wins, 0);
   const crewLosses = teams.reduce((sum, team) => sum + team.losses, 0);
   const tournamentsWon = uniqueTournamentWins.size;
+  const totalMatches = crewVictories + crewLosses;
+  const winRate = crewVictories + crewLosses > 0 ? Math.round((crewVictories / (crewVictories + crewLosses)) * 100) : 0;
+  const teamResultsHelper = totalMatches > 0
+    ? `${dict.profile.winRate}: ${winRate}% • ${totalMatches} ${dict.profile.matchesPlayed}`
+    : `${dict.profile.winRate}: 0% • ${dict.profile.noMatchesPlayed}`;
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-14 text-slate-900 dark:bg-[radial-gradient(ellipse_at_top,_#0f2847_0%,_#0b1826_50%,_#050b12_100%)] dark:text-slate-100">
@@ -187,14 +192,17 @@ export default async function PublicProfilePage({ params }: Props) {
           {dict.profile.backHome}
         </Link>
 
-        <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white/95 shadow-xl backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/60 dark:shadow-2xl dark:shadow-black/40">
+        <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white/95 shadow-xl backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/65 dark:shadow-2xl dark:shadow-black/40">
           <div className="h-1.5 w-full bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600" />
 
-          <div className="relative overflow-hidden px-6 py-8 sm:px-8 sm:py-10">
-            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.12),transparent_30%)]" />
-            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-5">
-                <div className="relative h-28 w-28 overflow-hidden rounded-full bg-slate-200 ring-4 ring-yellow-400/70 ring-offset-2 ring-offset-slate-900 shadow-[0_0_32px_rgba(250,204,21,0.20)] dark:bg-slate-800">
+          <div className="relative overflow-hidden">
+            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_center_right,rgba(59,130,246,0.12),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.18),transparent_28%)]" />
+            <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-br from-cyan-500/12 via-slate-900/0 to-amber-400/10" />
+
+            <div className="relative grid gap-8 px-6 py-8 sm:px-8 sm:py-10 xl:grid-cols-[minmax(0,1.2fr)_420px] xl:items-start">
+              <div className="space-y-6">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                  <div className="relative h-28 w-28 overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-200 ring-4 ring-yellow-400/70 ring-offset-2 ring-offset-slate-900 shadow-[0_0_32px_rgba(250,204,21,0.20)] dark:bg-slate-800">
                   {profile.avatar_url ? (
                     <Image src={profile.avatar_url} alt={profile.display_name} fill sizes="112px" className="object-cover" />
                   ) : (
@@ -202,49 +210,60 @@ export default async function PublicProfilePage({ params }: Props) {
                       {profile.display_name.slice(0, 1).toUpperCase()}
                     </div>
                   )}
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <h1 className="flex flex-wrap items-center gap-2 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-                      <span>{profile.display_name}</span>
-                      {profile.role === "owner" ? <Crown className="h-6 w-6 text-yellow-500" /> : null}
-                      {profile.role === "admin" ? <Shield className="h-6 w-6 text-cyan-400" /> : null}
-                    </h1>
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-                      <span className="inline-flex items-center gap-1.5">
-                        <AtSign className="h-4 w-4 text-cyan-400" />@{profile.username}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <Calendar className="h-4 w-4 text-cyan-400" />
-                        {dict.profile.memberSince}: {memberSince}
-                      </span>
-                    </div>
                   </div>
 
-                  {profile.custom_status ? (
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-200">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      {profile.custom_status}
+                  <div className="min-w-0 flex-1 space-y-4">
+                    <div>
+                      <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/90 dark:text-amber-200">
+                        <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.9)]" />
+                        Arena profile
+                      </div>
+                      <h1 className="flex flex-wrap items-center gap-2 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+                        <span>{profile.display_name}</span>
+                        {profile.role === "owner" ? <Crown className="h-6 w-6 text-yellow-500" /> : null}
+                        {profile.role === "admin" ? <Shield className="h-6 w-6 text-cyan-400" /> : null}
+                      </h1>
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/15 bg-cyan-400/8 px-3 py-1">
+                          <AtSign className="h-4 w-4 text-cyan-400" />@{profile.username}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/5 px-3 py-1 dark:bg-white/5">
+                          <Calendar className="h-4 w-4 text-cyan-400" />
+                          {dict.profile.memberSince}: {memberSince}
+                        </span>
+                      </div>
                     </div>
-                  ) : null}
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <XboxStatusTag gamertag={profile.xbox_gamertag} />
-                    {boatRoles.map((role) => (
-                      <span key={role} className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-200">
-                        {role}
-                      </span>
-                    ))}
+                    {profile.custom_status ? (
+                      <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-200">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(34,197,94,0.9)]" />
+                        {profile.custom_status}
+                      </div>
+                    ) : null}
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <XboxStatusTag gamertag={profile.xbox_gamertag} emptyLabel={dict.profile.xboxNotLinked} />
+                      {boatRoles.map((role) => (
+                        <span key={role} className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-200">
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <HighlightStrip label={dict.profile.currentTeams} value={teams.length} accent="cyan" />
+                      <HighlightStrip label={dict.profile.winsLosses} value={`${crewVictories}/${crewLosses}`} accent="violet" />
+                      <HighlightStrip label={dict.profile.winRate} value={`${winRate}%`} accent="amber" />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:w-[420px]">
-                <StatCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={dict.profile.leaguePoints} value={playerRanking?.points ?? 0} />
-                <StatCard icon={<Swords className="h-4 w-4 text-cyan-400" />} label={dict.profile.matchWins} value={playerRanking?.wins ?? 0} />
-                <StatCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label={dict.profile.tournamentsWon} value={tournamentsWon} />
-                <StatCard icon={<Users className="h-4 w-4 text-violet-400" />} label={dict.profile.crewVictories} value={crewVictories} />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-2 xl:self-stretch">
+                <StatCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={dict.profile.leaguePoints} value={playerRanking?.points ?? 0} description="Season pressure" tone="emerald" />
+                <StatCard icon={<Swords className="h-4 w-4 text-cyan-400" />} label={dict.profile.matchWins} value={playerRanking?.wins ?? 0} description="Duel dominance" tone="cyan" />
+                <StatCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label={dict.profile.tournamentsWon} value={tournamentsWon} description="Finals conquered" tone="amber" />
+                <StatCard icon={<Users className="h-4 w-4 text-violet-400" />} label={dict.profile.crewVictories} value={crewVictories} description="Crew momentum" tone="violet" />
               </div>
             </div>
           </div>
@@ -265,7 +284,7 @@ export default async function PublicProfilePage({ params }: Props) {
         <section className="grid gap-4 md:grid-cols-3">
           <StatPanel icon={<Users className="h-4 w-4 text-cyan-400" />} label={dict.profile.currentTeams} value={teams.length} helper={dict.profile.activeCrews} />
           <StatPanel icon={<Trophy className="h-4 w-4 text-amber-400" />} label={dict.profile.tournamentsWon} value={tournamentsWon} helper={dict.profile.profileTrophiesHelper} />
-          <StatPanel icon={<Swords className="h-4 w-4 text-violet-400" />} label={dict.profile.winsLosses} value={`${crewVictories} / ${crewLosses}`} helper={dict.profile.teamResultsHelper} />
+          <StatPanel icon={<Swords className="h-4 w-4 text-violet-400" />} label={dict.profile.winsLosses} value={`${crewVictories} / ${crewLosses}`} helper={teamResultsHelper} />
         </section>
 
         <section className="rounded-[2rem] border border-slate-200 bg-white/95 p-6 shadow-xl dark:border-white/10 dark:bg-slate-950/60 dark:shadow-black/20">
@@ -335,8 +354,8 @@ export default async function PublicProfilePage({ params }: Props) {
 
 function InfoCard({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-2 px-6 py-6 text-center">
-      <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">
+    <div className="flex flex-col gap-3 px-6 py-6 text-center sm:text-left">
+      <div className="flex items-center justify-center gap-1.5 text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400 sm:justify-start">
         {icon}
         <span>{label}</span>
       </div>
@@ -345,21 +364,30 @@ function InfoCard({ icon, label, children }: { icon: ReactNode; label: string; c
   );
 }
 
-function StatCard({ icon, label, value }: { icon: ReactNode; label: string; value: string | number }) {
+function StatCard({ icon, label, value, description, tone }: { icon: ReactNode; label: string; value: string | number; description: string; tone: "emerald" | "cyan" | "amber" | "violet" }) {
+  const toneClasses = {
+    emerald: "before:bg-emerald-400/70",
+    cyan: "before:bg-cyan-400/70",
+    amber: "before:bg-amber-400/70",
+    violet: "before:bg-violet-400/70",
+  } satisfies Record<string, string>;
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-4 text-center dark:border-white/10 dark:bg-white/5">
+    <div className={`relative overflow-hidden rounded-[1.6rem] border border-slate-200 bg-slate-50/90 p-4 text-center shadow-lg before:absolute before:left-4 before:right-4 before:top-0 before:h-px dark:border-white/10 dark:bg-white/5 ${toneClasses[tone]}`}>
       <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
         {icon}
         <span>{label}</span>
       </div>
       <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
+      <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{description}</p>
     </div>
   );
 }
 
 function StatPanel({ icon, label, value, helper }: { icon: ReactNode; label: string; value: string | number; helper: string }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-lg dark:border-white/10 dark:bg-slate-950/60 dark:shadow-black/20">
+    <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-lg dark:border-white/10 dark:bg-slate-950/60 dark:shadow-black/20">
+      <div aria-hidden className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
         {icon}
         <span>{label}</span>
@@ -372,9 +400,24 @@ function StatPanel({ icon, label, value, helper }: { icon: ReactNode; label: str
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/80 px-3 py-3 text-center dark:border-white/10 dark:bg-black/10">
+    <div className="rounded-2xl border border-slate-200 bg-white/80 px-3 py-3 text-center shadow-sm dark:border-white/10 dark:bg-black/10">
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{label}</p>
       <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{value}</p>
+    </div>
+  );
+}
+
+function HighlightStrip({ label, value, accent }: { label: string; value: string | number; accent: "cyan" | "violet" | "amber" }) {
+  const accentClasses = {
+    cyan: "border-cyan-400/20 bg-cyan-400/10 text-cyan-700 dark:text-cyan-200",
+    violet: "border-violet-400/20 bg-violet-400/10 text-violet-700 dark:text-violet-200",
+    amber: "border-amber-400/20 bg-amber-400/10 text-amber-700 dark:text-amber-200",
+  } satisfies Record<string, string>;
+
+  return (
+    <div className={`rounded-2xl border px-4 py-3 ${accentClasses[accent]}`}>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80">{label}</p>
+      <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">{value}</p>
     </div>
   );
 }

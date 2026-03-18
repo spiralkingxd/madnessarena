@@ -148,8 +148,12 @@
   "profile": {
     "backHome": "← Back to home",
     "username": "Username",
+    "xboxNotLinked": "No linked Xbox account",
     "memberSince": "Member since",
     "lastActivity": "Last activity",
+    "winRate": "Win rate",
+    "matchesPlayed": "matches played",
+    "noMatchesPlayed": "no matches played",
     "leaguePoints": "League Points",
     "matchWins": "Match wins",
     "tournamentsWon": "Tournaments Won",

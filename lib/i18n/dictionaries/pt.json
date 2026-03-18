@@ -148,8 +148,12 @@
   "profile": {
     "backHome": "← Voltar para o início",
     "username": "Username",
+    "xboxNotLinked": "Sem conta Xbox vinculada",
     "memberSince": "Membro desde",
     "lastActivity": "Última atividade",
+    "winRate": "Taxa de vitória",
+    "matchesPlayed": "partidas disputadas",
+    "noMatchesPlayed": "sem partidas disputadas",
     "leaguePoints": "Pontos de Liga",
     "matchWins": "Vitórias em partidas",
     "tournamentsWon": "Torneios Ganhos",

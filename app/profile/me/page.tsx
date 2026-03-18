@@ -140,8 +140,6 @@ export default async function MyProfilePage() {
       }
     }
 
-    const dateLocale = locale === "en" ? "en-US" : "pt-BR";
-    const memberSince = new Intl.DateTimeFormat(dateLocale, { timeZone: "America/Sao_Paulo", dateStyle: "medium" }).format(new Date(profile.created_at));
     const [teamRankingsResponse, finalWinsResponse] = teamIds.length
       ? await Promise.all([
           supabase.from("team_rankings").select("team_id, wins, losses, points, rank_position").in("team_id", teamIds),
@@ -167,7 +165,6 @@ export default async function MyProfilePage() {
       teamTournamentWinsMap.set(teamId, current + 1);
     }
     tournamentsWon = new Set((finalWinsResponse.data ?? []).map((row) => `${row.winner_id}:${row.event_id}`)).size;
-    const playerRanking = profile.rankings?.[0];
 
     userTeams = memberships
       .map((membership) => {
@@ -203,14 +200,25 @@ export default async function MyProfilePage() {
 
   const dateLocale = locale === "en" ? "en-US" : "pt-BR";
   const memberSince = new Intl.DateTimeFormat(dateLocale, { timeZone: "America/Sao_Paulo", dateStyle: "medium" }).format(new Date(profile.created_at));
-  
+  const lastActivity = profile.updated_at
+    ? new Intl.DateTimeFormat(dateLocale, { timeZone: "America/Sao_Paulo", dateStyle: "medium", timeStyle: "short" }).format(new Date(profile.updated_at))
+    : "--";
+  const boatRoles = profile.boat_role
+    ? profile.boat_role.split(",").map((role) => role.trim()).filter(Boolean)
+    : [];
   const playerRanking = profile.rankings?.[0];
+  const crewVictories = userTeams.reduce((sum, team) => sum + team.wins, 0);
+  const crewLosses = userTeams.reduce((sum, team) => sum + team.losses, 0);
+  const totalMatches = crewVictories + crewLosses;
+  const winRate = crewVictories + crewLosses > 0 ? Math.round((crewVictories / (crewVictories + crewLosses)) * 100) : 0;
+  const teamResultsHelper = totalMatches > 0
+    ? `${dict.profile.winRate}: ${winRate}% • ${totalMatches} ${dict.profile.matchesPlayed}`
+    : `${dict.profile.winRate}: 0% • ${dict.profile.noMatchesPlayed}`;
 
   return (
     <main className="min-h-[calc(100vh-72px)] bg-slate-50 dark:bg-[radial-gradient(ellipse_at_top,_#0f2847_0%,_#0b1826_50%,_#050b12_100%)] px-4 py-16 text-slate-900 dark:text-slate-100">
       <div className="mx-auto w-full max-w-6xl space-y-6">
-        <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 shadow-xl dark:shadow-2xl dark:shadow-black/40 backdrop-blur-sm">
-          {/* Settings Button absolute top right on mobile and desktop */}
+        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/95 shadow-xl backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/65 dark:shadow-2xl dark:shadow-black/40">
           <div className="absolute top-4 right-4 z-50">
             <ProfileSettingsForm
               initialStatus={profile.custom_status}
@@ -219,97 +227,106 @@ export default async function MyProfilePage() {
             />
           </div>
 
-          {/* Gold accent bar */}
           <div className="h-1.5 w-full bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600" />
 
-          {/* Avatar + Name header */}
-          <div className="flex flex-col items-center gap-4 px-8 pb-8 pt-10">
-            {/* Avatar with golden ring */}
-            <div className="relative h-28 w-28 overflow-hidden rounded-full ring-4 ring-yellow-400/70 ring-offset-2 ring-offset-slate-900 shadow-[0_0_32px_rgba(250,204,21,0.20)]">
-              {profile.avatar_url ? (
-                <Image
-                  src={profile.avatar_url}
-                  alt={profile.display_name}
-                  fill
-                  sizes="112px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-slate-200 dark:bg-slate-800 text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {profile.display_name.slice(0, 1).toUpperCase()}
-                </div>
-              )}
-            </div>
+          <div className="relative overflow-hidden">
+            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_center_right,rgba(59,130,246,0.12),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.18),transparent_28%)]" />
+            <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-br from-cyan-500/12 via-slate-900/0 to-amber-400/10" />
 
-            {/* Display name */}
-            <h1 className="text-2xl font-bold tracking-wide text-slate-900 dark:text-white flex flex-col items-center">
-              <div className="flex items-center gap-2">
-                {profile.role === 'owner' && <Crown className="h-5 w-5 text-yellow-500" />}
-                {profile.role === 'admin' && <Shield className="h-5 w-5 text-cyan-500" />}
-                {profile.display_name}
-              </div>
-              {profile.custom_status && (
-                <span className="text-sm font-normal text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                  {profile.custom_status}
-                </span>
-              )}
-            </h1>
-
-            {/* Xbox status and Boat Role */}
-            <div className="flex gap-4 items-center">
-              <XboxStatusTag gamertag={profile.xbox_gamertag} />
-              {profile.boat_role && profile.boat_role !== "nenhuma" && (
-                  <div className="flex flex-wrap gap-2">
-                    {profile.boat_role.split(',').map((r) => r.trim()).map((role) => (
-                      <span key={role} className="px-3 py-1 rounded-full bg-blue-100 dark:bg-[#1a2b4b] text-blue-800 dark:text-blue-300 text-xs font-semibold capitalize border border-blue-200 dark:border-blue-800/50 shadow-sm">
-                        {role}
-                      </span>
-                    ))}
+            <div className="relative grid gap-8 px-6 py-8 sm:px-8 sm:py-10 xl:grid-cols-[minmax(0,1.2fr)_420px] xl:items-start">
+              <div className="space-y-6">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                  <div className="relative h-28 w-28 overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-200 ring-4 ring-yellow-400/70 ring-offset-2 ring-offset-slate-900 shadow-[0_0_32px_rgba(250,204,21,0.20)] dark:bg-slate-800">
+                    {profile.avatar_url ? (
+                      <Image
+                        src={profile.avatar_url}
+                        alt={profile.display_name}
+                        fill
+                        sizes="112px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                        {profile.display_name.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  <div className="min-w-0 flex-1 space-y-4">
+                    <div>
+                      <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/90 dark:text-amber-200">
+                        <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.9)]" />
+                        Command center
+                      </div>
+                      <h1 className="flex flex-wrap items-center gap-2 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+                        <span>{profile.display_name}</span>
+                        {profile.role === "owner" ? <Crown className="h-6 w-6 text-yellow-500" /> : null}
+                        {profile.role === "admin" ? <Shield className="h-6 w-6 text-cyan-500" /> : null}
+                      </h1>
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/15 bg-cyan-400/8 px-3 py-1">
+                          <AtSign className="h-4 w-4 text-cyan-400" />@{profile.username}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/5 px-3 py-1 dark:bg-white/5">
+                          <Calendar className="h-4 w-4 text-cyan-400" />
+                          {dict.profile.memberSince}: {memberSince}
+                        </span>
+                      </div>
+                    </div>
+
+                    {profile.custom_status ? (
+                      <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-200">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(34,197,94,0.9)]" />
+                        {profile.custom_status}
+                      </div>
+                    ) : null}
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <XboxStatusTag gamertag={profile.xbox_gamertag} emptyLabel={dict.profile.xboxNotLinked} />
+                      {boatRoles.map((role) => (
+                        <span key={role} className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-200 capitalize">
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <HighlightStrip label={dict.profile.currentTeams} value={userTeams.length} accent="cyan" />
+                      <HighlightStrip label={dict.profile.winsLosses} value={`${crewVictories}/${crewLosses}`} accent="violet" />
+                      <HighlightStrip label={dict.profile.winRate} value={`${winRate}%`} accent="amber" />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-2 xl:self-stretch">
+                <StatCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={dict.profile.leaguePoints} value={playerRanking?.points ?? 0} description="Season pressure" tone="emerald" />
+                <StatCard icon={<Swords className="h-4 w-4 text-cyan-400" />} label={dict.profile.matchWins} value={playerRanking?.wins ?? 0} description="Duel dominance" tone="cyan" />
+                <StatCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label={dict.profile.tournamentsWon} value={tournamentsWon} description="Finals conquered" tone="amber" />
+                <StatCard icon={<Users className="h-4 w-4 text-violet-400" />} label={dict.profile.currentTeams} value={userTeams.length} description="Active rosters" tone="violet" />
+              </div>
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="mx-8 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-white/10 to-transparent" />
-
-          {/* Info grid - Top Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 sm:divide-x sm:divide-slate-200 dark:sm:divide-white/5 border-b border-slate-200 dark:border-white/5">
-            <InfoCard icon={<AtSign className="h-4 w-4 text-cyan-400" />} label="Username">
+          <div className="grid grid-cols-1 border-t border-slate-200 sm:grid-cols-3 sm:divide-x sm:divide-slate-200 dark:border-white/5 dark:sm:divide-white/5">
+            <InfoCard icon={<AtSign className="h-4 w-4 text-cyan-400" />} label={dict.profile.username}>
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">@{profile.username}</span>
             </InfoCard>
-
             <InfoCard icon={<Calendar className="h-4 w-4 text-cyan-400" />} label={dict.profile.memberSince}>
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{memberSince}</span>
             </InfoCard>
-
             <InfoCard icon={<Clock className="h-4 w-4 text-cyan-400" />} label={dict.profile.lastActivity}>
-              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                {profile.updated_at ? new Intl.DateTimeFormat(dateLocale, { timeZone: "America/Sao_Paulo", dateStyle: "medium", timeStyle: "short" }).format(new Date(profile.updated_at)) : "--"}
-              </span>
-            </InfoCard>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-slate-200 dark:lg:divide-white/5">
-            <InfoCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={dict.profile.leaguePoints}>
-              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{playerRanking?.points || 0}</span>
-            </InfoCard>
-
-            <InfoCard icon={<Swords className="h-4 w-4 text-cyan-400" />} label={dict.profile.matchWins}>
-              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{playerRanking?.wins || 0}</span>
-            </InfoCard>
-
-            <InfoCard icon={<Trophy className="h-4 w-4 text-amber-400" />} label={dict.profile.tournamentsWon}>
-              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{tournamentsWon}</span>
-            </InfoCard>
-
-            <InfoCard icon={<Users className="h-4 w-4 text-violet-400" />} label={dict.profile.currentTeams}>
-              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{userTeams.length}</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{dict.profile.activeCrews}</span>
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{lastActivity}</span>
             </InfoCard>
           </div>
         </div>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          <StatPanel icon={<Users className="h-4 w-4 text-cyan-400" />} label={dict.profile.currentTeams} value={userTeams.length} helper={dict.profile.activeCrews} />
+          <StatPanel icon={<Trophy className="h-4 w-4 text-amber-400" />} label={dict.profile.tournamentsWon} value={tournamentsWon} helper={dict.profile.profileTrophiesHelper} />
+          <StatPanel icon={<Swords className="h-4 w-4 text-violet-400" />} label={dict.profile.winsLosses} value={`${crewVictories} / ${crewLosses}`} helper={teamResultsHelper} />
+        </section>
 
         <ProfileTeamsSection dict={dict} locale={dateLocale} systemMaxMembers={maxTeamSize}
           userId={user.id}
@@ -332,12 +349,61 @@ function InfoCard({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 px-6 py-6 text-center">
-      <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">
+    <div className="flex flex-col gap-3 px-6 py-6 text-center sm:text-left">
+      <div className="flex items-center justify-center gap-1.5 text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400 sm:justify-start">
         {icon}
         <span>{label}</span>
       </div>
       {children}
+    </div>
+  );
+}
+
+function StatCard({ icon, label, value, description, tone }: { icon: ReactNode; label: string; value: string | number; description: string; tone: "emerald" | "cyan" | "amber" | "violet" }) {
+  const toneClasses = {
+    emerald: "before:bg-emerald-400/70",
+    cyan: "before:bg-cyan-400/70",
+    amber: "before:bg-amber-400/70",
+    violet: "before:bg-violet-400/70",
+  } satisfies Record<string, string>;
+
+  return (
+    <div className={`relative overflow-hidden rounded-[1.6rem] border border-slate-200 bg-slate-50/90 p-4 text-center shadow-lg before:absolute before:left-4 before:right-4 before:top-0 before:h-px dark:border-white/10 dark:bg-white/5 ${toneClasses[tone]}`}>
+      <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
+      <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{description}</p>
+    </div>
+  );
+}
+
+function StatPanel({ icon, label, value, helper }: { icon: ReactNode; label: string; value: string | number; helper: string }) {
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-lg dark:border-white/10 dark:bg-slate-950/60 dark:shadow-black/20">
+      <div aria-hidden className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <p className="mt-3 text-3xl font-black text-slate-900 dark:text-white">{value}</p>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{helper}</p>
+    </div>
+  );
+}
+
+function HighlightStrip({ label, value, accent }: { label: string; value: string | number; accent: "cyan" | "violet" | "amber" }) {
+  const accentClasses = {
+    cyan: "border-cyan-400/20 bg-cyan-400/10 text-cyan-700 dark:text-cyan-200",
+    violet: "border-violet-400/20 bg-violet-400/10 text-violet-700 dark:text-violet-200",
+    amber: "border-amber-400/20 bg-amber-400/10 text-amber-700 dark:text-amber-200",
+  } satisfies Record<string, string>;
+
+  return (
+    <div className={`rounded-2xl border px-4 py-3 ${accentClasses[accent]}`}>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80">{label}</p>
+      <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">{value}</p>
     </div>
   );
 }

@@ -322,11 +322,12 @@ async function queueUpcomingStartNotifications(
 }
 
 async function recalculateRankings(supabase: Awaited<ReturnType<typeof assertAdminAccess>>["supabase"]): Promise<ActionResult> {
-  const [{ data: allTeams }, { data: members }, { data: matches }, { data: events }] = await Promise.all([
+  const [{ data: allTeams }, { data: members }, { data: matches }, { data: events }, { data: registrations }] = await Promise.all([
     supabase.from("teams").select("id, captain_id"),
     supabase.from("team_members").select("team_id, user_id"),
-    supabase.from("matches").select("event_id, team_a_id, team_b_id, winner_id, score_a, score_b"),
-    supabase.from("events").select("id, scoring_win, scoring_draw, scoring_loss"),
+    supabase.from("matches").select("event_id, team_a_id, team_b_id, winner_id, score_a, score_b, next_match_id"),
+    supabase.from("events").select("id, status, scoring_win, scoring_draw, scoring_loss"),
+    supabase.from("registrations").select("event_id, team_id, status").eq("status", "approved"),
   ]);
 
   const rosterByTeam = new Map<string, Set<string>>();
@@ -344,16 +345,28 @@ async function recalculateRankings(supabase: Awaited<ReturnType<typeof assertAdm
     rosterByTeam.set(teamId, roster);
   }
 
-  const eventScoreMap = new Map<string, { win: number; draw: number; loss: number }>();
+  const eventScoreMap = new Map<string, { win: number; draw: number; loss: number; status: string }>();
   for (const event of events ?? []) {
     eventScoreMap.set(String(event.id), {
       win: Number(event.scoring_win ?? 3),
       draw: Number(event.scoring_draw ?? 1),
       loss: Number(event.scoring_loss ?? 0),
+      status: String(event.status ?? "draft"),
     });
   }
 
+  const approvedTeamsByEvent = new Map<string, Set<string>>();
+  for (const registration of registrations ?? []) {
+    const eventId = String(registration.event_id ?? "");
+    const teamId = String(registration.team_id ?? "");
+    if (!eventId || !teamId) continue;
+    const current = approvedTeamsByEvent.get(eventId) ?? new Set<string>();
+    current.add(teamId);
+    approvedTeamsByEvent.set(eventId, current);
+  }
+
   const standings = new Map<string, RankingAccumulator>();
+  const teamStandings = new Map<string, RankingAccumulator>();
 
   function applyToRoster(profileIds: Set<string>, updater: (acc: RankingAccumulator) => void) {
     for (const profileId of profileIds) {
@@ -362,6 +375,14 @@ async function recalculateRankings(supabase: Awaited<ReturnType<typeof assertAdm
       standings.set(profileId, current);
     }
   }
+
+  function applyToTeam(teamId: string, updater: (acc: RankingAccumulator) => void) {
+    const current = teamStandings.get(teamId) ?? { points: 0, wins: 0, losses: 0 };
+    updater(current);
+    teamStandings.set(teamId, current);
+  }
+
+  const terminalWinnersByEvent = new Map<string, Set<string>>();
 
   for (const match of matches ?? []) {
     const teamAId = String(match.team_a_id);
@@ -384,6 +405,12 @@ async function recalculateRankings(supabase: Awaited<ReturnType<typeof assertAdm
       applyToRoster(rosterB, (acc) => {
         acc.points += scoring.draw;
       });
+      applyToTeam(teamAId, (acc) => {
+        acc.points += scoring.draw;
+      });
+      applyToTeam(teamBId, (acc) => {
+        acc.points += scoring.draw;
+      });
       continue;
     }
 
@@ -400,6 +427,44 @@ async function recalculateRankings(supabase: Awaited<ReturnType<typeof assertAdm
       acc.points += scoring.loss;
       acc.losses += 1;
     });
+
+    applyToTeam(winnerTeamId, (acc) => {
+      acc.points += scoring.win;
+      acc.wins += 1;
+    });
+    applyToTeam(loserTeamId, (acc) => {
+      acc.points += scoring.loss;
+      acc.losses += 1;
+    });
+
+    if (!match.next_match_id) {
+      const winners = terminalWinnersByEvent.get(String(match.event_id)) ?? new Set<string>();
+      winners.add(winnerTeamId);
+      terminalWinnersByEvent.set(String(match.event_id), winners);
+    }
+  }
+
+  for (const [eventId, scoring] of eventScoreMap.entries()) {
+    if (scoring.status !== "finished") continue;
+
+    const approvedTeams = approvedTeamsByEvent.get(eventId);
+    const terminalWinners = terminalWinnersByEvent.get(eventId);
+    if (!approvedTeams || approvedTeams.size < 2 || !terminalWinners || terminalWinners.size !== 1) continue;
+
+    const championTeamId = [...terminalWinners][0];
+    for (const teamId of approvedTeams) {
+      if (teamId === championTeamId) continue;
+
+      const roster = rosterByTeam.get(teamId) ?? new Set<string>();
+      applyToTeam(teamId, (acc) => {
+        acc.points += scoring.loss;
+        acc.losses += 1;
+      });
+      applyToRoster(roster, (acc) => {
+        acc.points += scoring.loss;
+        acc.losses += 1;
+      });
+    }
   }
 
   const sorted = [...standings.entries()].sort((a, b) => {
@@ -409,8 +474,18 @@ async function recalculateRankings(supabase: Awaited<ReturnType<typeof assertAdm
     return a[0].localeCompare(b[0]);
   });
 
-  const { error: deleteError } = await supabase.from("rankings").delete().gte("points", 0);
-  if (deleteError) return { error: "Não foi possível recalcular o ranking." };
+  const sortedTeams = [...teamStandings.entries()].sort((a, b) => {
+    if (b[1].points !== a[1].points) return b[1].points - a[1].points;
+    if (b[1].wins !== a[1].wins) return b[1].wins - a[1].wins;
+    if (a[1].losses !== b[1].losses) return a[1].losses - b[1].losses;
+    return a[0].localeCompare(b[0]);
+  });
+
+  const [{ error: deletePlayerError }, { error: deleteTeamError }] = await Promise.all([
+    supabase.from("rankings").delete().gte("points", 0),
+    supabase.from("team_rankings").delete().gte("points", 0),
+  ]);
+  if (deletePlayerError || deleteTeamError) return { error: "Não foi possível recalcular o ranking." };
 
   if (sorted.length > 0) {
     const { error: insertError } = await supabase.from("rankings").insert(
@@ -426,8 +501,25 @@ async function recalculateRankings(supabase: Awaited<ReturnType<typeof assertAdm
     if (insertError) return { error: "Não foi possível atualizar o ranking." };
   }
 
+  if (sortedTeams.length > 0) {
+    const { error: insertTeamError } = await supabase.from("team_rankings").insert(
+      sortedTeams.map(([teamId, stats], index) => ({
+        team_id: teamId,
+        points: stats.points,
+        wins: stats.wins,
+        losses: stats.losses,
+        rank_position: index + 1,
+        updated_at: getNowIso(),
+      })),
+    );
+
+    if (insertTeamError) return { error: "Não foi possível atualizar o ranking das equipes." };
+  }
+
   revalidatePath("/ranking");
   revalidatePath("/profile/me");
+  revalidatePath("/admin/rankings");
+  revalidatePath("/admin/dashboard");
   return { success: "Ranking recalculado." };
 }
 
