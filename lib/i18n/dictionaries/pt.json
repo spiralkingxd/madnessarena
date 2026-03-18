@@ -83,6 +83,7 @@
     "empty": "Nenhuma equipe registrada ainda.",
     "members": "membros",
     "captain": "Capitão",
+    "member": "Membro",
     "unknownCaptain": "Desconhecido",
     "createdAt": "Criada em",
     "yourTeam": "Sua equipe",
@@ -180,6 +181,18 @@
   },
   "search": {
     "placeholder": "Buscar...",
-    "placeholderOpen": "Buscar... (ex: user:)"
+    "placeholderOpen": "Buscar... (ex: usuario:)",
+    "prefixUser": "usuario:",
+    "prefixTournament": "torneio:",
+    "prefixTeam": "equipe:",
+    "filters": "Filtros",
+    "filterUser": "De um usuário específico",
+    "filterTournament": "Em um torneio",
+    "filterTeam": "Buscar por equipe",
+    "results": "Resultados",
+    "minChars": "Digite pelo menos 2 caracteres...",
+    "noResults": "Nenhum resultado encontrado para",
+    "footer": "Navegue, clique sobre os filtros ou",
+    "footerClose": "para fechar"
   }
 }

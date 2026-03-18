@@ -45,6 +45,11 @@ type UserTeamCard = {
   joined_at: string;
   member_count: number;
   max_members: number;
+  wins: number;
+  losses: number;
+  points: number;
+  tournaments_won: number;
+  rank_position: number | null;
 };
 
 export default async function MyProfilePage() {
@@ -162,18 +167,42 @@ export default async function MyProfilePage() {
   const memberSince = new Intl.DateTimeFormat(dateLocale, { timeZone: "America/Sao_Paulo", dateStyle: "medium" }).format(new Date(profile.created_at));
   const [teamRankingsResponse, finalWinsResponse] = teamIds.length
     ? await Promise.all([
-        supabase.from("team_rankings").select("team_id, wins, losses").in("team_id", teamIds),
+        supabase.from("team_rankings").select("team_id, wins, losses, points, rank_position").in("team_id", teamIds),
         supabase.from("matches").select("event_id, winner_id").in("winner_id", teamIds).is("next_match_id", null),
       ])
     : [
-        { data: [] as Array<{ team_id: string; wins: number; losses: number }>, error: null },
+        { data: [] as Array<{ team_id: string; wins: number; losses: number; points: number; rank_position: number | null }>, error: null },
         { data: [] as Array<{ event_id: string; winner_id: string }>, error: null },
       ];
 
-  const crewVictories = (teamRankingsResponse.data ?? []).reduce((sum, row) => sum + Number(row.wins ?? 0), 0);
-  const crewLosses = (teamRankingsResponse.data ?? []).reduce((sum, row) => sum + Number(row.losses ?? 0), 0);
+  const teamRankingMap = new Map(
+    (teamRankingsResponse.data ?? []).map((row) => [String(row.team_id), {
+      wins: Number(row.wins ?? 0),
+      losses: Number(row.losses ?? 0),
+      points: Number(row.points ?? 0),
+      rank_position: row.rank_position ?? null,
+    }]),
+  );
+  const teamTournamentWinsMap = new Map<string, number>();
+  for (const row of finalWinsResponse.data ?? []) {
+    const teamId = String(row.winner_id);
+    const current = teamTournamentWinsMap.get(teamId) ?? 0;
+    teamTournamentWinsMap.set(teamId, current + 1);
+  }
   const tournamentsWon = new Set((finalWinsResponse.data ?? []).map((row) => `${row.winner_id}:${row.event_id}`)).size;
   const playerRanking = profile.rankings?.[0];
+
+  userTeams = userTeams.map((team) => {
+    const ranking = teamRankingMap.get(team.id);
+    return {
+      ...team,
+      wins: ranking?.wins ?? 0,
+      losses: ranking?.losses ?? 0,
+      points: ranking?.points ?? 0,
+      tournaments_won: teamTournamentWinsMap.get(team.id) ?? 0,
+      rank_position: ranking?.rank_position ?? null,
+    };
+  });
 
   return (
     <main className="min-h-[calc(100vh-72px)] bg-slate-50 dark:bg-[radial-gradient(ellipse_at_top,_#0f2847_0%,_#0b1826_50%,_#050b12_100%)] px-4 py-16 text-slate-900 dark:text-slate-100">
@@ -260,7 +289,7 @@ export default async function MyProfilePage() {
             </InfoCard>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-slate-200 dark:lg:divide-white/5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-slate-200 dark:lg:divide-white/5">
             <InfoCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={dict.profile.leaguePoints}>
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{playerRanking?.points || 0}</span>
             </InfoCard>
@@ -273,14 +302,14 @@ export default async function MyProfilePage() {
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{tournamentsWon}</span>
             </InfoCard>
 
-            <InfoCard icon={<Users className="h-4 w-4 text-violet-400" />} label={dict.profile.crewVictories}>
-              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{crewVictories}</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{dict.profile.winsLosses}: {crewVictories}/{crewLosses}</span>
+            <InfoCard icon={<Users className="h-4 w-4 text-violet-400" />} label={dict.profile.currentTeams}>
+              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{userTeams.length}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{dict.profile.activeCrews}</span>
             </InfoCard>
           </div>
         </div>
 
-        <ProfileTeamsSection dict={dict} systemMaxMembers={maxTeamSize}
+        <ProfileTeamsSection dict={dict} locale={dateLocale} systemMaxMembers={maxTeamSize}
           userId={user.id}
           userXboxGamertag={profile.xbox_gamertag}
           teams={userTeams}

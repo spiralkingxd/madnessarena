@@ -16,6 +16,13 @@ export function GlobalSearch({ dict }: { dict?: any }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const searchDict = dict?.search;
+
+  const filterPrefixes = {
+    user: searchDict?.prefixUser ?? "user:",
+    tournament: searchDict?.prefixTournament ?? "tournament:",
+    team: searchDict?.prefixTeam ?? "team:",
+  } as const;
 
   // Click outside to close
   useEffect(() => {
@@ -58,12 +65,12 @@ export function GlobalSearch({ dict }: { dict?: any }) {
     if (text.startsWith("usuario:") || text.startsWith("user:")) {
       setFilter("user");
       setQuery(text.replace("usuario:", "").replace("user:", ""));
-    } else if (text.startsWith("torneio:")) {
+    } else if (text.startsWith("torneio:") || text.startsWith("tournament:")) {
       setFilter("tournament");
-      setQuery(text.replace("torneio:", ""));
-    } else if (text.startsWith("equipe:")) {
+      setQuery(text.replace("torneio:", "").replace("tournament:", ""));
+    } else if (text.startsWith("equipe:") || text.startsWith("team:")) {
       setFilter("team");
-      setQuery(text.replace("equipe:", ""));
+      setQuery(text.replace("equipe:", "").replace("team:", ""));
     } else {
       setQuery(text);
     }
@@ -94,7 +101,7 @@ export function GlobalSearch({ dict }: { dict?: any }) {
           
           {filter !== "all" && (
             <span className="flex shrink-0 items-center justify-center bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ml-2">
-              {filter === "user" ? "usuario:" : filter === "tournament" ? "torneio:" : "equipe:"}
+              {filter === "user" ? filterPrefixes.user : filter === "tournament" ? filterPrefixes.tournament : filterPrefixes.team}
               <button 
                 onClick={(e) => { e.stopPropagation(); setFilter("all"); inputRef.current?.focus(); }}
                 className="ml-1 hover:text-red-500"
@@ -136,20 +143,20 @@ export function GlobalSearch({ dict }: { dict?: any }) {
             <div className="max-h-[60vh] overflow-y-auto p-1.5">
               {query.trim().length > 0 && query.trim().length < 2 && (
                 <div className="p-4 text-center text-sm text-slate-500">
-                  Digite pelo menos 2 caracteres...
+                  {searchDict?.minChars ?? "Type at least 2 characters..."}
                 </div>
               )}
               
               {query.trim().length >= 2 && results.length === 0 && !isPending && (
                 <div className="p-6 text-center text-sm text-slate-500">
-                  Nenhum resultado encontrado para &quot;{query}&quot;
+                  {(searchDict?.noResults ?? "No results found for")} &quot;{query}&quot;
                 </div>
               )}
 
               {results.length > 0 && (
                 <div className="space-y-0.5">
                   <div className="px-2 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                    Resultados
+                    {searchDict?.results ?? "Results"}
                   </div>
                   {results.map((result) => (
                     <button
@@ -192,7 +199,7 @@ export function GlobalSearch({ dict }: { dict?: any }) {
               {query.length === 0 && filter === "all" && (
                 <div className="p-2">
                   <div className="px-1 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    Filtros
+                    {searchDict?.filters ?? "Filters"}
                   </div>
                   <div className="flex flex-col gap-0.5">
                     <button 
@@ -200,24 +207,24 @@ export function GlobalSearch({ dict }: { dict?: any }) {
                       className="flex items-center gap-3 p-2 text-sm text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 transition"
                     >
                       <User className="h-4 w-4 text-slate-500" />
-                      De um usuário específico 
-                      <span className="ml-auto text-xs text-slate-400 font-mono">usuario:</span>
+                      {searchDict?.filterUser ?? "From a specific user"}
+                      <span className="ml-auto text-xs text-slate-400 font-mono">{filterPrefixes.user}</span>
                     </button>
                     <button 
                       onClick={() => { setFilter("tournament"); inputRef.current?.focus(); }}
                       className="flex items-center gap-3 p-2 text-sm text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 transition"
                     >
                       <Trophy className="h-4 w-4 text-slate-500" />
-                      Em um torneio
-                      <span className="ml-auto text-xs text-slate-400 font-mono">torneio:</span>
+                      {searchDict?.filterTournament ?? "Inside a tournament"}
+                      <span className="ml-auto text-xs text-slate-400 font-mono">{filterPrefixes.tournament}</span>
                     </button>
                     <button 
                       onClick={() => { setFilter("team"); inputRef.current?.focus(); }}
                       className="flex items-center gap-3 p-2 text-sm text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 transition"
                     >
                       <Users className="h-4 w-4 text-slate-500" />
-                      Buscar por equipe
-                      <span className="ml-auto text-xs text-slate-400 font-mono">equipe:</span>
+                      {searchDict?.filterTeam ?? "Search by team"}
+                      <span className="ml-auto text-xs text-slate-400 font-mono">{filterPrefixes.team}</span>
                     </button>
                   </div>
                 </div>
@@ -226,7 +233,7 @@ export function GlobalSearch({ dict }: { dict?: any }) {
             
             {/* Footer / Tip */}
             <div className="bg-slate-50 dark:bg-slate-900/50 p-2 text-[10px] text-center text-slate-500 border-t border-slate-100 dark:border-slate-800">
-              Navegue, clique sobre os filtros ou <kbd className="font-mono font-bold ml-1">ESC</kbd> para fechar
+              {searchDict?.footer ?? "Navigate, click the filters, or"} <kbd className="font-mono font-bold ml-1">ESC</kbd> {searchDict?.footerClose ?? "to close"}
             </div>
           </div>
         )}

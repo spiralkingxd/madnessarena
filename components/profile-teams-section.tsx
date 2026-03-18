@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useState, useTransition, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { AlertTriangle, Anchor, Plus, Shield, Swords, Users } from "lucide-react";
+import { AlertTriangle, Anchor, Plus, Shield, Swords, Trophy, Users } from "lucide-react";
 
 import { CreateTeamModal } from "@/components/create-team-modal";
 
@@ -17,22 +16,30 @@ type UserTeamCard = {
   joined_at: string;
   member_count: number;
   max_members: number;
+  wins: number;
+  losses: number;
+  points: number;
+  tournaments_won: number;
+  rank_position: number | null;
 };
 
 type Props = { dict?: any;
+  locale?: string;
   userId: string;
   userXboxGamertag: string | null;
   teams: UserTeamCard[];
   teamsError?: string | null; systemMaxMembers?: number;
 };
 
-const teamDateFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "medium" });
-
-function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, systemMaxMembers = 10, dict }: Props) {
+function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, systemMaxMembers = 10, dict, locale = "pt-BR" }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isLaunching, startTransition] = useTransition();
   const searchParams = useSearchParams();
+  const teamDateFmt = useMemo(
+    () => new Intl.DateTimeFormat(locale, { timeZone: "America/Sao_Paulo", dateStyle: "medium" }),
+    [locale],
+  );
 
   useEffect(() => {
     if (searchParams.get("action") === "new-team") {
@@ -130,7 +137,7 @@ function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, syst
               <Link
                 key={team.id}
                 href={`/teams/${team.id}`}
-                className="group rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/4 p-4 transition hover:border-amber-400/50 dark:hover:border-amber-400/30 hover:bg-amber-50 dark:hover:bg-amber-400/6"
+                className="group rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/4 p-4 transition hover:border-amber-400/50 dark:hover:border-amber-400/30 hover:bg-amber-50 dark:hover:bg-amber-400/6"
               >
                 <div className="flex items-start gap-3">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"> {team.logo_url ? ( <img src={team.logo_url} alt={team.name} className="h-full w-full object-contain bg-black/10 dark:bg-black/40" /> ) : ( <Anchor className="h-5 w-5 text-amber-400/70" /> )} </span>
@@ -146,9 +153,16 @@ function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, syst
                           : "border-slate-300 dark:border-slate-300/20 bg-slate-100 dark:bg-slate-300/10 text-slate-700 dark:text-slate-300"
                       }`}
                     >
-                      {isCaptain ? "Capitão" : "Membro"}
+                      {isCaptain ? (dict?.teams?.captain || "Capitão") : (dict?.teams?.member || "Membro")}
                     </span>
                   </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <TeamMiniStat label={dict?.profile?.crewVictories || "Vitórias da equipe"} value={team.wins} />
+                  <TeamMiniStat label={dict?.profile?.winsLosses || "Vitórias / Derrotas"} value={`${team.wins}/${team.losses}`} />
+                  <TeamMiniStat label={dict?.profile?.tournamentsWon || "Torneios ganhos"} value={team.tournaments_won} />
+                  <TeamMiniStat label={dict?.profile?.teamPoints || "Pontos"} value={team.points} />
                 </div>
 
                 <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -160,6 +174,11 @@ function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, syst
                     <Users className="h-3.5 w-3.5" />
                     {team.member_count}/{team.max_members}
                   </span>
+                </div>
+
+                <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                  <span>{dict?.profile?.teamRank || "Rank da equipe"}: {team.rank_position ? `#${team.rank_position}` : "-"}</span>
+                  <span className="inline-flex items-center gap-1"><Trophy className="h-3 w-3" />{dict?.profile?.tournamentsWon || "Torneios ganhos"}</span>
                 </div>
               </Link>
             );
@@ -179,6 +198,15 @@ function ProfileTeamsContent({ userId, userXboxGamertag, teams, teamsError, syst
 
       {open ? <CreateTeamModal dict={dict} userId={userId} userXboxGamertag={userXboxGamertag} hasReachedTeamLimit={reachedLimit} onClose={() => setOpen(false)} systemMaxMembers={systemMaxMembers} /> : null}
     </section>
+  );
+}
+
+function TeamMiniStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/10 px-3 py-2 text-center">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-100">{value}</p>
+    </div>
   );
 }
 

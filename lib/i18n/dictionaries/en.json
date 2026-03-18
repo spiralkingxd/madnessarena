@@ -83,6 +83,7 @@
     "empty": "No teams registered yet.",
     "members": "members",
     "captain": "Captain",
+    "member": "Member",
     "unknownCaptain": "Unknown",
     "createdAt": "Created on",
     "yourTeam": "Your team",
@@ -180,6 +181,18 @@
   },
   "search": {
     "placeholder": "Search...",
-    "placeholderOpen": "Search... (e.g. user:)"
+    "placeholderOpen": "Search... (e.g. user:)",
+    "prefixUser": "user:",
+    "prefixTournament": "tournament:",
+    "prefixTeam": "team:",
+    "filters": "Filters",
+    "filterUser": "From a specific user",
+    "filterTournament": "Inside a tournament",
+    "filterTeam": "Search by team",
+    "results": "Results",
+    "minChars": "Type at least 2 characters...",
+    "noResults": "No results found for",
+    "footer": "Navigate, click the filters, or",
+    "footerClose": "to close"
   }
 }
