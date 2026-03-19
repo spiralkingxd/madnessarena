@@ -92,7 +92,7 @@ export default async function Home() {
             sizes="100vw"
             className="object-cover object-[center_22%] scale-[1.01] opacity-62 dark:opacity-68 saturate-[1.16] contrast-[1.08] brightness-[0.94] dark:brightness-[0.84]"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,10,22,0.42)_0%,rgba(3,10,22,0.18)_38%,rgba(2,8,20,0.56)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,8,20,0.54)_0%,rgba(2,8,20,0.3)_40%,rgba(2,8,20,0.7)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,10,22,0.62)_0%,rgba(3,10,22,0.38)_38%,rgba(2,8,20,0.7)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,8,20,0.54)_0%,rgba(2,8,20,0.3)_40%,rgba(2,8,20,0.7)_100%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,rgba(56,189,248,0.15),transparent_44%),radial-gradient(circle_at_50%_120%,rgba(2,132,199,0.26),transparent_58%)] dark:bg-[radial-gradient(circle_at_50%_35%,rgba(56,189,248,0.18),transparent_46%),radial-gradient(circle_at_50%_115%,rgba(14,116,144,0.36),transparent_60%)]" />
         </div>
         <div className="relative mx-auto flex flex-col items-center text-center max-w-5xl gap-8 px-4 sm:px-6 py-20 sm:py-28 lg:px-10 lg:py-32">     
@@ -102,7 +102,7 @@ export default async function Home() {
               <span className="truncate whitespace-normal">{dict.home.heroSubtitle}</span>
             </div>
 
-            <h1 className="max-w-4xl text-5xl font-extrabold leading-[1.04] tracking-tight text-slate-900 dark:text-white sm:text-7xl lg:text-8xl drop-shadow-2xl">
+            <h1 className="max-w-4xl text-5xl font-extrabold leading-[1.04] tracking-tight text-white sm:text-7xl lg:text-8xl drop-shadow-[0_10px_30px_rgba(2,8,20,0.65)]">
               {dict.home.heroTitle1}
               <br className="hidden sm:block" />
               <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-300 bg-clip-text text-transparent ml-0 sm:ml-4">
@@ -110,7 +110,7 @@ export default async function Home() {
               </span>
             </h1>
 
-            <p className="max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-300 sm:text-lg lg:text-xl drop-shadow-md">
+            <p className="max-w-2xl text-base leading-relaxed text-slate-100/90 dark:text-slate-300 sm:text-lg lg:text-xl drop-shadow-[0_4px_14px_rgba(2,8,20,0.55)]">
               {dict.home.heroDesc}
             </p>
 
