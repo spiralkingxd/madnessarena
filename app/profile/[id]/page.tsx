@@ -15,14 +15,14 @@ type PublicProfile = {
   avatar_url: string | null;
   xbox_gamertag: string | null;
   custom_status: string | null;
-  boat_role: string | null;
-  role: string;
+  return (
+    <main className="min-h-[calc(100vh-72px)] bg-slate-50 px-4 py-16 text-slate-900 md:px-6 dark:bg-[radial-gradient(ellipse_at_top,_#0f2847_0%,_#0b1826_50%,_#050b12_100%)] dark:text-slate-100">
   created_at: string;
   updated_at: string;
   rankings?: {
     wins: number;
     losses: number;
-    points: number;
+        <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/95 shadow-xl backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/65 dark:shadow-2xl dark:shadow-black/30">
   }[];
 };
 
@@ -30,49 +30,64 @@ type TeamMembershipRow = {
   team_id: string;
   role: "captain" | "member";
   joined_at: string;
-};
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+                <div className="md:col-span-1 lg:col-span-4">
+                  <div className="flex h-full flex-col items-center rounded-[1.6rem] border border-slate-200/80 bg-slate-50/80 p-6 text-center shadow-sm dark:border-white/10 dark:bg-white/5">
+                    <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+                      {profile.display_name}
+                    </h1>
 
-type TeamRow = {
-  id: string;
-  name: string;
-  logo_url: string | null;
-  max_members: number | null;
-};
+                    <div className="relative my-4 h-40 w-40 overflow-hidden rounded-full border border-amber-400/45 bg-slate-200 ring-2 ring-amber-400/70 ring-offset-2 ring-offset-slate-900 shadow-lg sm:h-44 sm:w-44 dark:bg-slate-800">
+                      {profile.avatar_url ? (
+                        <Image
+                          src={profile.avatar_url}
+                          alt={profile.display_name}
+                          fill
+                          sizes="(min-width: 1024px) 176px, (min-width: 640px) 160px, 160px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-yellow-600 dark:text-yellow-400">
+                          {profile.display_name.slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
 
-type TeamRankingRow = {
-  team_id: string;
-  points: number;
-  wins: number;
-  losses: number;
-  rank_position: number | null;
-};
+                    <div className="my-4 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-slate-900 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300 dark:bg-slate-950/80 dark:text-amber-200">
+                      <Crown className="h-3.5 w-3.5" />
+                      Command Center
+                      {profile.role === "owner" ? <Crown className="h-3.5 w-3.5 text-yellow-500" /> : null}
+                      {profile.role === "admin" ? <Shield className="h-3.5 w-3.5 text-cyan-400" /> : null}
+                    </div>
 
-type TeamCard = {
-  id: string;
-  name: string;
-  logo_url: string | null;
-  role: "captain" | "member";
-  joined_at: string;
-  member_count: number;
-  max_members: number;
-  wins: number;
-  losses: number;
-  points: number;
-  rank_position: number | null;
-  tournaments_won: number;
-};
+                    <div className="my-4 w-full rounded-2xl border border-slate-200 bg-white/90 p-4 text-left shadow-sm dark:border-white/10 dark:bg-slate-950/35">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                        Conta Xbox
+                      </p>
+                      <div className="mt-2 flex justify-start">
+                        <XboxStatusTag gamertag={profile.xbox_gamertag} emptyLabel={dict.profile.xboxNotLinked} />
+                      </div>
+                    </div>
 
-type Props = { params: Promise<{ id: string }> };
+                    {profile.custom_status ? (
+                      <div className="my-4 inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-200">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                        {profile.custom_status}
+                      </div>
+                    ) : null}
 
-export default async function PublicProfilePage({ params }: Props) {
+                    <div className="my-4 flex flex-wrap items-center justify-center gap-2">
+                      {boatRoles.map((role) => (
+                        <span key={role} className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-700 capitalize dark:text-cyan-200">
+                          {role}
+                        </span>
   const dict = await getDictionary();
   const locale = await getLocale();
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, display_name, username, avatar_url, xbox_gamertag, custom_status, boat_role, role, created_at, updated_at, rankings(wins, losses, points)")
+                <div className="md:col-span-1 lg:col-span-8">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
     .eq("id", id)
     .maybeSingle<PublicProfile>();
 
@@ -244,8 +259,6 @@ export default async function PublicProfilePage({ params }: Props) {
                       value={lastActivity}
                       icon={<Clock className="h-4 w-4 text-cyan-400" />}
                     />
-                  </div>
-                  <div className="flex flex-1 gap-4 justify-end">
                     <StatCard icon={<Target className="h-4 w-4 text-emerald-400" />} label={dict.profile.leaguePoints} value={playerRanking?.points ?? 0} description="Season pressure" tone="emerald" />
                     <StatCard icon={<Swords className="h-4 w-4 text-cyan-400" />} label={dict.profile.winsLosses} value={`${crewVictories}/${crewLosses}`} description={`${dict.profile.winRate}: ${winRate}%`} tone="cyan" />
                   </div>
@@ -321,8 +334,8 @@ export default async function PublicProfilePage({ params }: Props) {
 
 function InfoPanel({ icon, title, value }: { icon: ReactNode; title: string; value: string }) {
   return (
-    <div className="rounded-[1.6rem] border border-slate-200 bg-slate-50/85 px-5 py-5 text-center shadow-sm dark:border-white/10 dark:bg-white/5 sm:text-left">
-      <div className="flex items-center justify-center gap-1.5 text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400 sm:justify-start">
+    <div className="h-full rounded-[1.6rem] border border-slate-200 bg-slate-50/85 p-6 text-left shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">
         {icon}
         <span>{title}</span>
       </div>
@@ -340,12 +353,12 @@ function StatCard({ icon, label, value, description, tone }: { icon: ReactNode; 
   } satisfies Record<string, string>;
 
   return (
-    <div className={`relative overflow-hidden rounded-[1.6rem] border border-slate-200 bg-slate-50/90 p-4 text-center shadow-sm before:absolute before:left-4 before:right-4 before:top-0 before:h-px dark:border-white/10 dark:bg-white/5 ${toneClasses[tone]}`}>
-      <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+    <div className={`relative h-full overflow-hidden rounded-[1.6rem] border border-slate-200 bg-slate-50/90 p-6 text-left shadow-sm before:absolute before:left-4 before:right-4 before:top-0 before:h-px dark:border-white/10 dark:bg-white/5 ${toneClasses[tone]}`}>
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
         {icon}
         <span>{label}</span>
       </div>
-      <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
+      <p className="mt-3 text-2xl font-black text-slate-900 dark:text-white">{value}</p>
       <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{description}</p>
     </div>
   );
