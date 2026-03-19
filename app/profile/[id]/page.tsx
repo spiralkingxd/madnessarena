@@ -4,7 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight, Clock, Crown, Shield, Swords, Target, Users } from "lucide-react";
 
-import { XboxStatusTag } from "@/components/xbox-status-tag";
+import { RoleBadge } from "../../../components/profile/RoleBadge";
+import { XboxStatusTag } from "../../../components/xbox-status-tag";
 import { getDictionary, getLocale } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 
@@ -241,9 +242,17 @@ export default async function PublicProfilePage({ params }: Props) {
                       <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
                         {dict.profile.inGameRoles}
                       </p>
-                      <p className="text-sm text-slate-700 dark:text-slate-200">
-                        {boatRoles.length > 0 ? boatRoles.join(", ") : dict.profile.noInGameRoles}
-                      </p>
+                      {boatRoles.length > 0 ? (
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {boatRoles.slice(0, 4).map((role) => (
+                            <RoleBadge key={role} role={role} size="sm" />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {dict.profile.noInGameRoles}
+                        </p>
+                      )}
                     </div>
 
                     <div className="w-full max-w-xs">
