@@ -168,8 +168,15 @@ body::selection {
 }
 
 [data-theme="light"] .action-secondary {
-  color: #1c334c;
-  background: rgba(28, 51, 76, 0.06);
+  color: #0f2740;
+  background: rgba(241, 247, 253, 0.96);
+  border-color: rgba(120, 145, 173, 0.55);
+  box-shadow: 0 10px 24px rgba(15, 39, 64, 0.18);
+}
+
+[data-theme="light"] .action-secondary:hover {
+  background: #ffffff;
+  border-color: rgba(120, 145, 173, 0.75);
 }
 
 [data-theme="light"] .text-white,
