@@ -148,7 +148,13 @@
   "profile": {
     "backHome": "← Voltar para o início",
     "username": "Username",
+    "xboxAccount": "Conta Xbox",
     "xboxNotLinked": "Sem conta Xbox vinculada",
+    "inGameRoles": "Funções In-Game",
+    "noInGameRoles": "Sem funções in-game cadastradas",
+    "roleOwner": "Owner",
+    "roleAdmin": "Admin",
+    "roleMember": "Membro",
     "memberSince": "Membro desde",
     "lastActivity": "Última atividade",
     "winRate": "Taxa de vitória",

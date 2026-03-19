@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Calendar, Clock, Crown, Shield, Swords, Target } from "lucide-react";
+import { Clock, Crown, Shield, Swords, Target, Users } from "lucide-react";
 
 import { ProfileSettingsForm } from "@/components/profile-settings-form";
 import { ProfileTeamsSection } from "@/components/profile-teams-section";
@@ -203,6 +203,14 @@ export default async function MyProfilePage() {
   const boatRoles = profile.boat_role
     ? profile.boat_role.split(",").map((role) => role.trim()).filter(Boolean)
     : [];
+  const roleKey = profile.role === "owner" ? "owner" : profile.role === "admin" ? "admin" : "member";
+  const roleLabel = roleKey === "owner" ? dict.profile.roleOwner : roleKey === "admin" ? dict.profile.roleAdmin : dict.profile.roleMember;
+  const roleBadgeClasses = roleKey === "owner"
+    ? "border-amber-400/45 bg-amber-100 text-amber-800 dark:border-amber-400/35 dark:bg-amber-400/15 dark:text-amber-200"
+    : roleKey === "admin"
+      ? "border-slate-400/45 bg-slate-200 text-slate-700 dark:border-slate-300/35 dark:bg-slate-400/15 dark:text-slate-200"
+      : "border-orange-500/40 bg-orange-100 text-orange-800 dark:border-orange-400/35 dark:bg-orange-400/15 dark:text-orange-200";
+  const RoleIcon = roleKey === "owner" ? Crown : roleKey === "admin" ? Shield : Users;
   const playerRanking = profile.rankings?.[0];
   const crewVictories = userTeams.reduce((sum, team) => sum + team.wins, 0);
   const crewLosses = userTeams.reduce((sum, team) => sum + team.losses, 0);
@@ -222,12 +230,17 @@ export default async function MyProfilePage() {
             <div className="relative px-6 py-6 sm:px-8 sm:py-8">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
                 <div className="md:col-span-1 lg:col-span-4">
-                  <div className="flex h-full flex-col items-center rounded-[1.6rem] border border-slate-200/80 bg-slate-50/80 p-6 text-center shadow-sm dark:border-white/10 dark:bg-white/5">
-                    <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+                  <div className="flex h-full flex-col items-center p-2 text-center sm:p-4">
+                    <h1 className="mb-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
                       {profile.display_name}
                     </h1>
 
-                    <div className="relative my-4 h-40 w-40 overflow-hidden rounded-full border border-amber-400/45 bg-slate-200 ring-2 ring-amber-400/70 ring-offset-2 ring-offset-slate-900 shadow-lg sm:h-44 sm:w-44 dark:bg-slate-800">
+                    <span className={`mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${roleBadgeClasses}`}>
+                      <RoleIcon className="h-3.5 w-3.5" />
+                      {roleLabel}
+                    </span>
+
+                    <div className="relative mb-4 h-32 w-32 overflow-hidden rounded-full border-2 border-amber-400/70 bg-slate-200 sm:h-36 sm:w-36 dark:bg-slate-800">
                       {profile.avatar_url ? (
                         <Image
                           src={profile.avatar_url}
@@ -243,35 +256,31 @@ export default async function MyProfilePage() {
                       )}
                     </div>
 
-                    <div className="my-4 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-slate-900 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300 dark:bg-slate-950/80 dark:text-amber-200">
-                      <Crown className="h-3.5 w-3.5" />
-                      Command Center
-                      {profile.role === "owner" ? <Crown className="h-3.5 w-3.5 text-yellow-500" /> : null}
-                      {profile.role === "admin" ? <Shield className="h-3.5 w-3.5 text-cyan-400" /> : null}
-                    </div>
-
-                    <div className="my-4 w-full rounded-2xl border border-slate-200 bg-white/90 p-4 text-left shadow-sm dark:border-white/10 dark:bg-slate-950/35">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                        Conta Xbox
+                    <div className="mb-4 w-full max-w-xs">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                        {dict.profile.xboxAccount}
                       </p>
-                      <div className="mt-2 flex justify-start">
+                      <div className="flex justify-center">
                         <XboxStatusTag gamertag={profile.xbox_gamertag} emptyLabel={dict.profile.xboxNotLinked} />
                       </div>
                     </div>
 
-                    {profile.custom_status ? (
-                      <div className="my-4 inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-200">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                        {profile.custom_status}
-                      </div>
-                    ) : null}
+                    <div className="mb-4 w-full max-w-xs">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                        {dict.profile.inGameRoles}
+                      </p>
+                      <p className="text-sm text-slate-700 dark:text-slate-200">
+                        {boatRoles.length > 0 ? boatRoles.join(", ") : dict.profile.noInGameRoles}
+                      </p>
+                    </div>
 
-                    <div className="my-4 flex flex-wrap items-center justify-center gap-2">
-                      {boatRoles.map((role) => (
-                        <span key={role} className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-700 capitalize dark:text-cyan-200">
-                          {role}
-                        </span>
-                      ))}
+                    <div className="w-full max-w-xs">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                        {dict.profile.memberSince}
+                      </p>
+                      <p className="text-sm text-slate-700 dark:text-slate-200">
+                        {memberSince}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -287,11 +296,6 @@ export default async function MyProfilePage() {
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <InfoPanel
-                        title={dict.profile.memberSince}
-                        value={memberSince}
-                        icon={<Calendar className="h-4 w-4 text-cyan-400" />}
-                      />
                       <InfoPanel
                         title={dict.profile.lastActivity}
                         value={lastActivity}
