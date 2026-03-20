@@ -1,4 +1,13 @@
-export const EVENT_STATUS_VALUES = ["draft", "published", "active", "paused", "finished"] as const;
+export const EVENT_STATUS_VALUES = [
+  "draft",
+  "published",
+  "active",
+  "paused",
+  "registrations_open",
+  "check_in",
+  "started",
+  "finished",
+] as const;
 export const EVENT_KIND_VALUES = ["event", "tournament"] as const;
 export const EVENT_TYPE_VALUES = ["tournament", "special", "scrimmage"] as const;
 export const EVENT_VISIBILITY_VALUES = ["public", "private"] as const;
@@ -18,6 +27,9 @@ export const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
   published: "Publicado",
   active: "Ativo",
   paused: "Pausado",
+  registrations_open: "Inscricoes abertas",
+  check_in: "Check-in",
+  started: "Em andamento",
   finished: "Finalizado",
 };
 
@@ -90,11 +102,18 @@ export function formatTeamSize(size: number | null | undefined) {
 }
 
 export function isEventVisible(status: string) {
-  return status === "published" || status === "active" || status === "finished";
+  return (
+    status === "published"
+    || status === "active"
+    || status === "registrations_open"
+    || status === "check_in"
+    || status === "started"
+    || status === "finished"
+  );
 }
 
 export function isEventRegistrable(status: string) {
-  return status === "published" || status === "active";
+  return status === "published" || status === "active" || status === "registrations_open" || status === "check_in";
 }
 
 export function toDatetimeLocalValue(value: string | null | undefined) {

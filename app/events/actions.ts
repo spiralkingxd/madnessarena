@@ -77,30 +77,44 @@ export async function registerTeamForEvent(
 
   if (activeRestriction) {
     const until = activeRestriction.expires_at
-      ? ` atÃ© ${new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(activeRestriction.expires_at))}`
+      ? ` ate ${new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(activeRestriction.expires_at))}`
       : "";
-    return { error: `Sua conta estÃ¡ suspensa para inscriÃ§Ãµes em torneios${until}. Motivo: ${activeRestriction.reason}` };
+    return { error: `Sua conta esta suspensa para inscricoes em torneios${until}. Motivo: ${activeRestriction.reason}` };
   }
 
   const { data: event } = await supabase
     .from("events")
-    .select("status, registration_deadline")
+    .select("status, registration_deadline, max_teams, crew_type")
     .eq("id", event_id)
     .maybeSingle<{
-      status: "draft" | "published" | "active" | "paused" | "finished";
+      status: "registrations_open" | "check_in" | "started" | "finished";
       registration_deadline: string | null;
+      max_teams: number | null;
+      crew_type: "sloop" | "brig" | "galleon";
     }>();
 
   if (!event) {
     return { error: "Evento não encontrado." };
   }
 
-  if (event.status !== "published" && event.status !== "active") {
+  if (event.status !== "registrations_open" && event.status !== "check_in") {
     return { error: "Este evento não está aceitando inscrições no momento." };
   }
 
   if (event.registration_deadline && new Date(event.registration_deadline) < new Date()) {
     return { error: "O prazo de inscrição para este evento já terminou." };
+  }
+
+  if (event.max_teams) {
+    const { count } = await supabase
+      .from("registrations")
+      .select("id", { count: "exact", head: true })
+      .eq("event_id", event_id)
+      .eq("status", "approved");
+
+    if ((count ?? 0) >= event.max_teams) {
+      return { error: "Todas as vagas para este torneio ja foram preenchidas." };
+    }
   }
 
   // Garante no servidor que o usuário é capitão da equipe informada.
@@ -112,6 +126,21 @@ export async function registerTeamForEvent(
 
   if (!team || team.captain_id !== user.id) {
     return { error: "Você não é o capitão desta equipe." };
+  }
+
+  const { data: members } = await supabase
+    .from("team_members")
+    .select("user_id")
+    .eq("team_id", team_id);
+
+  const roster = new Set<string>([user.id]);
+  for (const row of members ?? []) {
+    roster.add(String(row.user_id));
+  }
+
+  const expectedSize = event.crew_type === "sloop" ? 2 : event.crew_type === "brig" ? 3 : 4;
+  if (roster.size !== expectedSize) {
+    return { error: `Sua equipe precisa ter exatamente ${expectedSize} jogadores para este torneio.` };
   }
 
   const { error } = await supabase.from("registrations").insert({

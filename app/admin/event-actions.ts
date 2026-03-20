@@ -8,14 +8,19 @@ import { queueOrSendDiscordNotification } from "@/lib/discord-notifications";
 import {
   EVENT_KIND_VALUES,
   EVENT_TYPE_VALUES,
-  EVENT_STATUS_VALUES,
   EVENT_VISIBILITY_VALUES,
   SEEDING_METHOD_VALUES,
   TOURNAMENT_FORMAT_VALUES,
   formatTeamSize,
 } from "@/lib/events";
 
-const eventStatusSchema = z.enum(EVENT_STATUS_VALUES);
+const TOURNAMENT_STATUS_VALUES = ["registrations_open", "check_in", "started", "finished"] as const;
+const TOURNAMENT_TYPE_VALUES = ["1v1_elimination", "free_for_all_points"] as const;
+const CREW_TYPE_VALUES = ["sloop", "brig", "galleon"] as const;
+
+const eventStatusSchema = z.enum(TOURNAMENT_STATUS_VALUES);
+const tournamentTypeSchema = z.enum(TOURNAMENT_TYPE_VALUES);
+const crewTypeSchema = z.enum(CREW_TYPE_VALUES);
 const eventKindSchema = z.enum(EVENT_KIND_VALUES);
 const eventTypeSchema = z.enum(EVENT_TYPE_VALUES);
 const eventVisibilitySchema = z.enum(EVENT_VISIBILITY_VALUES);
@@ -25,7 +30,10 @@ const registrationStatusSchema = z.enum(["pending", "approved", "rejected", "can
 
 const eventPayloadSchema = z.object({
   title: z.string().trim().min(3, "Nome muito curto.").max(120, "Nome muito longo."),
-  description: z.string().max(40000, "Descrição muito longa.").optional().nullable(),
+  description: z.string().trim().min(1, "Descrição obrigatória.").max(40000, "Descrição muito longa."),
+  prize: z.string().trim().min(1, "Premiação obrigatória.").max(4000, "Premiação muito longa."),
+  tournament_type: tournamentTypeSchema,
+  crew_type: crewTypeSchema,
   start_date: z.string().min(1, "Data de início obrigatória."),
   end_date: z.string().optional().nullable(),
   registration_deadline: z.string().optional().nullable(),
@@ -66,7 +74,10 @@ const bulkRegistrationSchema = z.object({
 
 export type EventMutationInput = {
   title: string;
-  description?: string | null;
+  description: string;
+  prize: string;
+  tournament_type: "1v1_elimination" | "free_for_all_points";
+  crew_type: "sloop" | "brig" | "galleon";
   start_date: string;
   end_date?: string | null;
   registration_deadline?: string | null;
@@ -78,7 +89,7 @@ export type EventMutationInput = {
   rules?: string | null;
   logo_url?: string | null;
   banner_url?: string | null;
-  status: "draft" | "published" | "active" | "paused" | "finished";
+  status: "registrations_open" | "check_in" | "started" | "finished";
   scoring_win: number;
   scoring_loss: number;
   scoring_draw: number;
@@ -97,6 +108,7 @@ export type ActionResult<T = undefined> = {
 type EventRow = EventMutationInput & {
   id: string;
   status: EventMutationInput["status"];
+  name: string | null;
   created_at: string;
   prize_pool: number | null;
   published_at: string | null;
@@ -155,7 +167,7 @@ async function ensureUniqueVisibleTitle(
   const { data } = await supabase
     .from("events")
     .select("id, title, status")
-    .in("status", ["published", "active"])
+    .in("status", ["registrations_open", "check_in", "started"])
     .ilike("title", title);
 
   const collision = (data ?? []).find((row) => row.id !== excludeId && String(row.title).toLowerCase() === title.toLowerCase());
@@ -210,8 +222,8 @@ function validateEventDates(
 function buildStatusTimestamps(previousStatus: string | null, nextStatus: EventMutationInput["status"]) {
   const now = getNowIso();
   return {
-    published_at: nextStatus === "published" && previousStatus !== "published" ? now : undefined,
-    paused_at: nextStatus === "paused" && previousStatus !== "paused" ? now : undefined,
+    published_at: nextStatus === "registrations_open" && previousStatus !== "registrations_open" ? now : undefined,
+    paused_at: nextStatus === "check_in" && previousStatus !== "check_in" ? now : undefined,
     finalized_at: nextStatus === "finished" && previousStatus !== "finished" ? now : undefined,
   };
 }
@@ -219,6 +231,17 @@ function buildStatusTimestamps(previousStatus: string | null, nextStatus: EventM
 function normalizeEventType(kind: EventMutationInput["event_kind"], type: EventMutationInput["event_type"]) {
   if (kind === "tournament") return "tournament" as const;
   return type;
+}
+
+function crewTypeToTeamSize(crewType: EventMutationInput["crew_type"]) {
+  if (crewType === "sloop") return 2;
+  if (crewType === "brig") return 3;
+  return 4;
+}
+
+function tournamentTypeToLegacyFormat(type: EventMutationInput["tournament_type"]): EventMutationInput["tournament_format"] {
+  if (type === "free_for_all_points") return "round_robin";
+  return "single_elimination";
 }
 
 async function queueTeamNotifications(
@@ -351,7 +374,7 @@ async function recalculateRankings(supabase: Awaited<ReturnType<typeof assertAdm
       win: Number(event.scoring_win ?? 3),
       draw: Number(event.scoring_draw ?? 1),
       loss: Number(event.scoring_loss ?? 0),
-      status: String(event.status ?? "draft"),
+      status: String(event.status ?? "registrations_open"),
     });
   }
 
@@ -546,19 +569,23 @@ export async function createEvent(data: EventMutationInput): Promise<ActionResul
 
     const payload: EventMutationInput = {
       ...parsed.data,
-      description: normalizeOptionalText(parsed.data.description),
+      description: parsed.data.description.trim(),
+      prize: parsed.data.prize,
+      tournament_type: parsed.data.tournament_type,
+      crew_type: parsed.data.crew_type,
       end_date: normalizeOptionalDate(parsed.data.end_date),
       registration_deadline: normalizeOptionalDate(parsed.data.registration_deadline),
-      prize_description: normalizeOptionalText(parsed.data.prize_description),
+      prize_description: normalizeOptionalText(parsed.data.prize),
       rules: normalizeOptionalText(parsed.data.rules),
       event_type: normalizeEventType(parsed.data.event_kind, parsed.data.event_type),
       visibility: parsed.data.visibility,
       logo_url: normalizeOptionalText(parsed.data.logo_url),
       banner_url: normalizeOptionalText(parsed.data.banner_url),
-      tournament_format: normalizeOptionalText(parsed.data.tournament_format) as EventMutationInput["tournament_format"],
+      tournament_format: tournamentTypeToLegacyFormat(parsed.data.tournament_type),
       rounds_count: normalizeOptionalNumber(parsed.data.rounds_count),
       seeding_method: (normalizeOptionalText(parsed.data.seeding_method) ?? "random") as EventMutationInput["seeding_method"],
       max_teams: normalizeOptionalNumber(parsed.data.max_teams),
+      team_size: crewTypeToTeamSize(parsed.data.crew_type),
       start_date: new Date(parsed.data.start_date).toISOString(),
     };
 
@@ -567,13 +594,17 @@ export async function createEvent(data: EventMutationInput): Promise<ActionResul
     }
 
     validateEventDates(payload, "create");
-    if (payload.status === "published" || payload.status === "active") {
+    if (payload.status === "registrations_open" || payload.status === "check_in" || payload.status === "started") {
       await ensureUniqueVisibleTitle(supabase, payload.title);
     }
 
     const timestamps = buildStatusTimestamps(null, payload.status);
     const insertPayload = {
       ...payload,
+      name: payload.title,
+      prize: payload.prize,
+      tournament_type: payload.tournament_type,
+      crew_type: payload.crew_type,
       prize_pool: 0,
       published_at: timestamps.published_at ?? null,
       paused_at: timestamps.paused_at ?? null,
@@ -584,7 +615,7 @@ export async function createEvent(data: EventMutationInput): Promise<ActionResul
     const { data: created, error } = await supabase.from("events").insert(insertPayload).select("id").single();
     if (error || !created) return { error: "Não foi possível criar o evento." };
 
-    if (payload.status === "published") {
+    if (payload.status === "registrations_open") {
       await queueEventPublishedNotifications(supabase, String(created.id), payload.title, payload.start_date);
     }
     await queueUpcomingStartNotifications(supabase, String(created.id), payload.title, payload.start_date);
@@ -618,19 +649,23 @@ export async function updateEvent(eventId: string, data: EventMutationInput): Pr
     const existing = await loadEventOrThrow(supabase, parsedId.data.eventId);
     const payload: EventMutationInput = {
       ...parsed.data,
-      description: normalizeOptionalText(parsed.data.description),
+      description: parsed.data.description.trim(),
+      prize: parsed.data.prize,
+      tournament_type: parsed.data.tournament_type,
+      crew_type: parsed.data.crew_type,
       end_date: normalizeOptionalDate(parsed.data.end_date),
       registration_deadline: normalizeOptionalDate(parsed.data.registration_deadline),
-      prize_description: normalizeOptionalText(parsed.data.prize_description),
+      prize_description: normalizeOptionalText(parsed.data.prize),
       rules: normalizeOptionalText(parsed.data.rules),
       event_type: normalizeEventType(parsed.data.event_kind, parsed.data.event_type),
       visibility: parsed.data.visibility,
       logo_url: normalizeOptionalText(parsed.data.logo_url),
       banner_url: normalizeOptionalText(parsed.data.banner_url),
-      tournament_format: normalizeOptionalText(parsed.data.tournament_format) as EventMutationInput["tournament_format"],
+      tournament_format: tournamentTypeToLegacyFormat(parsed.data.tournament_type),
       rounds_count: normalizeOptionalNumber(parsed.data.rounds_count),
       seeding_method: (normalizeOptionalText(parsed.data.seeding_method) ?? "random") as EventMutationInput["seeding_method"],
       max_teams: normalizeOptionalNumber(parsed.data.max_teams),
+      team_size: crewTypeToTeamSize(parsed.data.crew_type),
       start_date: new Date(parsed.data.start_date).toISOString(),
     };
 
@@ -639,24 +674,28 @@ export async function updateEvent(eventId: string, data: EventMutationInput): Pr
     }
 
     validateEventDates(payload, "update", existing.start_date);
-    if (payload.status === "published" || payload.status === "active") {
+    if (payload.status === "registrations_open" || payload.status === "check_in" || payload.status === "started") {
       await ensureUniqueVisibleTitle(supabase, payload.title, parsedId.data.eventId);
     }
 
     const timestamps = buildStatusTimestamps(existing.status, payload.status);
     const updatePayload = {
       ...payload,
+      name: payload.title,
+      prize: payload.prize,
+      tournament_type: payload.tournament_type,
+      crew_type: payload.crew_type,
       prize_pool: existing.prize_pool ?? 0,
       updated_at: getNowIso(),
       published_at: timestamps.published_at ?? existing.published_at ?? null,
-      paused_at: timestamps.paused_at ?? (payload.status === "paused" ? existing.paused_at ?? getNowIso() : null),
+      paused_at: timestamps.paused_at ?? (payload.status === "check_in" ? existing.paused_at ?? getNowIso() : null),
       finalized_at: timestamps.finalized_at ?? (payload.status === "finished" ? existing.finalized_at ?? getNowIso() : null),
     };
 
     const { error } = await supabase.from("events").update(updatePayload).eq("id", parsedId.data.eventId);
     if (error) return { error: "Não foi possível atualizar o evento." };
 
-    if (existing.status !== "published" && payload.status === "published") {
+    if (existing.status !== "registrations_open" && payload.status === "registrations_open") {
       await queueEventPublishedNotifications(supabase, parsedId.data.eventId, payload.title, payload.start_date);
     }
     await queueUpcomingStartNotifications(supabase, parsedId.data.eventId, payload.title, payload.start_date);
@@ -722,7 +761,7 @@ export async function publishEvent(eventId: string): Promise<ActionResult> {
 
     const { error } = await supabase
       .from("events")
-      .update({ status: "published", published_at: getNowIso(), paused_at: null, updated_at: getNowIso() })
+      .update({ status: "registrations_open", published_at: getNowIso(), paused_at: null, updated_at: getNowIso() })
       .eq("id", parsed.data.eventId);
     if (error) return { error: "Não foi possível publicar o evento." };
 
@@ -770,7 +809,7 @@ export async function pauseEvent(eventId: string): Promise<ActionResult> {
     }
     const { error } = await supabase
       .from("events")
-      .update({ status: "paused", paused_at: getNowIso(), updated_at: getNowIso() })
+      .update({ status: "check_in", paused_at: getNowIso(), updated_at: getNowIso() })
       .eq("id", event.id);
     if (error) return { error: "Não foi possível pausar o evento." };
 
@@ -801,13 +840,13 @@ export async function activateEvent(eventId: string): Promise<ActionResult> {
     if (event.event_kind !== "tournament") {
       return { error: "A ativação de eventos foi desativada no painel admin." };
     }
-    if (event.status !== "published" && event.status !== "paused") {
-      return { error: "Somente eventos publicados ou pausados podem ser ativados." };
+    if (event.status !== "registrations_open" && event.status !== "check_in") {
+      return { error: "Somente torneios com inscrições abertas ou em check-in podem ser iniciados." };
     }
 
     const { error } = await supabase
       .from("events")
-      .update({ status: "active", paused_at: null, updated_at: getNowIso() })
+      .update({ status: "started", paused_at: null, updated_at: getNowIso() })
       .eq("id", event.id);
     if (error) return { error: "Não foi possível ativar o evento." };
 
@@ -909,7 +948,11 @@ export async function duplicateEvent(eventId: string): Promise<ActionResult<{ id
 
     const insertPayload = {
       title: copyTitle,
+      name: copyTitle,
       description: event.description,
+      prize: event.prize,
+      tournament_type: event.tournament_type,
+      crew_type: event.crew_type,
       start_date: baseStart.toISOString(),
       end_date: duration ? new Date(baseStart.getTime() + duration).toISOString() : null,
       registration_deadline: deadlineDelta ? new Date(baseStart.getTime() - deadlineDelta).toISOString() : null,
@@ -921,7 +964,7 @@ export async function duplicateEvent(eventId: string): Promise<ActionResult<{ id
       rules: event.rules,
       logo_url: event.logo_url,
       banner_url: event.banner_url,
-      status: "draft",
+      status: "registrations_open",
       scoring_win: event.scoring_win,
       scoring_loss: event.scoring_loss,
       scoring_draw: event.scoring_draw,

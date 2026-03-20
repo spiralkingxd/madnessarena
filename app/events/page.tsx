@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
 import { unstable_cache } from "next/cache";
-import { Calendar, Coins, Search, Trophy } from "lucide-react";
+import { Search, Trophy } from "lucide-react";
 
-import { EventStatusFilter } from "@/components/event-status-filter";
-import { formatTeamSize } from "@/lib/events";
+import { TournamentCard, type TournamentCardData } from "@/components/events/TournamentCard";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { cn } from "@/lib/utils";
@@ -18,55 +16,82 @@ export const metadata: Metadata = {
 type EventRow = {
   id: string;
   title: string;
-  description: string | null;
-  status: "published" | "active" | "paused" | "finished";
+  name: string;
+  status: "registrations_open" | "check_in" | "started" | "finished";
+  tournament_type: "1v1_elimination" | "free_for_all_points";
+  crew_type: "sloop" | "brig" | "galleon";
+  prize: string;
   start_date: string;
-  end_date: string | null;
-  prize_description: string | null;
-  team_size: number;
+  registration_deadline: string | null;
+  max_teams: number | null;
 };
 
-const VALID_STATUSES = ["published", "active", "paused", "finished"] as const;
+const VALID_STATUSES = ["registrations_open", "check_in", "started", "finished"] as const;
 type StatusFilter = (typeof VALID_STATUSES)[number];
 
 const STATUS_LABELS: Record<string, string> = {
-  active: "Em andamento",
-  published: "Publicado",
-  paused: "Pausado",
+  registrations_open: "Inscricoes abertas",
+  check_in: "Check-in",
+  started: "Em andamento",
   finished: "Finalizado",
 };
-
-const fmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "medium" });
 
 const getCachedAllEvents = unstable_cache(
   async () => {
     const supabase = createPublicServerClient();
-    const { data } = await supabase.from('events').select('id, title, description, status, start_date, end_date, prize_description, team_size').in('status', ['published', 'active', 'paused', 'finished']).order('start_date', { ascending: false });
+    const { data } = await supabase
+      .from("events")
+      .select("id, title, name, status, tournament_type, crew_type, prize, start_date, registration_deadline, max_teams")
+      .eq("event_kind", "tournament")
+      .in("status", ["registrations_open", "check_in", "started", "finished"])
+      .order("start_date", { ascending: false });
     return (data ?? []) as EventRow[];
   },
-  ['all-events-public'],
-  { tags: ['events', 'public-data'], revalidate: 3600 }
+  ["all-events-public"],
+  { tags: ["events", "public-data"], revalidate: 300 },
 );
 
 async function getEventsData(status: StatusFilter | null) {
   if (!isSupabaseConfigured()) {
     return {
-      events: [] as EventRow[],
-      stats: { total: 0, active: 0, upcoming: 0, paused: 0, finished: 0 },
+      events: [] as TournamentCardData[],
+      stats: { total: 0, registrations_open: 0, check_in: 0, started: 0, finished: 0 },
     };
   }
 
   const allEvents = await getCachedAllEvents();
-  const events = status ? allEvents.filter((event) => event.status === status) : allEvents;
+  const supabase = createPublicServerClient();
+  const eventIds = allEvents.map((event) => event.id);
+  const approvedCounts = new Map<string, number>();
+
+  if (eventIds.length > 0) {
+    const { data: approvedRows } = await supabase
+      .from("registrations")
+      .select("event_id")
+      .eq("status", "approved")
+      .in("event_id", eventIds);
+
+    for (const row of approvedRows ?? []) {
+      const eventId = String(row.event_id);
+      approvedCounts.set(eventId, (approvedCounts.get(eventId) ?? 0) + 1);
+    }
+  }
+
+  const allCards: TournamentCardData[] = allEvents.map((event) => ({
+    ...event,
+    approved_count: approvedCounts.get(event.id) ?? 0,
+  }));
+
+  const events = status ? allCards.filter((event) => event.status === status) : allCards;
 
   return {
     events,
     stats: {
-      total: allEvents.length,
-      active: allEvents.filter((event) => event.status === "active").length,
-      upcoming: allEvents.filter((event) => event.status === "published").length,
-      paused: allEvents.filter((event) => event.status === "paused").length,
-      finished: allEvents.filter((event) => event.status === "finished").length,
+      total: allCards.length,
+      registrations_open: allCards.filter((event) => event.status === "registrations_open").length,
+      check_in: allCards.filter((event) => event.status === "check_in").length,
+      started: allCards.filter((event) => event.status === "started").length,
+      finished: allCards.filter((event) => event.status === "finished").length,
     },
   };
 }
@@ -109,9 +134,9 @@ export default async function EventsPage({ searchParams }: Props) {
           <div className="flex flex-wrap gap-3">
             {[
               { label: dict.events.stats.total, value: stats.total, color: "text-white" },
-              { label: dict.events.stats.active, value: stats.active, color: "text-emerald-400" },
-              { label: dict.events.stats.published, value: stats.upcoming, color: "text-amber-400" },
-              { label: dict.events.stats.paused, value: stats.paused, color: "text-sky-400" },
+              { label: "Inscricoes abertas", value: stats.registrations_open, color: "text-emerald-400" },
+              { label: "Check-in", value: stats.check_in, color: "text-amber-400" },
+              { label: "Em andamento", value: stats.started, color: "text-sky-400" },
               { label: dict.events.stats.finished, value: stats.finished, color: "text-slate-400" },
             ]
               .filter(({ label, value }) => Number(value) > 0 || label === "Total")
@@ -129,10 +154,12 @@ export default async function EventsPage({ searchParams }: Props) {
       <div className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-10">
 
         {/* Filtros */}
-        <div className="mb-7">
-          <Suspense fallback={null}>
-            <EventStatusFilter />
-          </Suspense>
+        <div className="mb-7 flex flex-wrap gap-2">
+          <FilterChip href="/events" active={!status}>Todos</FilterChip>
+          <FilterChip href="/events?status=registrations_open" active={status === "registrations_open"}>Inscricoes abertas</FilterChip>
+          <FilterChip href="/events?status=check_in" active={status === "check_in"}>Check-in</FilterChip>
+          <FilterChip href="/events?status=started" active={status === "started"}>Em andamento</FilterChip>
+          <FilterChip href="/events?status=finished" active={status === "finished"}>Finalizados</FilterChip>
         </div>
 
         {/* Contagem */}
@@ -145,60 +172,7 @@ export default async function EventsPage({ searchParams }: Props) {
         {/* Grid */}
         {events.length > 0 ? (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {events.map((event) => (
-              <Link
-                key={event.id}
-                href={`/events/${event.id}`}
-                className="glass-card soft-ring group flex flex-col rounded-2xl p-6 transition hover:border-amber-400/25 hover:bg-amber-400/4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="font-semibold leading-snug text-slate-100 group-hover:text-white">
-                    {event.title}
-                  </h2>
-                  <StatusBadge status={event.status} />
-                </div>
-
-                {event.description && (
-                  <div
-                    className="mt-3 line-clamp-3 text-sm leading-6 text-slate-400"
-                    dangerouslySetInnerHTML={{ __html: event.description }}
-                  />
-                )}
-
-                <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {fmt.format(new Date(event.start_date))}
-                  </span>
-                  {event.end_date && (
-                    <span className="flex items-center gap-1">
-                      until {fmt.format(new Date(event.end_date))}
-                    </span>
-                  )}
-                  <span className="rounded-full border border-white/10 px-2 py-1 text-[11px] text-slate-400">
-                    {formatTeamSize(event.team_size)}
-                  </span>
-                  {event.prize_description && (
-                    <span className="flex items-center gap-1 text-amber-300/70">
-                      <Coins className="h-3 w-3" />
-                      {event.prize_description}
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-5 flex items-center justify-between border-t border-white/6 pt-4">
-                  <span className="text-xs font-medium text-cyan-300/60 transition group-hover:text-cyan-300">
-                    Ver detalhes →
-                  </span>
-                  {event.status === "active" && (
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                    </span>
-                  )}
-                </div>
-              </Link>
-            ))}
+            {events.map((event) => <TournamentCard key={event.id} event={event} />)}
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-white/10 px-6 py-24 text-center">
@@ -224,18 +198,19 @@ export default async function EventsPage({ searchParams }: Props) {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function FilterChip({ href, active, children }: { href: string; active: boolean; children: string }) {
   return (
-    <span
+    <Link
+      href={href}
       className={cn(
-        "shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-        status === "active" && "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-        status === "published" && "border border-amber-400/30 bg-amber-400/10 text-amber-300",
-        status === "finished" && "border border-slate-400/30 bg-slate-400/10 text-slate-400",
+        "inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-medium transition",
+        active
+          ? "border-amber-400/50 bg-amber-400/10 text-amber-200"
+          : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10",
       )}
     >
-      {STATUS_LABELS[status] ?? status}
-    </span>
+      {children}
+    </Link>
   );
 }
 

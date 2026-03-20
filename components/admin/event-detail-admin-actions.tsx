@@ -17,7 +17,15 @@ import { useAdminToast } from "@/components/admin/admin-toast";
 
 type Props = {
   eventId: string;
-  status: "draft" | "published" | "active" | "paused" | "finished";
+  status:
+    | "draft"
+    | "published"
+    | "active"
+    | "paused"
+    | "registrations_open"
+    | "check_in"
+    | "started"
+    | "finished";
 };
 
 export function EventDetailAdminActions({ eventId, status }: Props) {
@@ -43,14 +51,14 @@ export function EventDetailAdminActions({ eventId, status }: Props) {
         </AdminButton>
       ) : null}
 
-      {(status === "published" || status === "paused") ? (
+      {(status === "published" || status === "paused" || status === "registrations_open" || status === "check_in") ? (
         <AdminButton type="button" onClick={() => runAction(() => activateEvent(eventId))} disabled={isPending}>
           <Play className="mr-2 h-4 w-4" />
           Ativar
         </AdminButton>
       ) : null}
 
-      {(status === "published" || status === "active") ? (
+      {(status === "published" || status === "active" || status === "registrations_open" || status === "started") ? (
         <AdminButton type="button" onClick={() => runAction(() => pauseEvent(eventId))} disabled={isPending}>
           <Pause className="mr-2 h-4 w-4" />
           Pausar

@@ -994,18 +994,26 @@ where t.id = tm.team_id
 create table if not exists public.events (
   id uuid primary key default gen_random_uuid(),
   title text not null,
+  name text not null default 'Torneio sem nome',
   description text,
+  prize text not null default 'A definir',
+  tournament_type text not null default '1v1_elimination',
+  crew_type text not null default 'galleon',
   start_date timestamptz not null,
   end_date timestamptz,
-  status public.event_status not null default 'draft',
+  status text not null default 'registrations_open',
   prize_pool numeric(12, 2) not null default 0,
   rules text,
   created_at timestamptz not null default timezone('utc', now())
 );
 
+alter table public.events add column if not exists name text;
 alter table public.events add column if not exists description text;
+alter table public.events add column if not exists prize text;
+alter table public.events add column if not exists tournament_type text;
+alter table public.events add column if not exists crew_type text;
 alter table public.events add column if not exists end_date timestamptz;
-alter table public.events add column if not exists status public.event_status;
+alter table public.events add column if not exists status text;
 alter table public.events add column if not exists prize_pool numeric(12, 2);
 alter table public.events add column if not exists rules text;
 alter table public.events add column if not exists created_at timestamptz;
@@ -1030,8 +1038,81 @@ alter table public.events add column if not exists published_at timestamptz;
 alter table public.events add column if not exists paused_at timestamptz;
 alter table public.events add column if not exists finalized_at timestamptz;
 
-alter table public.events alter column status set default 'draft';
-update public.events set status = 'draft' where status is null;
+update public.events
+set name = coalesce(nullif(trim(name), ''), nullif(trim(title), ''), 'Torneio sem nome')
+where name is null or trim(name) = '';
+alter table public.events alter column name set default 'Torneio sem nome';
+alter table public.events alter column name set not null;
+
+update public.events
+set prize = coalesce(
+  nullif(trim(prize), ''),
+  nullif(trim(prize_description), ''),
+  case
+    when coalesce(prize_pool, 0) > 0 then concat('R$ ', to_char(prize_pool, 'FM9999999990D00'))
+    else 'A definir'
+  end
+)
+where prize is null or trim(prize) = '';
+alter table public.events alter column prize set default 'A definir';
+alter table public.events alter column prize set not null;
+
+update public.events
+set tournament_type = coalesce(
+  nullif(trim(tournament_type), ''),
+  case
+    when tournament_format in ('single_elimination', 'double_elimination') then '1v1_elimination'
+    when tournament_format = 'round_robin' then 'free_for_all_points'
+    else '1v1_elimination'
+  end
+)
+where tournament_type is null or trim(tournament_type) = '';
+alter table public.events alter column tournament_type set default '1v1_elimination';
+alter table public.events alter column tournament_type set not null;
+
+update public.events
+set crew_type = coalesce(
+  nullif(trim(crew_type), ''),
+  case
+    when team_size = 2 then 'sloop'
+    when team_size = 3 then 'brig'
+    else 'galleon'
+  end
+)
+where crew_type is null or trim(crew_type) = '';
+alter table public.events alter column crew_type set default 'galleon';
+alter table public.events alter column crew_type set not null;
+
+-- Policies dependentes de events.status precisam ser removidas antes de alterar o tipo da coluna.
+drop policy if exists "Public can read active data from events" on public.events;
+drop policy if exists "Public can read approved registrations" on public.registrations;
+
+alter table public.events alter column status drop default;
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'events'
+      and column_name = 'status'
+      and udt_name = 'event_status'
+  ) then
+    alter table public.events alter column status type text using status::text;
+  end if;
+end
+$$;
+
+update public.events
+set status = case
+  when status in ('registrations_open', 'check_in', 'started', 'finished') then status
+  when status in ('draft', 'published') then 'registrations_open'
+  when status in ('active', 'paused') then 'started'
+  when status = 'finished' then 'finished'
+  else 'registrations_open'
+end;
+alter table public.events alter column status set default 'registrations_open';
 alter table public.events alter column status set not null;
 alter table public.events alter column prize_pool set default 0;
 update public.events set prize_pool = 0 where prize_pool is null;
@@ -1152,6 +1233,57 @@ begin
       tournament_format is null
       or tournament_format in ('single_elimination', 'double_elimination', 'round_robin')
     );
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_tournament_type_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_tournament_type_check;
+  end if;
+
+  alter table public.events
+    add constraint events_tournament_type_check
+    check (tournament_type in ('1v1_elimination', 'free_for_all_points'));
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_crew_type_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_crew_type_check;
+  end if;
+
+  alter table public.events
+    add constraint events_crew_type_check
+    check (crew_type in ('sloop', 'galleon', 'brig'));
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'events_status_check'
+      and conrelid = 'public.events'::regclass
+  ) then
+    alter table public.events drop constraint events_status_check;
+  end if;
+
+  alter table public.events
+    add constraint events_status_check
+    check (status in ('registrations_open', 'check_in', 'started', 'finished'));
 end
 $$;
 
@@ -1781,6 +1913,9 @@ create index if not exists profiles_role_idx on public.profiles (role);
 create index if not exists events_status_idx on public.events (status);
 create index if not exists events_kind_idx on public.events (event_kind, status);
 create index if not exists events_start_date_idx on public.events (start_date desc);
+create index if not exists events_tournament_type_idx on public.events (tournament_type);
+create index if not exists events_crew_type_idx on public.events (crew_type);
+create index if not exists events_registration_deadline_idx on public.events (registration_deadline);
 create index if not exists registrations_event_id_idx on public.registrations (event_id);
 create index if not exists registrations_team_id_idx on public.registrations (team_id);
 create index if not exists registrations_status_idx on public.registrations (event_id, status);
@@ -1830,7 +1965,7 @@ using (
   public.is_admin()
   or (
     visibility = 'public'
-    and status::text in ('published', 'active', 'paused', 'finished')
+    and status in ('registrations_open', 'check_in', 'started', 'finished')
   )
 );
 
@@ -2266,7 +2401,7 @@ using (
     select 1
     from public.events
     where events.id = registrations.event_id
-      and events.status::text in ('published', 'active', 'finished')
+      and events.status in ('registrations_open', 'check_in', 'started', 'finished')
   )
 );
 

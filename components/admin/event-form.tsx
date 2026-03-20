@@ -1,57 +1,97 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { createEvent, type EventMutationInput, updateEvent } from "@/app/admin/event-actions";
+import { createTournament as createEvent, updateTournament as updateEvent, type TournamentMutationInput as EventMutationInput } from "@/app/actions/tournaments";
 import { AdminBadge } from "@/components/admin/admin-badge";
 import { AdminButton } from "@/components/admin/admin-button";
-import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { MarkdownEditor } from "@/components/admin/MarkdownEditor";
 import { useAdminToast } from "@/components/admin/admin-toast";
-import {
-  EVENT_KIND_LABELS,
-  EVENT_KIND_VALUES,
-  EVENT_STATUS_LABELS,
-  EVENT_STATUS_VALUES,
-  EVENT_TYPE_LABELS,
-  EVENT_TYPE_VALUES,
-  EVENT_VISIBILITY_LABELS,
-  EVENT_VISIBILITY_VALUES,
-  SEEDING_METHOD_LABELS,
-  SEEDING_METHOD_VALUES,
-  TEAM_SIZE_VALUES,
-  TOURNAMENT_FORMAT_LABELS,
-  TOURNAMENT_FORMAT_VALUES,
-  toDatetimeLocalValue,
-  getTeamSizeLabel,
-} from "@/lib/events";
+import { EVENT_KIND_LABELS, toDatetimeLocalValue } from "@/lib/events";
 
-const formSchema = z.object({
-  title: z.string().trim().min(3, "Nome muito curto.").max(120, "Nome muito longo."),
-  description: z.string().optional(),
-  start_date: z.string().min(1, "Informe a data de início."),
-  end_date: z.string().optional(),
-  registration_deadline: z.string().optional(),
-  event_kind: z.enum(EVENT_KIND_VALUES),
-  event_type: z.enum(EVENT_TYPE_VALUES),
-  visibility: z.enum(EVENT_VISIBILITY_VALUES),
-  team_size: z.coerce.number().int().min(1).max(4),
-  prize_description: z.string().optional(),
-  rules: z.string().optional(),
-  logo_url: z.string().optional(),
-  banner_url: z.string().optional(),
-  status: z.enum(EVENT_STATUS_VALUES),
-  scoring_win: z.coerce.number().int().min(0).max(50),
-  scoring_loss: z.coerce.number().int().min(0).max(50),
-  scoring_draw: z.coerce.number().int().min(0).max(50),
-  tournament_format: z.string().optional(),
-  rounds_count: z.union([z.literal(""), z.coerce.number().int().min(1).max(32)]).optional(),
-  seeding_method: z.string().optional(),
-  max_teams: z.union([z.literal(""), z.coerce.number().int().min(2).max(256)]).optional(),
-});
+const STATUS_VALUES = ["registrations_open", "check_in", "started", "finished"] as const;
+const TOURNAMENT_TYPE_VALUES = ["1v1_elimination", "free_for_all_points"] as const;
+const CREW_TYPE_VALUES = ["sloop", "brig", "galleon"] as const;
+
+const STATUS_LABELS: Record<(typeof STATUS_VALUES)[number], string> = {
+  registrations_open: "Inscrições Abertas",
+  check_in: "Check-in",
+  started: "Iniciado",
+  finished: "Finalizado",
+};
+
+const TOURNAMENT_TYPE_LABELS: Record<(typeof TOURNAMENT_TYPE_VALUES)[number], string> = {
+  "1v1_elimination": "1v1 - Eliminação Única",
+  free_for_all_points: "Free For All - Pontuação",
+};
+
+const CREW_TYPE_LABELS: Record<(typeof CREW_TYPE_VALUES)[number], string> = {
+  sloop: "Sloop (1-2 jogadores)",
+  brig: "Brigantine (2-3 jogadores)",
+  galleon: "Galleon (3-4 jogadores)",
+};
+
+const formSchema = z
+  .object({
+    title: z.string().trim().min(3, "Nome obrigatório."),
+    description: z.string().trim().min(1, "Descrição obrigatória."),
+    prize: z.string().trim().min(1, "Premiação obrigatória."),
+    tournament_type: z.enum(TOURNAMENT_TYPE_VALUES),
+    crew_type: z.enum(CREW_TYPE_VALUES),
+    status: z.enum(STATUS_VALUES),
+    start_date: z.string().min(1, "Informe a data de início."),
+    registration_deadline: z.string().min(1, "Informe o limite de inscrição."),
+    end_date: z.string().min(1, "Informe a data de término."),
+    logo_url: z.string().optional(),
+    banner_url: z.string().optional(),
+    scoring_win: z.coerce.number().int().min(0).max(50),
+    scoring_loss: z.coerce.number().int().min(0).max(50),
+    scoring_draw: z.coerce.number().int().min(0).max(50),
+    max_teams: z.union([z.literal(""), z.coerce.number().int().min(2).max(256)]).optional(),
+  })
+  .superRefine((values, ctx) => {
+    const now = new Date();
+    const start = new Date(values.start_date);
+    const deadline = new Date(values.registration_deadline);
+    const end = new Date(values.end_date);
+
+    if (Number.isNaN(start.getTime())) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["start_date"], message: "Data de início inválida." });
+      return;
+    }
+    if (Number.isNaN(deadline.getTime())) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["registration_deadline"], message: "Limite de inscrição inválido." });
+      return;
+    }
+    if (Number.isNaN(end.getTime())) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["end_date"], message: "Data de término inválida." });
+      return;
+    }
+
+    if (start < now) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["start_date"], message: "A data de início não pode ser no passado." });
+    }
+
+    if (deadline >= start) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["registration_deadline"],
+        message: "O limite de inscrição deve ser antes da data de início.",
+      });
+    }
+
+    if (end <= start) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["end_date"],
+        message: "A data de término deve ser após a data de início.",
+      });
+    }
+  });
 
 type FormValues = z.input<typeof formSchema>;
 type ParsedFormValues = z.output<typeof formSchema>;
@@ -62,26 +102,40 @@ function defaults(kind: "event" | "tournament"): EventFormValues {
   return {
     title: "",
     description: "",
+    prize: "",
+    tournament_type: "1v1_elimination",
+    crew_type: "galleon",
     start_date: "",
     end_date: "",
     registration_deadline: "",
     event_kind: kind,
-    event_type: kind === "tournament" ? "tournament" : "special",
+    event_type: "tournament",
     visibility: "public",
     team_size: 4,
     prize_description: "",
     rules: "",
     logo_url: "",
     banner_url: "",
-    status: "published",
+    status: "registrations_open",
     scoring_win: 3,
     scoring_loss: 0,
     scoring_draw: 1,
-    tournament_format: kind === "tournament" ? "single_elimination" : null,
-    rounds_count: kind === "tournament" ? 3 : null,
+    tournament_format: "single_elimination",
+    rounds_count: 3,
     seeding_method: "random",
     max_teams: 16,
   };
+}
+
+function crewTypeToTeamSize(crewType: (typeof CREW_TYPE_VALUES)[number]) {
+  if (crewType === "sloop") return 2;
+  if (crewType === "brig") return 3;
+  return 4;
+}
+
+function tournamentTypeToFormat(type: (typeof TOURNAMENT_TYPE_VALUES)[number]): EventMutationInput["tournament_format"] {
+  if (type === "free_for_all_points") return "round_robin";
+  return "single_elimination";
 }
 
 export function EventForm({
@@ -98,14 +152,13 @@ export function EventForm({
   const router = useRouter();
   const { pushToast } = useAdminToast();
   const [isPending, startTransition] = useTransition();
+
   const initial = useMemo(() => ({ ...defaults(fixedKind ?? initialValues?.event_kind ?? "event"), ...initialValues }), [fixedKind, initialValues]);
   const [description, setDescription] = useState(initial.description ?? "");
-  const [rules, setRules] = useState(initial.rules ?? "");
 
   const {
     register,
     handleSubmit,
-    watch,
     setValue,
     formState: { errors },
   } = useForm<FormValues, unknown, ParsedFormValues>({
@@ -113,67 +166,56 @@ export function EventForm({
     defaultValues: {
       title: initial.title ?? "",
       description: initial.description ?? "",
+      prize: initial.prize ?? initial.prize_description ?? "",
+      tournament_type: initial.tournament_type ?? "1v1_elimination",
+      crew_type: initial.crew_type ?? "galleon",
+      status: initial.status ?? "registrations_open",
       start_date: toDatetimeLocalValue(initial.start_date),
-      end_date: toDatetimeLocalValue(initial.end_date),
       registration_deadline: toDatetimeLocalValue(initial.registration_deadline),
-      event_kind: fixedKind ?? initial.event_kind ?? "event",
-      event_type: initial.event_type ?? (fixedKind === "tournament" ? "tournament" : "special"),
-      visibility: initial.visibility ?? "public",
-      team_size: initial.team_size ?? 4,
-      prize_description: initial.prize_description ?? "",
-      rules: initial.rules ?? "",
+      end_date: toDatetimeLocalValue(initial.end_date),
       logo_url: initial.logo_url ?? "",
       banner_url: initial.banner_url ?? "",
-      status: initial.status ?? "draft",
       scoring_win: initial.scoring_win ?? 3,
       scoring_loss: initial.scoring_loss ?? 0,
       scoring_draw: initial.scoring_draw ?? 1,
-      tournament_format: initial.tournament_format ?? (fixedKind === "tournament" ? "single_elimination" : ""),
-      rounds_count: initial.rounds_count ?? (fixedKind === "tournament" ? 3 : ""),
-      seeding_method: initial.seeding_method ?? "random",
       max_teams: initial.max_teams ?? 16,
     },
   });
-
-  const eventKind = watch("event_kind");
 
   useEffect(() => {
     setValue("description", description);
   }, [description, setValue]);
 
-  useEffect(() => {
-    setValue("rules", rules);
-  }, [rules, setValue]);
-
   async function onSubmit(values: ParsedFormValues) {
     const payload: EventMutationInput = {
       title: values.title,
-      description,
+      description: values.description,
+      prize: values.prize,
+      tournament_type: values.tournament_type,
+      crew_type: values.crew_type,
       start_date: values.start_date,
-      end_date: values.end_date || null,
-      registration_deadline: values.registration_deadline || null,
-      event_kind: fixedKind ?? values.event_kind,
-      event_type: (fixedKind ?? values.event_kind) === "tournament" ? "tournament" : values.event_type,
-      visibility: values.visibility,
-      team_size: Number(values.team_size),
-      prize_description: values.prize_description || null,
-      rules,
+      registration_deadline: values.registration_deadline,
+      end_date: values.end_date,
+      event_kind: fixedKind ?? "tournament",
+      event_type: "tournament",
+      visibility: "public",
+      team_size: crewTypeToTeamSize(values.crew_type),
+      prize_description: values.prize,
+      rules: null,
       logo_url: values.logo_url || null,
       banner_url: values.banner_url || null,
       status: values.status,
       scoring_win: Number(values.scoring_win),
       scoring_loss: Number(values.scoring_loss),
       scoring_draw: Number(values.scoring_draw),
-      tournament_format: eventKind === "tournament" ? (values.tournament_format as EventMutationInput["tournament_format"]) || null : null,
-      rounds_count: eventKind === "tournament" ? (values.rounds_count === "" ? null : Number(values.rounds_count)) : null,
-      seeding_method: eventKind === "tournament" ? (values.seeding_method as EventMutationInput["seeding_method"]) || "random" : "random",
+      tournament_format: tournamentTypeToFormat(values.tournament_type),
+      rounds_count: null,
+      seeding_method: "random",
       max_teams: values.max_teams === "" ? null : Number(values.max_teams),
     };
 
     startTransition(async () => {
-      const result = mode === "create"
-        ? await createEvent(payload)
-        : await updateEvent(eventId ?? "", payload);
+      const result = mode === "create" ? await createEvent(payload) : await updateEvent(eventId ?? "", payload);
 
       pushToast(result.error ? "error" : "success", result.error ?? result.success ?? "Ação concluída.");
       if (result.error) return;
@@ -194,88 +236,69 @@ export function EventForm({
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Admin</p>
           <h1 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-            {mode === "create" ? "Novo cadastro" : "Editar cadastro"}
+            {mode === "create" ? "Novo torneio" : "Editar torneio"}
           </h1>
         </div>
-        <AdminBadge tone="info">
-          {EVENT_KIND_LABELS[(fixedKind ?? eventKind) as keyof typeof EVENT_KIND_LABELS]}
-        </AdminBadge>
+        <AdminBadge tone="info">{EVENT_KIND_LABELS[(fixedKind ?? "tournament") as keyof typeof EVENT_KIND_LABELS]}</AdminBadge>
       </header>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-4 lg:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200 lg:col-span-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Nome do evento</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Nome do Torneio</span>
             <input {...register("title")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
             {errors.title ? <span className="text-xs text-rose-300">{errors.title.message}</span> : null}
           </label>
 
-          {!fixedKind ? (
-            <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Categoria</span>
-              <select {...register("event_kind")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
-                {EVENT_KIND_VALUES.map((value) => (
-                  <option key={value} value={value}>{EVENT_KIND_LABELS[value]}</option>
-                ))}
-              </select>
-            </label>
-          ) : null}
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Tipo de Torneio</span>
+            <select {...register("tournament_type")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
+              {TOURNAMENT_TYPE_VALUES.map((value) => (
+                <option key={value} value={value}>{TOURNAMENT_TYPE_LABELS[value]}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Tipo de Tripulação</span>
+            <select {...register("crew_type")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
+              {CREW_TYPE_VALUES.map((value) => (
+                <option key={value} value={value}>{CREW_TYPE_LABELS[value]}</option>
+              ))}
+            </select>
+          </label>
 
           <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
             <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Status</span>
             <select {...register("status")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
-              {EVENT_STATUS_VALUES.map((value) => (
-                <option key={value} value={value}>{EVENT_STATUS_LABELS[value]}</option>
+              {STATUS_VALUES.map((value) => (
+                <option key={value} value={value}>{STATUS_LABELS[value]}</option>
               ))}
             </select>
           </label>
 
           <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Subtipo</span>
-            <select {...register("event_type")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" disabled={(fixedKind ?? eventKind) === "tournament"}>
-              {EVENT_TYPE_VALUES.map((value) => (
-                <option key={value} value={value}>{EVENT_TYPE_LABELS[value]}</option>
-              ))}
-            </select>
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Premiação</span>
+            <input {...register("prize")} placeholder="Ex: R$ 500,00" className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
+            {errors.prize ? <span className="text-xs text-rose-300">{errors.prize.message}</span> : null}
           </label>
 
           <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Visibilidade</span>
-            <select {...register("visibility")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
-              {EVENT_VISIBILITY_VALUES.map((value) => (
-                <option key={value} value={value}>{EVENT_VISIBILITY_LABELS[value]}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Início</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Data de Início</span>
             <input type="datetime-local" {...register("start_date")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
             {errors.start_date ? <span className="text-xs text-rose-300">{errors.start_date.message}</span> : null}
           </label>
 
           <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Término</span>
-            <input type="datetime-local" {...register("end_date")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Limite de inscrições</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Limite de Inscrição</span>
             <input type="datetime-local" {...register("registration_deadline")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
+            {errors.registration_deadline ? <span className="text-xs text-rose-300">{errors.registration_deadline.message}</span> : null}
           </label>
 
           <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Tipo</span>
-            <select {...register("team_size")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
-              {TEAM_SIZE_VALUES.map((size) => (
-                <option key={size} value={size}>{getTeamSizeLabel(size)}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200 lg:col-span-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Premiação</span>
-            <textarea {...register("prize_description")} rows={3} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Data de Término</span>
+            <input type="datetime-local" {...register("end_date")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
+            {errors.end_date ? <span className="text-xs text-rose-300">{errors.end_date.message}</span> : null}
           </label>
 
           <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
@@ -289,17 +312,23 @@ export function EventForm({
           </label>
         </div>
 
-        <RichTextEditor label="Descrição" value={description} onChange={setDescription} placeholder="Resumo do evento, formato e informações gerais." />
-        {(fixedKind === "tournament" || eventKind === "tournament") ? null : (
-          <RichTextEditor label="Regras" value={rules} onChange={setRules} placeholder="Regras detalhadas, critérios de desempate e condutas." />
-        )}
+        <MarkdownEditor
+          label="Descrição"
+          value={description}
+          onChange={setDescription}
+          placeholder="Descreva o torneio em Markdown..."
+          previewLabel="Preview em tempo real"
+          helperText="Use Markdown para formatar a descrição."
+          minHeight={440}
+        />
+        {errors.description ? <span className="block text-xs text-rose-300">{errors.description.message}</span> : null}
 
         <section className="space-y-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 p-4">
           <div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Pontuação</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Usada no recálculo automático do ranking ao finalizar o evento.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Usada no recálculo automático do ranking ao finalizar o torneio.</p>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Vitória</span>
               <input type="number" {...register("scoring_win")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 px-4 py-3 text-sm outline-none" />
@@ -312,43 +341,12 @@ export function EventForm({
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Empate</span>
               <input type="number" {...register("scoring_draw")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 px-4 py-3 text-sm outline-none" />
             </label>
+            <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Máximo de equipes</span>
+              <input type="number" {...register("max_teams")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/60 px-4 py-3 text-sm outline-none" />
+            </label>
           </div>
         </section>
-
-        {(fixedKind === "tournament" || eventKind === "tournament") ? (
-          <section className="space-y-4 rounded-2xl border border-amber-300/20 bg-amber-300/5 p-4">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Configuração de torneio</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Formato, rounds e cabeceamento do chaveamento.</p>
-            </div>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Formato</span>
-                <select {...register("tournament_format")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
-                  {TOURNAMENT_FORMAT_VALUES.map((value) => (
-                    <option key={value} value={value}>{TOURNAMENT_FORMAT_LABELS[value]}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Rounds</span>
-                <input type="number" {...register("rounds_count")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Seeding</span>
-                <select {...register("seeding_method")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none">
-                  {SEEDING_METHOD_VALUES.map((value) => (
-                    <option key={value} value={value}>{SEEDING_METHOD_LABELS[value]}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Máximo de equipes</span>
-                <input type="number" {...register("max_teams")} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-sm outline-none" />
-              </label>
-            </div>
-          </section>
-        ) : null}
 
         <div className="flex flex-wrap justify-end gap-3">
           <AdminButton type="button" variant="ghost" onClick={() => router.back()} disabled={isPending}>

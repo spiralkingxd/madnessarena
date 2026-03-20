@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 export type AdminEventListRow = {
   id: string;
   title: string;
-  status: "draft" | "published" | "active" | "paused" | "finished";
+  status: "registrations_open" | "check_in" | "started" | "finished";
   event_kind: "event" | "tournament";
   event_type: "tournament" | "special" | "scrimmage";
   visibility: "public" | "private";
@@ -22,7 +22,11 @@ export type AdminEventListRow = {
 export type EventFormRow = {
   id: string;
   title: string;
+  name: string | null;
   description: string | null;
+  prize: string | null;
+  tournament_type: "1v1_elimination" | "free_for_all_points";
+  crew_type: "sloop" | "brig" | "galleon";
   start_date: string;
   end_date: string | null;
   registration_deadline: string | null;
@@ -34,7 +38,7 @@ export type EventFormRow = {
   rules: string | null;
   logo_url: string | null;
   banner_url: string | null;
-  status: "draft" | "published" | "active" | "paused" | "finished";
+  status: "registrations_open" | "check_in" | "started" | "finished";
   scoring_win: number;
   scoring_loss: number;
   scoring_draw: number;
@@ -185,7 +189,7 @@ export async function getAdminEventDetail(eventId: string, expectedKind?: "event
         id: string;
         title: string;
         description: string | null;
-        status: "draft" | "published" | "active" | "paused" | "finished";
+        status: "registrations_open" | "check_in" | "started" | "finished";
         event_kind: "event" | "tournament";
         event_type: "tournament" | "special" | "scrimmage";
         visibility: "public" | "private";

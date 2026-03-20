@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Calendar, Coins, Scroll, Shield, Trophy, Users } from "lucide-react";
+import { Calendar, Scroll, Shield, Trophy } from "lucide-react";
 
 import { RegisterTeamForm } from "@/components/register-team-form";
-import { formatTeamSize } from "@/lib/events";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -11,26 +11,47 @@ import { cn } from "@/lib/utils";
 type EventDetail = {
   id: string;
   title: string;
+  name: string;
   description: string | null;
   rules: string | null;
-  status: "draft" | "published" | "active" | "paused" | "finished";
+  status: "registrations_open" | "check_in" | "started" | "finished";
+  tournament_type: "1v1_elimination" | "free_for_all_points";
+  crew_type: "sloop" | "brig" | "galleon";
   start_date: string;
   end_date: string | null;
   registration_deadline: string | null;
-  prize_description: string | null;
-  team_size: number;
+  prize: string;
+  max_teams: number | null;
+  published_at: string | null;
+  created_at: string;
   logo_url: string | null;
   banner_url: string | null;
 };
 
-type TeamOption = { id: string; name: string };
+type TeamOption = { id: string; name: string; memberCount: number };
 
 const STATUS_LABELS: Record<string, string> = {
-  active: "Em andamento",
-  draft: "Rascunho",
-  published: "Publicado",
-  paused: "Pausado",
+  registrations_open: "Inscricoes abertas",
+  check_in: "Check-in",
+  started: "Em andamento",
   finished: "Finalizado",
+};
+
+const TOURNAMENT_TYPE_LABELS = {
+  "1v1_elimination": "1v1",
+  free_for_all_points: "FFA",
+} as const;
+
+const CREW_TYPE_LABELS = {
+  sloop: "Sloop",
+  brig: "Brig",
+  galleon: "Galleon",
+} as const;
+
+const CREW_REQUIRED_SIZE: Record<EventDetail["crew_type"], number> = {
+  sloop: 2,
+  brig: 3,
+  galleon: 4,
 };
 
 const fmt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "long" });
@@ -51,7 +72,7 @@ export default async function EventDetailPage({ params }: Props) {
   ] = await Promise.all([
     supabase
       .from("events")
-      .select("id, title, description, rules, status, start_date, end_date, registration_deadline, prize_description, team_size, logo_url, banner_url")
+      .select("id, title, name, description, rules, status, tournament_type, crew_type, start_date, end_date, registration_deadline, prize, max_teams, published_at, created_at, logo_url, banner_url")
       .eq("id", id)
       .single<EventDetail>(),
     supabase
@@ -67,15 +88,46 @@ export default async function EventDetailPage({ params }: Props) {
   // Define qual estado da inscrição deve ser exibido ao usuário.
   let captainTeams: TeamOption[] = [];
   let alreadyRegisteredTeamIds: string[] = [];
+  let incompatibleTeamsCount = 0;
   let registrationSuspension: { reason: string; expiresAt: string | null } | null = null;
+  const requiredSize = CREW_REQUIRED_SIZE[event.crew_type];
 
   if (user && event.status !== "finished") {
     const { data: myTeams } = await supabase
       .from("teams")
-      .select("id, name")
+      .select("id, name, captain_id")
       .eq("captain_id", user.id);
 
-    captainTeams = (myTeams ?? []) as TeamOption[];
+    const baseTeams = (myTeams ?? []) as Array<{ id: string; name: string; captain_id: string }>;
+
+    if (baseTeams.length > 0) {
+      const teamIds = baseTeams.map((team) => team.id);
+      const { data: members } = await supabase
+        .from("team_members")
+        .select("team_id, user_id")
+        .in("team_id", teamIds);
+
+      const rosterByTeam = new Map<string, Set<string>>();
+
+      for (const team of baseTeams) {
+        rosterByTeam.set(team.id, new Set<string>([team.captain_id]));
+      }
+
+      for (const member of members ?? []) {
+        const teamId = String(member.team_id);
+        const userId = String(member.user_id);
+        if (!rosterByTeam.has(teamId)) {
+          rosterByTeam.set(teamId, new Set<string>());
+        }
+        rosterByTeam.get(teamId)?.add(userId);
+      }
+
+      captainTeams = baseTeams.map((team) => ({
+        id: team.id,
+        name: team.name,
+        memberCount: rosterByTeam.get(team.id)?.size ?? 1,
+      }));
+    }
 
     if (captainTeams.length > 0) {
       const teamIds = captainTeams.map((t) => t.id);
@@ -108,11 +160,14 @@ export default async function EventDetailPage({ params }: Props) {
     }
   }
 
-  const eligibleTeams = captainTeams.filter((t) => !alreadyRegisteredTeamIds.includes(t.id));
+  const openForRegistration = event.status === "registrations_open" || event.status === "check_in";
+  const slotsFull = Boolean(event.max_teams && (registrationCount ?? 0) >= event.max_teams);
+  const eligibleTeams = captainTeams.filter((t) => !alreadyRegisteredTeamIds.includes(t.id) && t.memberCount === requiredSize);
+  incompatibleTeamsCount = captainTeams.filter((t) => !alreadyRegisteredTeamIds.includes(t.id) && t.memberCount !== requiredSize).length;
   const allTeamsAlreadyRegistered =
-    captainTeams.length > 0 && eligibleTeams.length === 0;
+    captainTeams.length > 0 && captainTeams.every((team) => alreadyRegisteredTeamIds.includes(team.id));
   const registrationClosed = Boolean(event.registration_deadline && new Date(event.registration_deadline) < new Date());
-  const canRegister = event.status === "published" || event.status === "active";
+  const canRegister = openForRegistration && !slotsFull;
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#13293d_0%,_#0b1826_40%,_#050b12_100%)] text-slate-100">
@@ -143,50 +198,30 @@ export default async function EventDetailPage({ params }: Props) {
               <StatusBadge status={event.status} />
               <div className="flex items-center gap-3">
                 {event.logo_url ? <img src={event.logo_url} alt={event.title} className="h-14 w-14 rounded-2xl object-cover" /> : null}
-                <h1 className="text-3xl font-bold text-white lg:text-4xl">{event.title}</h1>
+                <h1 className="text-3xl font-bold text-white lg:text-4xl">{event.name || event.title}</h1>
               </div>
             </div>
-            {event.prize_description ? (
+            {event.prize ? (
               <div className="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-6 py-4 text-center">
                 <p className="text-xs font-medium uppercase tracking-wider text-amber-300/70">
                   Premiação
                 </p>
-                <p className="mt-1 max-w-[220px] text-sm font-semibold text-amber-200">{event.prize_description}</p>
+                <p className="mt-1 max-w-[220px] text-sm font-semibold text-amber-200">{event.prize}</p>
               </div>
             ) : null}
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-4 text-sm text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <Calendar className="h-4 w-4" />
-              Início: {fmt.format(new Date(event.start_date))}
-            </span>
-            {event.end_date ? (
-              <span className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" />
-                Fim: {fmt.format(new Date(event.end_date))}
-              </span>
-            ) : null}
-            {event.registration_deadline ? (
-              <span className="flex items-center gap-1.5">
-                <Scroll className="h-4 w-4" />
-                Inscrições até {fmt.format(new Date(event.registration_deadline))}
-              </span>
-            ) : null}
-            <span className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              {registrationCount ?? 0} equipe{(registrationCount ?? 0) !== 1 ? "s" : ""} inscrita{(registrationCount ?? 0) !== 1 ? "s" : ""}
-            </span>
-            <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">
-              {formatTeamSize(event.team_size)}
-            </span>
-            <Link href={`/events/${event.id}/bracket`} className="font-medium text-cyan-300 hover:text-cyan-200">
-              Ver chaveamento →
-            </Link>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <InfoCard label="Tipo de torneio" value={TOURNAMENT_TYPE_LABELS[event.tournament_type]} />
+            <InfoCard label="Tipo de tripulação" value={CREW_TYPE_LABELS[event.crew_type]} />
+            <InfoCard label="Equipes inscritas" value={`${registrationCount ?? 0}${event.max_teams ? `/${event.max_teams}` : ""}`} />
           </div>
 
           {event.description ? (
-            <div className="prose prose-invert mt-5 max-w-none text-sm leading-7 text-slate-300" dangerouslySetInnerHTML={{ __html: event.description }} />
+            <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Descricao</h2>
+              <MarkdownRenderer content={event.description} className="mt-3 text-sm leading-7 text-slate-300" />
+            </div>
           ) : null}
         </section>
 
@@ -197,7 +232,7 @@ export default async function EventDetailPage({ params }: Props) {
               <section className="rounded-2xl border border-white/10 bg-slate-950/50 p-6">
                 <h2 className="flex items-center gap-2 text-lg font-bold text-white">
                   <Shield className="h-5 w-5 text-cyan-400" />
-                  Regras do Torneio
+                  Regras Especificas
                 </h2>
                 <div className="prose prose-sm prose-invert mt-4 max-w-none text-slate-300" dangerouslySetInnerHTML={{ __html: event.rules }} />
               </section>
@@ -205,41 +240,53 @@ export default async function EventDetailPage({ params }: Props) {
 
             <section className="rounded-2xl border border-white/10 bg-slate-950/50 p-6">
               <h2 className="flex items-center gap-2 text-lg font-bold text-white">
-                <Trophy className="h-5 w-5 text-amber-400" />
-                Premiação e Detalhes
+                <Calendar className="h-5 w-5 text-amber-400" />
+                Datas Importantes
               </h2>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div className="flex items-center justify-between border-b border-white/6 pb-3">
+                  <dt className="text-slate-400">Inicio das inscricoes</dt>
+                  <dd className="font-semibold text-white">{fmt.format(new Date(event.published_at ?? event.created_at))}</dd>
+                </div>
+                <div className="flex items-center justify-between border-b border-white/6 pb-3">
+                  <dt className="text-slate-400">Limite de inscricao</dt>
+                  <dd className="font-semibold text-white">
+                    {event.registration_deadline ? fmt.format(new Date(event.registration_deadline)) : "Nao definido"}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between border-b border-white/6 pb-3">
+                  <dt className="text-slate-400">Data de inicio</dt>
+                  <dd className="font-semibold text-white">{fmt.format(new Date(event.start_date))}</dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-slate-400">Data de termino</dt>
+                  <dd className="font-semibold text-white">
+                    {event.end_date ? fmt.format(new Date(event.end_date)) : "Nao definido"}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className="rounded-2xl border border-white/10 bg-slate-950/50 p-6">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-white">
+                <Trophy className="h-5 w-5 text-amber-400" />
+                Equipes Inscritas
+              </h2>
+              <p className="mt-3 text-sm text-slate-300">
+                {registrationCount ?? 0} equipe{(registrationCount ?? 0) !== 1 ? "s" : ""}
+                {event.max_teams ? ` de ${event.max_teams} vagas preenchidas` : " inscrita" + ((registrationCount ?? 0) !== 1 ? "s" : "")}
+              </p>
               <Link
                 href={`/events/${event.id}/bracket`}
                 className="mt-3 inline-flex text-sm font-medium text-cyan-300 hover:text-cyan-200"
               >
-                Acessar chaveamento completo
+                Ver chaveamento completo →
               </Link>
-              <dl className="mt-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between border-b border-white/6 pb-3">
-                  <dt className="text-slate-400">Status</dt>
-                  <dd>
-                    <StatusBadge status={event.status} />
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between border-b border-white/6 pb-3">
-                  <dt className="text-slate-400">Equipes inscritas</dt>
-                  <dd className="font-semibold text-white">{registrationCount ?? 0}</dd>
-                </div>
-                {event.prize_description ? (
-                  <div className="flex items-center justify-between">
-                    <dt className="flex items-center gap-1.5 text-slate-400">
-                      <Coins className="h-3.5 w-3.5" />
-                      Premiação
-                    </dt>
-                    <dd className="max-w-[200px] text-right font-bold text-amber-300">{event.prize_description}</dd>
-                  </div>
-                ) : null}
-              </dl>
             </section>
           </div>
 
           {/* Barra lateral de inscrição */}
-          <aside>
+          <aside id="inscricao">
             <div className="sticky top-24 rounded-2xl border border-white/10 bg-slate-950/60 p-6">
               <h2 className="flex items-center gap-2 text-lg font-bold text-white">
                 <Scroll className="h-5 w-5 text-amber-400" />
@@ -250,17 +297,17 @@ export default async function EventDetailPage({ params }: Props) {
                 <p className="mt-4 rounded-xl border border-slate-400/20 bg-slate-400/10 px-4 py-3 text-sm text-slate-400">
                   Este torneio já foi encerrado.
                 </p>
-              ) : event.status === "paused" ? (
-                <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
-                  As inscrições estão temporariamente pausadas pela organização.
-                </p>
               ) : !canRegister ? (
                 <p className="mt-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-                  O evento ainda não foi publicado para inscrições.
+                  As inscricoes nao estao abertas neste momento.
+                </p>
+              ) : slotsFull ? (
+                <p className="mt-4 rounded-xl border border-slate-400/20 bg-slate-400/10 px-4 py-3 text-sm text-slate-300">
+                  Todas as vagas de inscricao foram preenchidas.
                 </p>
               ) : registrationClosed ? (
                 <p className="mt-4 rounded-xl border border-rose-300/20 bg-rose-300/10 px-4 py-3 text-sm text-rose-100">
-                  O prazo de inscrições já foi encerrado.
+                  O prazo de inscricoes ja foi encerrado.
                 </p>
               ) : !user ? (
                 <div className="mt-4 space-y-3">
@@ -276,10 +323,10 @@ export default async function EventDetailPage({ params }: Props) {
                 </div>
               ) : registrationSuspension ? (
                 <p className="mt-4 rounded-xl border border-rose-300/20 bg-rose-300/10 px-4 py-3 text-sm text-rose-100">
-                  Sua conta está suspensa para inscrições em torneios.
+                  Sua conta esta suspensa para inscricoes em torneios.
                   {registrationSuspension.expiresAt
                     ? ` Expira em ${fmt.format(new Date(registrationSuspension.expiresAt))}.`
-                    : " Suspensão sem prazo definido."}
+                    : " Suspensao sem prazo definido."}
                   {` Motivo: ${registrationSuspension.reason}`}
                 </p>
               ) : captainTeams.length === 0 ? (
@@ -297,8 +344,12 @@ export default async function EventDetailPage({ params }: Props) {
               ) : allTeamsAlreadyRegistered ? (
                 <p className="mt-4 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-200">
                   {captainTeams.length === 1
-                    ? "Sua equipe já está inscrita neste evento."
-                    : "Todas as suas equipes já estão inscritas neste evento."}
+                    ? "Sua equipe ja esta inscrita neste evento."
+                    : "Todas as suas equipes ja estao inscritas neste evento."}
+                </p>
+              ) : incompatibleTeamsCount > 0 && eligibleTeams.length === 0 ? (
+                <p className="mt-4 rounded-xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+                  Nenhuma das suas equipes possui a tripulacao exigida para este torneio ({CREW_TYPE_LABELS[event.crew_type]} com {requiredSize} jogadores).
                 </p>
               ) : (
                 <div className="mt-4">
@@ -316,11 +367,19 @@ export default async function EventDetailPage({ params }: Props) {
 function StatusBadge({ status }: { status: string }) {
   const cls = cn(
     "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
-    status === "active" && "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-    status === "draft" && "border border-slate-400/20 bg-slate-400/10 text-slate-300",
-    status === "published" && "border border-amber-400/30 bg-amber-400/10 text-amber-300",
-    status === "paused" && "border border-rose-400/30 bg-rose-400/10 text-rose-300",
+    status === "registrations_open" && "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+    status === "check_in" && "border border-amber-400/30 bg-amber-400/10 text-amber-300",
+    status === "started" && "border border-sky-400/30 bg-sky-400/10 text-sky-300",
     status === "finished" && "border border-slate-400/30 bg-slate-400/10 text-slate-400",
   );
   return <span className={cls}>{STATUS_LABELS[status] ?? status}</span>;
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-white">{value}</p>
+    </div>
+  );
 }
