@@ -1266,7 +1266,7 @@ begin
 
   alter table public.events
     add constraint events_crew_type_check
-    check (crew_type in ('sloop', 'galleon', 'brig'));
+    check (crew_type in ('solo_sloop', 'sloop', 'galleon', 'brig'));
 end
 $$;
 

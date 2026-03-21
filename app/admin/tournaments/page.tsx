@@ -8,14 +8,14 @@ type Row = {
   title: string;
   status: "registrations_open" | "check_in" | "started" | "finished";
   tournament_type: "1v1_elimination" | "free_for_all_points" | null;
-  crew_type: "sloop" | "brig" | "galleon" | null;
+  crew_type: "solo_sloop" | "sloop" | "brig" | "galleon" | null;
   start_date: string;
   approved_registrations: number;
 };
 
 const STATUS_OPTIONS = ["registrations_open", "check_in", "started", "finished"] as const;
 const TOURNAMENT_TYPE_OPTIONS = ["1v1_elimination", "free_for_all_points"] as const;
-const CREW_TYPE_OPTIONS = ["sloop", "brig", "galleon"] as const;
+const CREW_TYPE_OPTIONS = ["solo_sloop", "sloop", "brig", "galleon"] as const;
 
 const STATUS_LABELS: Record<(typeof STATUS_OPTIONS)[number], string> = {
   registrations_open: "Inscrições Abertas",
@@ -44,6 +44,7 @@ const TOURNAMENT_TYPE_LABELS: Record<(typeof TOURNAMENT_TYPE_OPTIONS)[number], s
 };
 
 const CREW_TYPE_LABELS: Record<(typeof CREW_TYPE_OPTIONS)[number], string> = {
+  solo_sloop: "Sloop (1 Jogador)",
   sloop: "Sloop",
   brig: "Brig",
   galleon: "Galleon",

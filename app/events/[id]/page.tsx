@@ -16,7 +16,7 @@ type EventDetail = {
   rules: string | null;
   status: "registrations_open" | "check_in" | "started" | "finished";
   tournament_type: "1v1_elimination" | "free_for_all_points";
-  crew_type: "sloop" | "brig" | "galleon";
+  crew_type: "solo_sloop" | "sloop" | "brig" | "galleon";
   start_date: string;
   end_date: string | null;
   registration_deadline: string | null;
@@ -43,12 +43,14 @@ const TOURNAMENT_TYPE_LABELS = {
 } as const;
 
 const CREW_TYPE_LABELS = {
+  solo_sloop: "Sloop (1 Jogador)",
   sloop: "Sloop",
   brig: "Brig",
   galleon: "Galleon",
 } as const;
 
 const CREW_REQUIRED_SIZE: Record<EventDetail["crew_type"], number> = {
+  solo_sloop: 1,
   sloop: 2,
   brig: 3,
   galleon: 4,

@@ -15,7 +15,7 @@ import { EVENT_KIND_LABELS, toDatetimeLocalValue } from "@/lib/events";
 
 const STATUS_VALUES = ["registrations_open", "check_in", "started", "finished"] as const;
 const TOURNAMENT_TYPE_VALUES = ["1v1_elimination", "free_for_all_points"] as const;
-const CREW_TYPE_VALUES = ["sloop", "brig", "galleon"] as const;
+const CREW_TYPE_VALUES = ["solo_sloop", "sloop", "brig", "galleon"] as const;
 
 const STATUS_LABELS: Record<(typeof STATUS_VALUES)[number], string> = {
   registrations_open: "Inscrições Abertas",
@@ -30,6 +30,7 @@ const TOURNAMENT_TYPE_LABELS: Record<(typeof TOURNAMENT_TYPE_VALUES)[number], st
 };
 
 const CREW_TYPE_LABELS: Record<(typeof CREW_TYPE_VALUES)[number], string> = {
+  solo_sloop: "Sloop (1 Jogador)",
   sloop: "Sloop (1-2 jogadores)",
   brig: "Brigantine (2-3 jogadores)",
   galleon: "Galleon (3-4 jogadores)",
@@ -128,6 +129,7 @@ function defaults(kind: "event" | "tournament"): EventFormValues {
 }
 
 function crewTypeToTeamSize(crewType: (typeof CREW_TYPE_VALUES)[number]) {
+  if (crewType === "solo_sloop") return 1;
   if (crewType === "sloop") return 2;
   if (crewType === "brig") return 3;
   return 4;

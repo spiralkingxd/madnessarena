@@ -90,7 +90,7 @@ export async function registerTeamForEvent(
       status: "registrations_open" | "check_in" | "started" | "finished";
       registration_deadline: string | null;
       max_teams: number | null;
-      crew_type: "sloop" | "brig" | "galleon";
+      crew_type: "solo_sloop" | "sloop" | "brig" | "galleon";
     }>();
 
   if (!event) {
@@ -138,7 +138,7 @@ export async function registerTeamForEvent(
     roster.add(String(row.user_id));
   }
 
-  const expectedSize = event.crew_type === "sloop" ? 2 : event.crew_type === "brig" ? 3 : 4;
+  const expectedSize = event.crew_type === "solo_sloop" ? 1 : event.crew_type === "sloop" ? 2 : event.crew_type === "brig" ? 3 : 4;
   if (roster.size !== expectedSize) {
     return { error: `Sua equipe precisa ter exatamente ${expectedSize} jogadores para este torneio.` };
   }
