@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Shield } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { BracketMatchRow } from "@/app/admin/matches/_data";
 import { cn } from "@/lib/utils";
 import { MatchCard } from "@/components/bracket/match-card";
@@ -10,22 +10,23 @@ import { MatchCard } from "@/components/bracket/match-card";
 
 /**
  * Height of one "bracket unit" — determines vertical spacing.
- * Must be >= MatchCard rendered height to avoid slot overflow.
- * MatchCard max height ≈ 190px; 240 leaves ~50px gap between R1 cards.
+ * Compact spacing tuned for minimal match cards.
  */
-const UNIT_H = 240;
+const UNIT_H = 80;
 
 /** Pixel height reserved for the round header column */
 const HEADER_H = 68;
 
 /** Card widths (px) per viewport breakpoint */
-const CARD_W = { desktop: 240, tablet: 200, mobile: 200 } as const;
+const CARD_W = { desktop: 196, tablet: 172, mobile: 152 } as const;
 
 /** Column gap (px) per viewport breakpoint */
-const COL_GAP = { desktop: 80, tablet: 48, mobile: 80 } as const;
+const COL_GAP = { desktop: 72, tablet: 60, mobile: 56 } as const;
 
-function getCardWidthClass(vp: Viewport): "w-[240px]" | "w-[200px]" {
-  return vp === "desktop" ? "w-[240px]" : "w-[200px]";
+function getCardWidthClass(vp: Viewport): "w-[196px]" | "w-[172px]" | "w-[152px]" {
+  if (vp === "desktop") return "w-[196px]";
+  if (vp === "tablet") return "w-[172px]";
+  return "w-[152px]";
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -38,12 +39,12 @@ interface BracketVisualLayoutProps {
   renderMatchCard?: (match: BracketMatchRow) => React.ReactNode;
 }
 
-type ConnectorColor = "default" | "winner" | "bye";
+type ConnectorTone = "base" | "final";
 
 interface ConnectorPath {
   matchId: string;
   d: string;
-  color: ConnectorColor;
+  tone: ConnectorTone;
 }
 
 /** A virtual placeholder for a match that hasn't been created in the DB yet */
@@ -112,13 +113,6 @@ function slotIndexFromPosition(position: string | null): number {
   if (!position) return Infinity;
   const m = /R\d+-M(\d+)/i.exec(position.trim());
   return m ? Number(m[1]) - 1 : Infinity;
-}
-
-/** Connector stroke color based on match outcome. */
-function connectorColor(match: BracketMatchRow): ConnectorColor {
-  if (match.winner_id && (!match.team_a_id || !match.team_b_id)) return "bye";
-  if (match.winner_id) return "winner";
-  return "default";
 }
 
 function isFinalMatch(match: BracketMatchRow, maxRound: number): boolean {
@@ -192,6 +186,7 @@ function buildConnectors(
   cardRefs: Map<string, HTMLElement>,
   innerEl: HTMLElement,
   outerEl: HTMLElement,
+  maxRound: number,
 ): ConnectorPath[] {
   const innerRect = innerEl.getBoundingClientRect();
   const scrollX = outerEl.scrollLeft;
@@ -226,77 +221,43 @@ function buildConnectors(
     const y2 = dst.top + dst.height / 2;
     const midX = (x1 + x2) / 2;
 
-    const r = Math.min(8, Math.abs(y2 - y1) / 2, Math.abs(x2 - x1) / 4);
-    const vDir = y2 > y1 ? 1 : -1;
+    // Minimal connector path: straight segments only (no curves)
+    const d = `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
+    const nextMatch = matches.find((m) => m.id === match.next_match_id);
+    const tone: ConnectorTone = nextMatch && isFinalMatch(nextMatch, maxRound) ? "final" : "base";
 
-    const d =
-      r > 1
-        ? `M ${x1} ${y1}` +
-          ` H ${midX - r}` +
-          ` Q ${midX} ${y1} ${midX} ${y1 + r * vDir}` +
-          ` V ${y2 - r * vDir}` +
-          ` Q ${midX} ${y2} ${midX + r} ${y2}` +
-          ` H ${x2}`
-        : `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
-
-    paths.push({ matchId: match.id, d, color: connectorColor(match) });
+    paths.push({ matchId: match.id, d, tone });
   }
 
   return paths;
 }
 
-const CONNECTOR_CLASS: Record<ConnectorColor, string> = {
-  default: "stroke-slate-300 dark:stroke-slate-600",
-  winner: "stroke-emerald-400/70 dark:stroke-emerald-500/60",
-  bye: "stroke-amber-400/70 dark:stroke-amber-500/60",
+const CONNECTOR_CLASS: Record<ConnectorTone, string> = {
+  base: "stroke-[#4B5563]",
+  final: "stroke-[#374151]",
 };
 
 // ─── Ghost match card ─────────────────────────────────────────────────────────
 
 /** Visual placeholder for a match that doesn't exist yet. */
-function GhostMatchCard({ position, widthPx = 240 }: { position: number; widthPx?: number }) {
+function GhostMatchCard({ position, widthPx = 200 }: { position: number; widthPx?: number }) {
   return (
     <div
-      className="rounded-xl border-2 border-dashed border-slate-200/70 dark:border-white/6 bg-slate-50/40 dark:bg-slate-900/20 overflow-hidden"
+      className="overflow-hidden rounded-md border border-slate-200/80 bg-white/70 px-2.5 py-1.5 dark:border-white/10 dark:bg-slate-900/70"
       style={{ width: `${widthPx}px` }}
     >
-      <div className="flex flex-col gap-2 px-3 py-2.5">
-        {/* Header row */}
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-600 select-none">
-            Partida #{position}
-          </span>
-          <span className="text-[10px] text-slate-300 dark:text-slate-700 italic">A definir</span>
-        </div>
-
-        {/* Team slot A */}
-        <div className="flex items-center gap-2 rounded-lg border border-dashed border-slate-200/80 dark:border-white/6 px-2.5 py-2">
-          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-dashed border-slate-200 dark:border-white/8 bg-slate-100/60 dark:bg-slate-800/30">
-            <Shield className="h-3 w-3 text-slate-300 dark:text-slate-600" />
-          </span>
-          <span className="text-xs italic text-slate-400 dark:text-slate-500">A definir</span>
-        </div>
-
-        {/* Separator */}
-        <p className="text-center text-[9px] font-bold tracking-[0.2em] text-slate-200 dark:text-slate-700 select-none">
-          VS
-        </p>
-
-        {/* Team slot B */}
-        <div className="flex items-center gap-2 rounded-lg border border-dashed border-slate-200/80 dark:border-white/6 px-2.5 py-2">
-          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-dashed border-slate-200 dark:border-white/8 bg-slate-100/60 dark:bg-slate-800/30">
-            <Shield className="h-3 w-3 text-slate-300 dark:text-slate-600" />
-          </span>
-          <span className="text-xs italic text-slate-400 dark:text-slate-500">A definir</span>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-0.5 flex items-center justify-center rounded-md bg-slate-100/60 dark:bg-slate-800/20 py-1">
-          <span className="text-[10px] italic text-slate-400 dark:text-slate-600">
-            Aguardando resultado anterior
-          </span>
-        </div>
+      <div className="flex items-center justify-between py-1 text-[10px] text-slate-400 dark:text-slate-500">
+        <span className="uppercase tracking-wider">Partida #{position}</span>
+        <span>A definir</span>
       </div>
+
+      <div className="h-px bg-slate-200/70 dark:bg-white/10" />
+
+      <div className="py-1.5 text-sm italic text-slate-400 dark:text-slate-500">A definir</div>
+
+      <div className="h-px bg-slate-200/70 dark:bg-white/10" />
+
+      <div className="py-1.5 text-sm italic text-slate-400 dark:text-slate-500">A definir</div>
     </div>
   );
 }
@@ -534,24 +495,31 @@ export function BracketVisualLayout({
   // ── DOM measurement ────────────────────────────────────────────────────────
 
   const measure = useCallback(() => {
+    if (viewport === "mobile" && !mobileOverride) {
+      setConnectors([]);
+      return;
+    }
+
     const inner = innerRef.current;
     const outer = outerRef.current;
     if (!inner || !outer) return;
 
     setSvgSize({ w: inner.offsetWidth, h: inner.offsetHeight });
-    setConnectors(buildConnectors(matches, cardRefs.current, inner, outer));
-  }, [matches]);
+    setConnectors(buildConnectors(matches, cardRefs.current, inner, outer, maxRound));
+  }, [matches, maxRound, viewport, mobileOverride]);
 
   useEffect(() => {
+    if (viewport === "mobile" && !mobileOverride) return;
     const id = setTimeout(measure, 0);
     return () => clearTimeout(id);
-  }, [measure]);
+  }, [measure, viewport, mobileOverride]);
 
   useEffect(() => {
+    if (viewport === "mobile" && !mobileOverride) return;
     const observer = new ResizeObserver(measure);
     if (innerRef.current) observer.observe(innerRef.current);
     return () => observer.disconnect();
-  }, [measure]);
+  }, [measure, viewport, mobileOverride]);
 
   const setCardRef = useCallback(
     (matchId: string) => (el: HTMLElement | null) => {
@@ -612,25 +580,35 @@ export function BracketVisualLayout({
       {/* Inner content — w-max so it expands to fit all rounds */}
       <div ref={innerRef} className="relative w-max min-w-full">
         {/* ── SVG connector overlay ────────────────────────────────────────── */}
-        <svg
-          aria-hidden="true"
-          className="absolute inset-0 pointer-events-none overflow-visible"
-          width={svgSize.w}
-          height={svgSize.h}
-          style={{ zIndex: 0 }}
-        >
-          {connectors.map((conn) => (
-            <path
-              key={conn.matchId}
-              d={conn.d}
-              fill="none"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={CONNECTOR_CLASS[conn.color]}
-            />
-          ))}
-        </svg>
+        {viewport !== "mobile" && (
+          <svg
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none overflow-visible"
+            width={svgSize.w}
+            height={svgSize.h}
+            style={{ zIndex: 0 }}
+          >
+            {connectors.map((conn) => {
+              const isTablet = viewport === "tablet";
+              const isFinalConn = conn.tone === "final";
+              const strokeWidth = isFinalConn ? (isTablet ? 1.5 : 2) : 1;
+              const opacity = isFinalConn ? (isTablet ? 0.6 : 0.72) : (isTablet ? 0.45 : 0.6);
+
+              return (
+                <path
+                  key={conn.matchId}
+                  d={conn.d}
+                  fill="none"
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="butt"
+                  strokeLinejoin="miter"
+                  opacity={opacity}
+                  className={CONNECTOR_CLASS[conn.tone]}
+                />
+              );
+            })}
+          </svg>
+        )}
 
         {/* ── Round columns ────────────────────────────────────────────────── */}
         <div className="relative flex px-4 sm:px-6 pt-6 pb-8" style={{ zIndex: 1, gap: `${colGap}px` }}>
@@ -648,7 +626,15 @@ export function BracketVisualLayout({
             const slotH = Math.pow(2, round - 1) * UNIT_H;
 
             return (
-              <div key={round} className="shrink-0 flex flex-col" style={{ width: `${cardW}px` }}>
+              <div
+                key={round}
+                className="shrink-0 flex flex-col"
+                style={{
+                  width: `${cardW}px`,
+                  contentVisibility: "auto",
+                  containIntrinsicSize: "420px",
+                }}
+              >
                 {/* Round header */}
                 <div
                   className="flex flex-col justify-end pb-3"
