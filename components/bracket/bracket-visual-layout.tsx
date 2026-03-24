@@ -573,6 +573,9 @@ export function BracketVisualLayout({
   const colGap = COL_GAP[viewport] ?? COL_GAP.desktop;
 
   function renderColumn(round: number, slots: LayoutSlot[], slotHeight: number) {
+    const { title } = getRoundLabel(round, totalRounds);
+    const realCount = slots.filter((slot) => !isVirtual(slot)).length;
+
     return (
       <div
         key={`round-${round}`}
@@ -583,8 +586,15 @@ export function BracketVisualLayout({
           containIntrinsicSize: "420px",
         }}
       >
-        {/* Keep a slim header area so connector geometry remains stable */}
-        <div style={{ height: `${HEADER_H}px` }} />
+        {/* Lightweight round header for better scanability */}
+        <div className="flex flex-col justify-end pb-1" style={{ height: `${HEADER_H}px` }}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+            {title}
+          </p>
+          <p className="text-[10px] text-slate-500">
+            {realCount} {realCount === 1 ? "partida" : "partidas"}
+          </p>
+        </div>
 
         <div className="flex flex-col" style={{ height: `${columnContentHeight}px` }}>
           {slots.map((slot, idx) => {
