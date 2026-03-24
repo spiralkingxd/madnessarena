@@ -68,7 +68,11 @@ function testMatchStates() {
   assert.equal(scoreToken(bye, "A", 1), "Bye", "Bye winner row should show Bye");
   assert.equal(scoreToken(bye, null, 0), "—", "Bye empty row should show em dash");
 
-  assert.match(matchCard, /font-bold text-white/, "Winner score should be visually emphasized");
+  assert.match(
+    matchCard,
+    /font-(bold|semibold) text-(white|slate-900)/,
+    "Winner score should be visually emphasized",
+  );
 }
 
 function testResponsiveLayout() {

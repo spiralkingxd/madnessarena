@@ -13,33 +13,41 @@ interface TeamRowProps {
 
 function TeamRow({ id, displayName, logoUrl, scoreToken, isWinner }: TeamRowProps) {
   const isPending = !id;
+  const accentClass =
+    displayName === "—" || displayName === "A definir"
+      ? "bg-slate-400"
+      : isWinner
+        ? "bg-lime-500"
+        : "bg-slate-900";
 
   return (
-    <div className="flex items-center gap-2 py-1">
+    <div className="relative flex items-center gap-2 rounded-[2px] bg-[#d8d8d8] px-3 py-2 pl-4">
+      <span className={cn("absolute left-0 top-0 h-full w-[6px]", accentClass)} aria-hidden="true" />
+
       {isPending ? (
         <span className="h-6 w-6 flex-shrink-0" aria-hidden="true" />
       ) : logoUrl ? (
         <img
           src={logoUrl}
           alt={`Logo ${displayName}`}
-          className="h-6 w-6 flex-shrink-0 rounded-full object-cover"
+          className="h-6 w-6 flex-shrink-0 rounded-sm object-cover"
           loading="lazy"
           decoding="async"
         />
       ) : (
-        <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] font-semibold uppercase text-slate-600 dark:text-slate-300">
+        <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-sm bg-slate-300 text-[10px] font-semibold uppercase text-slate-700">
           {displayName.charAt(0)}
         </span>
       )}
 
       <span
         className={cn(
-          "min-w-0 flex-1 truncate text-[13px] md:text-sm leading-tight",
+          "min-w-0 flex-1 truncate text-[13px] md:text-sm leading-tight uppercase tracking-wide",
           displayName === "—" || displayName === "A definir"
-            ? "text-slate-400"
+            ? "text-slate-500"
             : isWinner
-              ? "font-normal text-slate-100"
-              : "font-normal text-slate-200",
+              ? "font-medium text-slate-900"
+              : "font-medium text-slate-800",
         )}
       >
         {displayName}
@@ -47,12 +55,12 @@ function TeamRow({ id, displayName, logoUrl, scoreToken, isWinner }: TeamRowProp
 
       <span
         className={cn(
-          "min-w-[1.5rem] text-right text-[13px] md:text-sm tabular-nums",
+          "min-w-[1.75rem] text-right text-[13px] md:text-sm tabular-nums uppercase",
           scoreToken === "—" || scoreToken.toLowerCase() === "vs"
-            ? "text-slate-400"
+            ? "text-slate-500"
             : isWinner
-              ? "font-bold text-white"
-              : "font-medium text-slate-500",
+              ? "font-semibold text-slate-900"
+              : "font-medium text-slate-700",
         )}
       >
         {scoreToken}
@@ -96,8 +104,7 @@ export function MatchCard({
   return (
     <article
       className={cn(
-        "relative overflow-hidden rounded-md border border-slate-600/70 bg-slate-800/95 px-2.5 py-2",
-        isFinal && "border-slate-400/70",
+        "relative flex flex-col gap-2 bg-transparent",
         onClick && "cursor-pointer",
         widthClass,
         className,
@@ -105,7 +112,7 @@ export function MatchCard({
       onClick={() => onClick?.(match.id)}
     >
       {isFinal && (
-        <span className="pointer-events-none absolute right-2 top-1 text-[9px] uppercase tracking-wider text-slate-400">
+        <span className="pointer-events-none absolute -top-3 right-0 text-[9px] uppercase tracking-wider text-slate-500">
           Final
         </span>
       )}
@@ -118,7 +125,7 @@ export function MatchCard({
         isWinner={teamAIsWinner}
       />
 
-      <div className="h-px bg-slate-600/80" />
+      <div className="h-px bg-slate-500/60" />
 
       <TeamRow
         id={match.team_b_id}

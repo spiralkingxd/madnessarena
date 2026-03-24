@@ -233,8 +233,8 @@ function buildConnectors(
 }
 
 const CONNECTOR_CLASS: Record<ConnectorTone, string> = {
-  base: "stroke-[#4B5563]",
-  final: "stroke-[#374151]",
+  base: "stroke-[#111827]",
+  final: "stroke-[#0f172a]",
 };
 
 // ─── Ghost match card ─────────────────────────────────────────────────────────
@@ -481,50 +481,16 @@ export function BracketVisualLayout({
     [matches, totalRounds, round1Count],
   );
 
-  const sideRounds = useMemo(
-    () => rounds.filter((round) => round < maxRound),
-    [rounds, maxRound],
-  );
-
-  const splitByRound = useMemo(() => {
-    const map = new Map<number, { left: LayoutSlot[]; right: LayoutSlot[] }>();
-    for (const round of sideRounds) {
-      const slots = roundSlots.get(round) ?? [];
-      const half = Math.ceil(slots.length / 2);
-      map.set(round, {
-        left: slots.slice(0, half),
-        right: slots.slice(half),
-      });
-    }
-    return map;
-  }, [sideRounds, roundSlots]);
-
-  const rightSideRounds = useMemo(
-    () => [...sideRounds].reverse(),
-    [sideRounds],
-  );
-
-  const centerSlots = useMemo(
-    () => roundSlots.get(maxRound) ?? [],
-    [roundSlots, maxRound],
-  );
-
   /**
-   * Side height for mirrored layout (left and right trees).
-   * round-1 is split in half, one side for each finalist path.
+   * Total height of card content inside every round column.
+   * Each column uses the same height so all rounds line up:
+   *   round-R slot height = 2^(R-1) × UNIT_H
+   *   sum across N slots in round R = N × 2^(R-1) × UNIT_H = round1Count × UNIT_H
    */
   const columnContentHeight = useMemo(() => {
-    const split = splitByRound.get(1);
-    const sideRound1Slots = split
-      ? Math.max(split.left.length, split.right.length, 1)
-      : Math.max(1, Math.ceil((roundSlots.get(1)?.length ?? Math.max(round1Count, 1)) / 2));
-    return sideRound1Slots * UNIT_H;
-  }, [splitByRound, roundSlots, round1Count]);
-
-  const centerSlotHeight = useMemo(
-    () => Math.max(UNIT_H, columnContentHeight / Math.max(centerSlots.length, 1)),
-    [columnContentHeight, centerSlots.length],
-  );
+    const r1Slots = roundSlots.get(1)?.length ?? Math.max(round1Count, 1);
+    return r1Slots * UNIT_H;
+  }, [roundSlots, round1Count]);
 
   // ── DOM measurement ────────────────────────────────────────────────────────
 
@@ -604,10 +570,10 @@ export function BracketVisualLayout({
   const cardWidthClass = getCardWidthClass(viewport);
   const colGap = COL_GAP[viewport] ?? COL_GAP.desktop;
 
-  function renderColumn(round: number, slots: LayoutSlot[], keyPrefix: string, slotHeight: number) {
+  function renderColumn(round: number, slots: LayoutSlot[], slotHeight: number) {
     return (
       <div
-        key={`${keyPrefix}-${round}`}
+        key={`round-${round}`}
         className="shrink-0 flex flex-col"
         style={{
           width: `${cardW}px`,
@@ -615,7 +581,7 @@ export function BracketVisualLayout({
           containIntrinsicSize: "420px",
         }}
       >
-        {/* Minimal visual top spacing: no heavy round metadata for clean bracket look */}
+        {/* Keep a slim header area so connector geometry remains stable */}
         <div style={{ height: `${HEADER_H}px` }} />
 
         <div className="flex flex-col" style={{ height: `${columnContentHeight}px` }}>
@@ -684,8 +650,8 @@ export function BracketVisualLayout({
             {connectors.map((conn) => {
               const isTablet = viewport === "tablet";
               const isFinalConn = conn.tone === "final";
-              const strokeWidth = isFinalConn ? (isTablet ? 1.5 : 2) : 1;
-              const opacity = isFinalConn ? (isTablet ? 0.6 : 0.72) : (isTablet ? 0.45 : 0.6);
+              const strokeWidth = isFinalConn ? (isTablet ? 1.6 : 1.9) : 1.2;
+              const opacity = isFinalConn ? (isTablet ? 0.8 : 0.9) : (isTablet ? 0.7 : 0.82);
 
               return (
                 <path
@@ -703,20 +669,12 @@ export function BracketVisualLayout({
           </svg>
         )}
 
-        {/* ── Mirrored bracket columns (left tree -> center final <- right tree) ── */}
+        {/* ── Classic left-to-right bracket columns ───────────────────────── */}
         <div className="relative flex px-4 sm:px-6 pt-6 pb-8" style={{ zIndex: 1, gap: `${colGap}px` }}>
-          {sideRounds.map((round) => {
-            const slots = splitByRound.get(round)?.left ?? [];
+          {rounds.map((round) => {
+            const slots = roundSlots.get(round) ?? [];
             const slotHeight = Math.pow(2, round - 1) * UNIT_H;
-            return renderColumn(round, slots, "left", slotHeight);
-          })}
-
-          {renderColumn(maxRound, centerSlots, "center", centerSlotHeight)}
-
-          {rightSideRounds.map((round) => {
-            const slots = splitByRound.get(round)?.right ?? [];
-            const slotHeight = Math.pow(2, round - 1) * UNIT_H;
-            return renderColumn(round, slots, "right", slotHeight);
+            return renderColumn(round, slots, slotHeight);
           })}
         </div>
       </div>
