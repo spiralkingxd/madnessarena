@@ -38,11 +38,7 @@ export async function getCommunityStreamers(query: StreamersQuery = {}): Promise
 
 export async function getCommunityTags(): Promise<Array<{ slug: string; name: string }>> {
   const supabase = createPublicServerClient();
-  const { data, error } = await supabase
-    .from("streamer_tags")
-    .select("slug, name")
-    .neq("slug", "madnessarena")
-    .order("name", { ascending: true });
+  const { data, error } = await supabase.rpc("get_madnessarena_secondary_tags");
 
   if (error || !data) {
     console.error("[streamers] failed to load tags", error);

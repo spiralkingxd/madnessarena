@@ -2,6 +2,7 @@
 -- Execute after main schema files.
 
 create extension if not exists pgcrypto;
+create extension if not exists unaccent;
 
 create table if not exists public.streamer_tags (
   id uuid primary key default gen_random_uuid(),
@@ -34,6 +35,9 @@ alter table public.streamers add column if not exists viewers integer;
 alter table public.streamers add column if not exists live_started_at timestamptz;
 alter table public.streamers add column if not exists last_seen_online timestamptz;
 alter table public.streamers add column if not exists last_checked_at timestamptz;
+alter table public.streamers add column if not exists twitch_live_tags jsonb;
+alter table public.streamers add column if not exists has_madnessarena_tag boolean;
+alter table public.streamers add column if not exists tag_checked_at timestamptz;
 
 update public.streamers
 set
@@ -47,7 +51,9 @@ set
   is_featured = coalesce(is_featured, false),
   community_enabled = coalesce(community_enabled, true),
   is_live = coalesce(is_live, false),
-  viewers = coalesce(viewers, 0);
+  viewers = coalesce(viewers, 0),
+  twitch_live_tags = coalesce(twitch_live_tags, '[]'::jsonb),
+  has_madnessarena_tag = coalesce(has_madnessarena_tag, false);
 
 alter table public.streamers alter column display_name set not null;
 alter table public.streamers alter column platform set not null;
@@ -59,6 +65,9 @@ alter table public.streamers alter column community_enabled set not null;
 alter table public.streamers alter column is_live set default false;
 alter table public.streamers alter column is_live set not null;
 alter table public.streamers alter column viewers set default 0;
+alter table public.streamers alter column twitch_live_tags set default '[]'::jsonb;
+alter table public.streamers alter column has_madnessarena_tag set default false;
+alter table public.streamers alter column has_madnessarena_tag set not null;
 
 do $$
 begin
@@ -78,6 +87,7 @@ $$;
 create unique index if not exists streamers_twitch_id_uidx on public.streamers (twitch_id) where twitch_id is not null;
 create unique index if not exists streamers_twitch_login_uidx on public.streamers (lower(twitch_login)) where twitch_login is not null;
 create index if not exists streamers_live_idx on public.streamers (is_live desc, is_featured desc, viewers desc, display_name);
+create index if not exists streamers_madness_live_idx on public.streamers (has_madnessarena_tag, is_live desc, viewers desc);
 create index if not exists streamers_active_platform_idx on public.streamers (is_active, platform);
 create index if not exists streamers_community_enabled_idx on public.streamers (community_enabled, platform);
 create index if not exists stl_tag_idx on public.streamer_tag_links (tag_id, streamer_id);
@@ -176,22 +186,15 @@ as $$
     select s.*
     from public.streamers s
     where s.community_enabled = true
-      and exists (
-        select 1
-        from public.streamer_tag_links stl
-        join public.streamer_tags t on t.id = stl.tag_id
-        where stl.streamer_id = s.id
-          and t.slug = 'madnessarena'
-      )
+      and s.has_madnessarena_tag = true
       and (
         p_secondary_tag is null
         or p_secondary_tag = ''
         or exists (
           select 1
-          from public.streamer_tag_links stl2
-          join public.streamer_tags t2 on t2.id = stl2.tag_id
-          where stl2.streamer_id = s.id
-            and t2.slug = lower(trim(p_secondary_tag))
+          from jsonb_array_elements_text(coalesce(s.twitch_live_tags, '[]'::jsonb)) as tag(value)
+          where lower(regexp_replace(unaccent(trim(tag.value)), '\s+', '', 'g'))
+            = lower(regexp_replace(unaccent(trim(p_secondary_tag)), '\s+', '', 'g'))
         )
       )
       and (
@@ -221,19 +224,24 @@ as $$
     b.is_featured,
     b.last_seen_online,
     coalesce(
-      jsonb_agg(
-        jsonb_build_object(
-          'name', t.name,
-          'slug', t.slug,
-          'is_highlight', t.is_highlight
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'name', v.tag,
+            'slug', lower(regexp_replace(unaccent(trim(v.tag)), '\s+', '', 'g')),
+            'is_highlight', lower(regexp_replace(unaccent(trim(v.tag)), '\s+', '', 'g')) = 'madnessarena'
+          )
+          order by
+            (lower(regexp_replace(unaccent(trim(v.tag)), '\s+', '', 'g')) = 'madnessarena') desc,
+            v.tag asc
         )
-        order by t.is_highlight desc, t.name asc
-      ) filter (where t.id is not null),
+        from (
+          select distinct jsonb_array_elements_text(coalesce(b.twitch_live_tags, '[]'::jsonb)) as tag
+        ) v
+      ),
       '[]'::jsonb
     ) as tags
   from base b
-  left join public.streamer_tag_links stl on stl.streamer_id = b.id
-  left join public.streamer_tags t on t.id = stl.tag_id
   group by
     b.id,
     b.display_name,
@@ -247,8 +255,34 @@ as $$
     b.live_game,
     b.viewers,
     b.is_featured,
-    b.last_seen_online
+    b.last_seen_online,
+    b.twitch_live_tags
   order by b.is_live desc, b.is_featured desc, coalesce(b.viewers, 0) desc, b.display_name asc;
 $$;
 
 grant execute on function public.get_madnessarena_streamers(text, text, text) to anon, authenticated;
+
+create or replace function public.get_madnessarena_secondary_tags()
+returns table (
+  slug text,
+  name text
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    lower(regexp_replace(unaccent(trim(tag.value)), '\s+', '', 'g')) as slug,
+    trim(tag.value) as name
+  from public.streamers s,
+       lateral jsonb_array_elements_text(coalesce(s.twitch_live_tags, '[]'::jsonb)) as tag(value)
+  where s.community_enabled = true
+    and s.has_madnessarena_tag = true
+    and lower(regexp_replace(unaccent(trim(tag.value)), '\s+', '', 'g')) <> 'madnessarena'
+  group by
+    lower(regexp_replace(unaccent(trim(tag.value)), '\s+', '', 'g')),
+    trim(tag.value)
+  order by name asc;
+$$;
+
+grant execute on function public.get_madnessarena_secondary_tags() to anon, authenticated;

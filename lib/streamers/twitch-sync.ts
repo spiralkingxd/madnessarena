@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hasMadnessArenaTag, normalizeTagList } from "@/lib/streamers/tag-normalize";
 
 type TwitchStream = {
   user_id: string;
@@ -20,6 +21,22 @@ type TwitchSearchChannel = {
   is_live: boolean;
   thumbnail_url: string;
   started_at?: string;
+};
+
+type TwitchUser = {
+  id: string;
+  login: string;
+  display_name: string;
+  profile_image_url: string;
+};
+
+type TwitchChannelInfo = {
+  broadcaster_id: string;
+  broadcaster_login: string;
+  broadcaster_name: string;
+  title: string;
+  game_name: string;
+  tags?: string[];
 };
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
@@ -87,6 +104,74 @@ async function fetchTwitchStreams(logins: string[]) {
   return all;
 }
 
+async function fetchTwitchStreamsByIds(userIds: string[]) {
+  const clientId = process.env.TWITCH_CLIENT_ID?.trim();
+  const token = await getTwitchAppToken();
+  if (!clientId || !token || userIds.length === 0) return [];
+
+  const all: TwitchStream[] = [];
+  for (const part of chunk(userIds, 100)) {
+    const params = new URLSearchParams();
+    for (const userId of part) {
+      params.append("user_id", userId);
+    }
+    const response = await fetch(`https://api.twitch.tv/helix/streams?${params.toString()}`, {
+      headers: {
+        "Client-ID": clientId,
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+    if (!response.ok) continue;
+    const payload = (await response.json()) as { data: TwitchStream[] };
+    all.push(...(payload.data ?? []));
+  }
+  return all;
+}
+
+async function fetchTwitchUsersByIds(userIds: string[]) {
+  const clientId = process.env.TWITCH_CLIENT_ID?.trim();
+  const token = await getTwitchAppToken();
+  if (!clientId || !token || userIds.length === 0) return [];
+
+  const all: TwitchUser[] = [];
+  for (const part of chunk(userIds, 100)) {
+    const params = new URLSearchParams();
+    for (const userId of part) {
+      params.append("id", userId);
+    }
+    const response = await fetch(`https://api.twitch.tv/helix/users?${params.toString()}`, {
+      headers: {
+        "Client-ID": clientId,
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+    if (!response.ok) continue;
+    const payload = (await response.json()) as { data: TwitchUser[] };
+    all.push(...(payload.data ?? []));
+  }
+  return all;
+}
+
+async function fetchTwitchChannelInformation(broadcasterId: string) {
+  const clientId = process.env.TWITCH_CLIENT_ID?.trim();
+  const token = await getTwitchAppToken();
+  if (!clientId || !token) return null;
+
+  const params = new URLSearchParams({ broadcaster_id: broadcasterId });
+  const response = await fetch(`https://api.twitch.tv/helix/channels?${params.toString()}`, {
+    headers: {
+      "Client-ID": clientId,
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) return null;
+  const payload = (await response.json()) as { data?: TwitchChannelInfo[] };
+  return payload.data?.[0] ?? null;
+}
+
 async function fetchTwitchSearchChannels(query: string) {
   const clientId = process.env.TWITCH_CLIENT_ID?.trim();
   const token = await getTwitchAppToken();
@@ -124,17 +209,130 @@ async function fetchTwitchSearchChannels(query: string) {
   return rows;
 }
 
-async function ensureMadnessArenaTagId() {
+async function upsertStreamerFromTwitch(input: {
+  twitchId: string;
+  login: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  isLive: boolean;
+  liveTitle?: string | null;
+  liveGame?: string | null;
+  viewers?: number | null;
+  liveStartedAt?: string | null;
+  twitchTags: string[];
+}) {
   const supabase = createAdminClient();
-  if (!supabase) return null;
-  const { data, error } = await supabase
-    .from("streamer_tags")
-    .upsert({ slug: "madnessarena", name: "MadnessArena", is_highlight: true }, { onConflict: "slug" })
-    .select("id")
-    .single();
+  if (!supabase) return { ok: false };
 
-  if (error || !data) return null;
-  return String(data.id);
+  const nowIso = new Date().toISOString();
+  const hasMainTag = hasMadnessArenaTag(input.twitchTags);
+  const payload = {
+    username: input.login,
+    display_name: input.displayName || input.login,
+    platform: "twitch",
+    channel_url: `https://twitch.tv/${input.login}`,
+    avatar_url: input.avatarUrl ?? null,
+    twitch_id: input.twitchId,
+    twitch_login: input.login,
+    community_enabled: true,
+    is_live: input.isLive,
+    live_title: input.isLive ? input.liveTitle ?? null : null,
+    live_game: input.isLive ? input.liveGame ?? null : null,
+    viewers: input.isLive ? Number(input.viewers ?? 0) : 0,
+    live_started_at: input.isLive ? input.liveStartedAt ?? null : null,
+    last_checked_at: nowIso,
+    last_seen_online: input.isLive ? nowIso : null,
+    twitch_live_tags: input.twitchTags,
+    has_madnessarena_tag: hasMainTag,
+    tag_checked_at: nowIso,
+  };
+
+  const { error } = await supabase.from("streamers").upsert(payload, {
+    onConflict: "twitch_id",
+    ignoreDuplicates: false,
+  });
+  if (error) {
+    console.error("[streamers/upsert] failed", error);
+    return { ok: false };
+  }
+
+  return { ok: true, hasMainTag };
+}
+
+export async function processTwitchStreamOnline(broadcasterId: string) {
+  const [channel, users, streams] = await Promise.all([
+    fetchTwitchChannelInformation(broadcasterId),
+    fetchTwitchUsersByIds([broadcasterId]),
+    fetchTwitchStreamsByIds([broadcasterId]),
+  ]);
+
+  const user = users[0];
+  const stream = streams[0];
+  const login = String(channel?.broadcaster_login ?? user?.login ?? stream?.user_login ?? "").trim().toLowerCase();
+  if (!login) {
+    return { ok: false, message: "Unable to resolve broadcaster login" };
+  }
+
+  const rawTags = normalizeTagList(channel?.tags ?? []);
+  const result = await upsertStreamerFromTwitch({
+    twitchId: broadcasterId,
+    login,
+    displayName: channel?.broadcaster_name ?? user?.display_name ?? login,
+    avatarUrl: user?.profile_image_url ?? null,
+    isLive: true,
+    liveTitle: stream?.title ?? channel?.title ?? null,
+    liveGame: stream?.game_name ?? channel?.game_name ?? null,
+    viewers: stream?.viewer_count ?? 0,
+    liveStartedAt: stream?.started_at ?? null,
+    twitchTags: rawTags,
+  });
+
+  return { ok: result.ok, included: result.ok && Boolean(result.hasMainTag) };
+}
+
+export async function processTwitchStreamOffline(broadcasterId: string) {
+  const supabase = createAdminClient();
+  if (!supabase) return { ok: false, message: "SUPABASE_SERVICE_ROLE_KEY missing" };
+
+  const nowIso = new Date().toISOString();
+  const { error } = await supabase
+    .from("streamers")
+    .update({
+      is_live: false,
+      live_title: null,
+      live_game: null,
+      viewers: 0,
+      live_started_at: null,
+      last_checked_at: nowIso,
+    })
+    .eq("twitch_id", broadcasterId);
+
+  return { ok: !error };
+}
+
+export async function processTwitchChannelUpdate(broadcasterId: string) {
+  const channel = await fetchTwitchChannelInformation(broadcasterId);
+  if (!channel) return { ok: false };
+
+  const normalizedTags = normalizeTagList(channel.tags ?? []);
+  const hasMainTag = hasMadnessArenaTag(normalizedTags);
+  const supabase = createAdminClient();
+  if (!supabase) return { ok: false };
+
+  const nowIso = new Date().toISOString();
+  const { error } = await supabase
+    .from("streamers")
+    .update({
+      live_title: channel.title || null,
+      live_game: channel.game_name || null,
+      twitch_live_tags: normalizedTags,
+      has_madnessarena_tag: hasMainTag,
+      tag_checked_at: nowIso,
+      last_checked_at: nowIso,
+    })
+    .eq("twitch_id", broadcasterId);
+
+  return { ok: !error };
 }
 
 export async function discoverMadnessArenaStreamers() {
@@ -148,50 +346,21 @@ export async function discoverMadnessArenaStreamers() {
     return { ok: true, discovered: 0, upserted: 0 };
   }
 
-  const tagId = await ensureMadnessArenaTagId();
-  if (!tagId) {
-    return { ok: false, message: "Unable to resolve madnessarena tag id" };
-  }
-
-  const nowIso = new Date().toISOString();
   let upserted = 0;
+  let included = 0;
 
   for (const channel of channels) {
     const username = String(channel.broadcaster_login ?? "").trim().toLowerCase();
     const twitchId = String(channel.id ?? "").trim();
     if (!username || !twitchId) continue;
-
-    const payload = {
-      username,
-      display_name: channel.display_name || username,
-      platform: "twitch",
-      channel_url: `https://twitch.tv/${username}`,
-      twitch_id: twitchId,
-      twitch_login: username,
-      community_enabled: true,
-      is_live: Boolean(channel.is_live),
-      live_title: channel.is_live ? channel.title || null : null,
-      live_game: channel.is_live ? channel.game_name || null : null,
-      live_started_at: channel.is_live ? channel.started_at ?? null : null,
-      last_checked_at: nowIso,
-      last_seen_online: channel.is_live ? nowIso : null,
-    };
-
-    const { data } = await supabase
-      .from("streamers")
-      .upsert(payload, { onConflict: "twitch_id", ignoreDuplicates: false })
-      .select("id")
-      .single();
-
-    if (!data?.id) continue;
-    upserted += 1;
-
-    await supabase
-      .from("streamer_tag_links")
-      .upsert({ streamer_id: String(data.id), tag_id: tagId }, { onConflict: "streamer_id,tag_id", ignoreDuplicates: false });
+    const processed = await processTwitchStreamOnline(twitchId);
+    if (processed.ok) {
+      upserted += 1;
+      if (processed.included) included += 1;
+    }
   }
 
-  return { ok: true, discovered: channels.length, upserted };
+  return { ok: true, discovered: channels.length, upserted, included };
 }
 
 export async function syncTwitchStreamersStatus() {
@@ -202,7 +371,7 @@ export async function syncTwitchStreamersStatus() {
 
   const { data: rows, error } = await supabase
     .from("streamers")
-    .select("id, username, twitch_login")
+    .select("id, username, twitch_login, twitch_id")
     .eq("community_enabled", true)
     .eq("platform", "twitch");
 
@@ -212,8 +381,9 @@ export async function syncTwitchStreamersStatus() {
 
   const streamers = (rows ?? []).map((row) => ({
     id: String(row.id),
+    twitchId: String(row.twitch_id ?? "").trim(),
     login: String(row.twitch_login ?? row.username ?? "").trim().toLowerCase(),
-  })).filter((row) => row.login.length > 0);
+  })).filter((row) => row.login.length > 0 && row.twitchId.length > 0);
 
   if (streamers.length === 0) {
     return { ok: true, checked: 0, live: 0 };
@@ -226,30 +396,30 @@ export async function syncTwitchStreamersStatus() {
   }
 
   const nowIso = new Date().toISOString();
-  const updates = streamers.map((streamer) => {
+  const updates = streamers.map(async (streamer) => {
     const stream = byLogin.get(streamer.login);
     if (!stream) {
-      return supabase.from("streamers").update({
-        is_live: false,
-        live_title: null,
-        live_game: null,
-        viewers: 0,
-        live_started_at: null,
-        last_checked_at: nowIso,
-      }).eq("id", streamer.id);
+      return processTwitchStreamOffline(streamer.twitchId);
     }
-    return supabase.from("streamers").update({
-      is_live: true,
-      live_title: stream.title,
-      live_game: stream.game_name,
+
+    const channel = await fetchTwitchChannelInformation(stream.user_id);
+    const user = (await fetchTwitchUsersByIds([stream.user_id]))[0];
+    const tags = normalizeTagList(channel?.tags ?? []);
+    return upsertStreamerFromTwitch({
+      twitchId: stream.user_id,
+      login: streamer.login,
+      displayName: channel?.broadcaster_name ?? user?.display_name ?? streamer.login,
+      avatarUrl: user?.profile_image_url ?? null,
+      isLive: true,
+      liveTitle: stream.title,
+      liveGame: stream.game_name,
       viewers: stream.viewer_count,
-      live_started_at: stream.started_at,
-      last_seen_online: nowIso,
-      last_checked_at: nowIso,
-    }).eq("id", streamer.id);
+      liveStartedAt: stream.started_at,
+      twitchTags: tags,
+    });
   });
 
   await Promise.all(updates);
 
-  return { ok: true, checked: streamers.length, live: streams.length };
+  return { ok: true, checked: streamers.length, live: streams.length, at: nowIso };
 }

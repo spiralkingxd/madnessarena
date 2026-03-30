@@ -21,11 +21,8 @@ type StreamerRow = {
   live_title: string | null;
   community_enabled: boolean | null;
   is_featured: boolean | null;
-};
-
-type TagLinkRow = {
-  streamer_id: string;
-  streamer_tags: { slug: string } | { slug: string }[] | null;
+  has_madnessarena_tag: boolean | null;
+  twitch_live_tags: unknown;
 };
 
 const OPS_MESSAGES: Record<string, { tone: "success" | "error"; text: string }> = {
@@ -50,29 +47,8 @@ async function getCommunityStreamersData() {
     return { rows: [], tagsByStreamer: new Map<string, string[]>() };
   }
 
-  const ids = (data ?? []).map((row) => row.id);
-  if (ids.length === 0) return { rows: (data ?? []) as StreamerRow[], tagsByStreamer: new Map<string, string[]>() };
-
-  const { data: tagLinks } = await supabase
-    .from("streamer_tag_links")
-    .select("streamer_id, streamer_tags(slug)")
-    .in("streamer_id", ids);
-
-  const tagsByStreamer = new Map<string, string[]>();
-  for (const row of (tagLinks ?? []) as TagLinkRow[]) {
-    const raw = row.streamer_tags;
-    const tags = (Array.isArray(raw) ? raw : raw ? [raw] : [])
-      .map((item) => String(item.slug ?? "").toLowerCase().trim())
-      .filter(Boolean);
-    tagsByStreamer.set(row.streamer_id, [...new Set([...(tagsByStreamer.get(row.streamer_id) ?? []), ...tags])]);
-  }
-
-  const communityRows = ((data ?? []) as StreamerRow[]).filter((row) => {
-    const tags = tagsByStreamer.get(row.id) ?? [];
-    return tags.includes("madnessarena") || Boolean(row.community_enabled);
-  });
-
-  return { rows: communityRows, tagsByStreamer };
+  const rows = ((data ?? []) as StreamerRow[]).filter((row) => Boolean(row.has_madnessarena_tag));
+  return { rows };
 }
 
 export default async function AdminCommunityStreamersPage({
@@ -168,7 +144,9 @@ export default async function AdminCommunityStreamersPage({
 
       <div className="mt-4 space-y-3">
         {data.rows.map((s) => {
-          const tags = data.tagsByStreamer.get(s.id) ?? [];
+          const tags = Array.isArray(s.twitch_live_tags)
+            ? s.twitch_live_tags.map((tag) => String(tag))
+            : [];
           return (
             <article key={s.id} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/5 p-4">
               <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4 text-sm">
@@ -194,7 +172,7 @@ export default async function AdminCommunityStreamersPage({
                 </div>
               </div>
               {s.live_title ? <p className="mt-2 text-sm text-slate-200 line-clamp-2">{s.live_title}</p> : null}
-              <p className="mt-2 text-xs text-slate-500">Tags: {tags.join(", ") || "madnessarena"}</p>
+              <p className="mt-2 text-xs text-slate-500">Tags Twitch: {tags.join(", ") || "sem tags"}</p>
             </article>
           );
         })}

@@ -2,7 +2,11 @@ import crypto from "node:crypto";
 
 import { NextResponse } from "next/server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  processTwitchChannelUpdate,
+  processTwitchStreamOffline,
+  processTwitchStreamOnline,
+} from "@/lib/streamers/twitch-sync";
 
 function verifySignature(params: {
   messageId: string;
@@ -38,6 +42,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
+  const messageTimestamp = new Date(timestamp).getTime();
+  if (!Number.isFinite(messageTimestamp) || Math.abs(Date.now() - messageTimestamp) > 10 * 60 * 1000) {
+    return NextResponse.json({ error: "Stale EventSub message" }, { status: 400 });
+  }
+
   const payload = JSON.parse(body) as {
     challenge?: string;
     subscription?: { type?: string };
@@ -52,40 +61,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const supabase = createAdminClient();
-  if (!supabase) {
-    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY missing" }, { status: 500 });
-  }
-
   const type = payload.subscription?.type;
   const broadcasterId = payload.event?.broadcaster_user_id;
   if (!type || !broadcasterId) {
     return NextResponse.json({ ok: true });
   }
 
-  const nowIso = new Date().toISOString();
+  let handled = true;
   if (type === "stream.online") {
-    await supabase
-      .from("streamers")
-      .update({
-        is_live: true,
-        last_seen_online: nowIso,
-        last_checked_at: nowIso,
-      })
-      .eq("twitch_id", broadcasterId);
+    await processTwitchStreamOnline(broadcasterId);
   } else if (type === "stream.offline") {
-    await supabase
-      .from("streamers")
-      .update({
-        is_live: false,
-        live_title: null,
-        live_game: null,
-        viewers: 0,
-        live_started_at: null,
-        last_checked_at: nowIso,
-      })
-      .eq("twitch_id", broadcasterId);
+    await processTwitchStreamOffline(broadcasterId);
+  } else if (type === "channel.update") {
+    await processTwitchChannelUpdate(broadcasterId);
+  } else {
+    handled = false;
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, handled, type });
 }

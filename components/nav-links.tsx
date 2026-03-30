@@ -11,7 +11,19 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 
 
 
-export function NavLinks({ dict }: { dict: any }) {
+type NavDict = {
+  navlinks?: {
+    home?: string;
+    events?: string;
+    rules?: string;
+    teams?: string;
+    ranking?: string;
+    streams?: string;
+    streamers?: string;
+  };
+};
+
+export function NavLinks({ dict }: { dict: NavDict }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -23,6 +35,7 @@ export function NavLinks({ dict }: { dict: any }) {
     { href: "/ranking", label: dict?.navlinks?.ranking ?? "Ranking" },
     { href: "/transmissoes", label: dict?.navlinks?.streams ?? "Transmissões" },
   ];
+  const STREAMERS_LINK = { href: "/streamers", label: dict?.navlinks?.streamers ?? "Streamers" };
 
   function isActive(href: string) {
     if (!href) return false;
@@ -42,6 +55,25 @@ export function NavLinks({ dict }: { dict: any }) {
       {/* Desktop nav */}
       <nav className="hidden items-center gap-0.5 md:flex">
         {LINKS.map((item) => {
+          if (item.href === "/transmissoes") {
+            return (
+              <div key={item.href} className="relative p-1 group">
+                <Link href={item.href as string} className={linkCls(item.href)}>
+                  {item.label}
+                </Link>
+
+                <div className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 -translate-x-1/2 opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                  <Link
+                    href={STREAMERS_LINK.href}
+                    className="inline-flex whitespace-nowrap rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-3.5 py-2 text-sm font-medium text-cyan-100 shadow-lg shadow-cyan-900/20 hover:bg-cyan-300/15"
+                  >
+                    {STREAMERS_LINK.label}
+                  </Link>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div key={item.href} className="p-1">
               <Link href={item.href as string} className={linkCls(item.href)}>
@@ -77,6 +109,13 @@ export function NavLinks({ dict }: { dict: any }) {
                 </Link>
               );
             })}
+            <Link
+              href={STREAMERS_LINK.href}
+              onClick={() => setOpen(false)}
+              className={cn(linkCls(STREAMERS_LINK.href), "py-3 text-base")}
+            >
+              {STREAMERS_LINK.label}
+            </Link>
             
             <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4 md:hidden">
               <span className="text-sm font-medium text-slate-400">Preferências</span>

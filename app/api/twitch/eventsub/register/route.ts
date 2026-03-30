@@ -85,7 +85,7 @@ export async function POST(request: Request) {
   let skipped = 0;
 
   for (const broadcasterUserId of twitchIds) {
-    for (const type of ["stream.online", "stream.offline"] as const) {
+    for (const type of ["stream.online", "stream.offline", "channel.update"] as const) {
       const response = await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", {
         method: "POST",
         headers: {
