@@ -1,5 +1,6 @@
 ﻿import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { Navbar } from "@/components/navbar";
 import NextTopLoader from "nextjs-toploader";
@@ -52,6 +53,7 @@ export default async function RootLayout({
         <NextTopLoader color="#fbbf24" showSpinner={false} />
         <Navbar />
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );

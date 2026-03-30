@@ -1266,7 +1266,7 @@ begin
 
   alter table public.events
     add constraint events_crew_type_check
-    check (crew_type in ('sloop', 'galleon', 'brig'));
+    check (crew_type in ('solo_sloop', 'sloop', 'galleon', 'brig'));
 end
 $$;
 
@@ -2409,16 +2409,18 @@ using (
 );
 
 drop policy if exists "Public can read approved registrations" on public.registrations;
-create policy "Public can read approved registrations"
+drop policy if exists "Public can read visible registrations" on public.registrations;
+create policy "Public can read visible registrations"
 on public.registrations
 for select
 to anon, authenticated
 using (
-  status = 'approved'
+  status in ('approved', 'pending')
   and exists (
     select 1
     from public.events
     where events.id = registrations.event_id
+      and events.visibility = 'public'
       and events.status in ('registrations_open', 'check_in', 'started', 'finished')
   )
 );

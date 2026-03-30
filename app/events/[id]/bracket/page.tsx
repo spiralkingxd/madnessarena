@@ -1,38 +1,86 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import { notFound } from "next/navigation";
-import { Crown, Swords } from "lucide-react";
 
-import { MatchResultForm } from "@/components/match-result-form";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
-import { cn } from "@/lib/utils";
+import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 type EventRow = {
   id: string;
   title: string;
-  status: "draft" | "published" | "active" | "paused" | "finished";
+  status: "registrations_open" | "check_in" | "started" | "finished";
 };
 
 type MatchRow = {
   id: string;
-  team_a_id: string;
-  team_b_id: string;
+  team_a_id: string | null;
+  team_b_id: string | null;
   winner_id: string | null;
   score_a: number;
   score_b: number;
   round: number;
   bracket_position: string | null;
+  status: "pending" | "in_progress" | "finished" | "cancelled";
+  scheduled_at: string | null;
+  created_at: string;
+};
+
+type TeamMeta = {
+  name: string;
+  logoUrl: string | null;
+  memberCount: number;
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  draft: "Rascunho",
-  published: "Publicado",
-  active: "Em andamento",
-  paused: "Pausado",
+  registrations_open: "Inscricoes abertas",
+  check_in: "Check-in",
+  started: "Em andamento",
   finished: "Finalizado",
 };
 
+const MATCH_STATUS_LABELS: Record<MatchRow["status"], string> = {
+  pending: "Pendente",
+  in_progress: "Em andamento",
+  finished: "Finalizada",
+  cancelled: "Cancelada",
+};
+
 type Props = { params: Promise<{ id: string }> };
+
+async function getCachedEventBracketData(eventId: string) {
+  const fetcher = unstable_cache(
+    async () => {
+      const supabase = createPublicServerClient();
+
+      const [{ data: event }, { data: matchesRaw }, { data: teamsRaw }, { data: teamMembersRaw }] = await Promise.all([
+        supabase.from("events").select("id, title, status").eq("id", eventId).single<EventRow>(),
+        supabase
+          .from("matches")
+          .select("id, team_a_id, team_b_id, winner_id, score_a, score_b, round, bracket_position, status, scheduled_at, created_at")
+          .eq("event_id", eventId)
+          .order("round", { ascending: true })
+          .order("bracket_position", { ascending: true })
+          .order("created_at", { ascending: true }),
+        supabase.from("teams").select("id, name, logo_url"),
+        supabase.from("team_members").select("team_id"),
+      ]);
+
+      return {
+        event: event ?? null,
+        matchesRaw: (matchesRaw ?? []) as MatchRow[],
+        teamsRaw: teamsRaw ?? [],
+        teamMembersRaw: teamMembersRaw ?? [],
+      };
+    },
+    [`event-bracket-${eventId}`],
+    {
+      tags: ["events", "public-data", `event:${eventId}`, `event-bracket:${eventId}`],
+      revalidate: 60,
+    },
+  );
+
+  return fetcher();
+}
 
 export default async function EventBracketPage({ params }: Props) {
   const { id } = await params;
@@ -41,42 +89,33 @@ export default async function EventBracketPage({ params }: Props) {
     notFound();
   }
 
-  const supabase = await createClient();
-
-  const [
-    { data: event },
-    { data: matchesRaw },
-    { data: teamsRaw },
-    { data: { user } },
-  ] = await Promise.all([
-    supabase.from("events").select("id, title, status").eq("id", id).single<EventRow>(),
-    supabase
-      .from("matches")
-      .select("id, team_a_id, team_b_id, winner_id, score_a, score_b, round, bracket_position")
-      .eq("event_id", id)
-      .order("round", { ascending: true })
-      .order("created_at", { ascending: true }),
-    supabase.from("teams").select("id, name"),
-    supabase.auth.getUser(),
-  ]);
+  const { event, matchesRaw, teamsRaw, teamMembersRaw } = await getCachedEventBracketData(id);
 
   if (!event) {
     notFound();
   }
 
-  let isAdmin = false;
+  const matches = (matchesRaw ?? []) as MatchRow[];
+  const teamMemberCountById = new Map<string, number>();
 
-  if (user) {
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-    isAdmin = profile?.role === "admin" || profile?.role === "owner";
+  for (const row of teamMembersRaw ?? []) {
+    const teamId = String(row.team_id);
+    teamMemberCountById.set(teamId, (teamMemberCountById.get(teamId) ?? 0) + 1);
   }
 
-  const matches = (matchesRaw ?? []) as MatchRow[];
-  const teamNameById = new Map<string, string>();
+  const teamById = new Map<string, TeamMeta>();
 
   for (const row of teamsRaw ?? []) {
-    teamNameById.set(row.id as string, row.name as string);
+    const teamId = String(row.id);
+    teamById.set(teamId, {
+      name: String(row.name),
+      logoUrl: (row.logo_url as string | null) ?? null,
+      // Inclui capitão na contagem além da tabela team_members.
+      memberCount: (teamMemberCountById.get(teamId) ?? 0) + 1,
+    });
   }
+
+  const shouldShowComingSoon = (event.status === "registrations_open" || event.status === "check_in") && matches.length === 0;
 
   const groupedByRound = new Map<number, MatchRow[]>();
   for (const match of matches) {
@@ -102,7 +141,7 @@ export default async function EventBracketPage({ params }: Props) {
           </div>
         </div>
 
-        {event.status === "draft" || event.status === "published" || event.status === "paused" ? (
+        {shouldShowComingSoon ? (
           <section className="rounded-2xl border border-amber-400/25 bg-amber-400/8 px-6 py-12 text-center">
             <h2 className="text-2xl font-semibold text-amber-300">Em breve</h2>
             <p className="mt-3 text-sm text-amber-200/80">
@@ -114,78 +153,47 @@ export default async function EventBracketPage({ params }: Props) {
             Nenhum confronto cadastrado para este evento.
           </section>
         ) : (
-          <section className="overflow-x-auto pb-4">
-            <div className="flex min-w-max gap-6">
-              {rounds.map(([roundNumber, roundMatches]) => (
-                <div key={roundNumber} className="w-[320px] shrink-0 space-y-4">
-                  <h2 className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-cyan-200">
+          <section className="space-y-4">
+            {rounds.map(([roundNumber, roundMatches]) => (
+              <div key={roundNumber} className="rounded-xl border border-white/10 bg-white/[0.02]">
+                <div className="border-b border-white/10 px-4 py-3">
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-200">
                     Rodada {roundNumber}
                   </h2>
+                </div>
 
+                <div className="divide-y divide-white/10">
                   {roundMatches.map((match) => {
-                    const teamAName = teamNameById.get(match.team_a_id) ?? "Equipe A";
-                    const teamBName = teamNameById.get(match.team_b_id) ?? "Equipe B";
+                    const teamAName = match.team_a_id
+                      ? (teamById.get(match.team_a_id)?.name ?? "Equipe removida")
+                      : "A definir";
+                    const teamBName = match.team_b_id
+                      ? (teamById.get(match.team_b_id)?.name ?? "Equipe removida")
+                      : "A definir";
+                    const scoreText =
+                      match.status === "finished" || match.status === "in_progress"
+                        ? `${match.score_a} - ${match.score_b}`
+                        : "vs";
 
                     return (
-                      <article
-                        key={match.id}
-                        className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 shadow-xl shadow-black/20"
-                      >
-                        <div className="space-y-2">
-                          <TeamRow
-                            name={teamAName}
-                            score={match.score_a}
-                            isWinner={match.winner_id === match.team_a_id}
-                          />
-                          <TeamRow
-                            name={teamBName}
-                            score={match.score_b}
-                            isWinner={match.winner_id === match.team_b_id}
-                          />
+                      <div key={match.id} className="px-4 py-3 text-sm">
+                        <div className="flex flex-wrap items-center gap-2 text-slate-300">
+                          <span className="min-w-[8rem] truncate">{teamAName}</span>
+                          <span className="font-semibold text-slate-100">{scoreText}</span>
+                          <span className="min-w-[8rem] truncate">{teamBName}</span>
+                          <span className="ml-auto text-xs text-slate-400">
+                            {MATCH_STATUS_LABELS[match.status]}
+                          </span>
                         </div>
-
-                        {match.bracket_position ? (
-                          <p className="mt-3 text-xs text-slate-500">Posição: {match.bracket_position}</p>
-                        ) : null}
-
-                        {isAdmin ? (
-                          <MatchResultForm
-                            eventId={event.id}
-                            matchId={match.id}
-                            teamAId={match.team_a_id}
-                            teamBId={match.team_b_id}
-                            scoreA={match.score_a}
-                            scoreB={match.score_b}
-                          />
-                        ) : null}
-                      </article>
+                      </div>
                     );
                   })}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </section>
         )}
       </div>
     </main>
-  );
-}
-
-function TeamRow({ name, score, isWinner }: { name: string; score: number; isWinner: boolean }) {
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between rounded-lg border px-3 py-2 text-sm",
-        isWinner
-          ? "border-emerald-400/35 bg-emerald-400/10 text-emerald-200"
-          : "border-white/10 bg-white/5 text-slate-200",
-      )}
-    >
-      <span className="flex items-center gap-2 truncate pr-3">
-        {isWinner ? <Crown className="h-3.5 w-3.5 shrink-0" /> : <Swords className="h-3.5 w-3.5 shrink-0" />}
-        <span className="truncate">{name}</span>
-      </span>
-      <span className="text-base font-bold">{score}</span>
-    </div>
   );
 }

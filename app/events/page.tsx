@@ -19,7 +19,7 @@ type EventRow = {
   name: string;
   status: "registrations_open" | "check_in" | "started" | "finished";
   tournament_type: "1v1_elimination" | "free_for_all_points";
-  crew_type: "sloop" | "brig" | "galleon";
+  crew_type: "solo_sloop" | "sloop" | "brig" | "galleon";
   prize: string;
   start_date: string;
   registration_deadline: string | null;

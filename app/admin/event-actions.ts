@@ -16,7 +16,7 @@ import {
 
 const TOURNAMENT_STATUS_VALUES = ["registrations_open", "check_in", "started", "finished"] as const;
 const TOURNAMENT_TYPE_VALUES = ["1v1_elimination", "free_for_all_points"] as const;
-const CREW_TYPE_VALUES = ["sloop", "brig", "galleon"] as const;
+const CREW_TYPE_VALUES = ["solo_sloop", "sloop", "brig", "galleon"] as const;
 
 const eventStatusSchema = z.enum(TOURNAMENT_STATUS_VALUES);
 const tournamentTypeSchema = z.enum(TOURNAMENT_TYPE_VALUES);
@@ -77,7 +77,7 @@ export type EventMutationInput = {
   description: string;
   prize: string;
   tournament_type: "1v1_elimination" | "free_for_all_points";
-  crew_type: "sloop" | "brig" | "galleon";
+  crew_type: "solo_sloop" | "sloop" | "brig" | "galleon";
   start_date: string;
   end_date?: string | null;
   registration_deadline?: string | null;
@@ -248,6 +248,7 @@ function normalizeEventType(kind: EventMutationInput["event_kind"], type: EventM
 }
 
 function crewTypeToTeamSize(crewType: EventMutationInput["crew_type"]) {
+  if (crewType === "solo_sloop") return 1;
   if (crewType === "sloop") return 2;
   if (crewType === "brig") return 3;
   return 4;

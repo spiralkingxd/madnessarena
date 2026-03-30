@@ -26,7 +26,7 @@ export type EventFormRow = {
   description: string | null;
   prize: string | null;
   tournament_type: "1v1_elimination" | "free_for_all_points";
-  crew_type: "sloop" | "brig" | "galleon";
+  crew_type: "solo_sloop" | "sloop" | "brig" | "galleon";
   start_date: string;
   end_date: string | null;
   registration_deadline: string | null;

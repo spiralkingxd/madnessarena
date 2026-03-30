@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 type TournamentStatus = "registrations_open" | "check_in" | "started" | "finished";
 type TournamentType = "1v1_elimination" | "free_for_all_points";
-type CrewType = "sloop" | "brig" | "galleon";
+type CrewType = "solo_sloop" | "sloop" | "brig" | "galleon";
 
 export type TournamentCardData = {
   id: string;
@@ -38,6 +38,7 @@ const TOURNAMENT_TYPE_LABELS: Record<TournamentType, string> = {
 };
 
 const CREW_TYPE_LABELS: Record<CrewType, string> = {
+  solo_sloop: "Sloop (1 Jogador)",
   sloop: "Sloop",
   brig: "Brig",
   galleon: "Galleon",
