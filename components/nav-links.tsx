@@ -62,7 +62,7 @@ export function NavLinks({ dict }: { dict: NavDict }) {
                   {item.label}
                 </Link>
 
-                <div className="pointer-events-none absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 translate-y-1 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-y-0">
+                <div className="pointer-events-none absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 translate-y-1 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-hover:translate-y-0">
                   <div className="rounded-xl border border-cyan-300/20 bg-slate-950/90 p-1.5 shadow-[0_12px_35px_rgba(0,0,0,0.45)] backdrop-blur-md">
                   <Link
                     href={STREAMERS_LINK.href}
