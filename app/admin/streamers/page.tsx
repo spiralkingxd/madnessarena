@@ -155,10 +155,12 @@ export default async function AdminStreamersPage() {
         <p className="text-slate-500 dark:text-slate-400 mt-2">Esta tela controla apenas /transmissoes e /multiview.</p>
       </div>
 
-      <div className="mb-4 rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-4 text-sm text-cyan-100">
-        Streamers da comunidade agora ficam em uma aba separada:{" "}
-        <Link href="/admin/community-streamers" className="font-bold underline">
-          /admin/community-streamers
+      <div className="mb-4">
+        <Link
+          href="/admin/community-streamers"
+          className="inline-flex items-center rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-500/20 transition"
+        >
+          Abrir aba da comunidade
         </Link>
       </div>
 

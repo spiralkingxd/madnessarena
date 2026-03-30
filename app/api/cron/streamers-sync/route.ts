@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { syncTwitchStreamersStatus } from "@/lib/streamers/twitch-sync";
+import { discoverMadnessArenaStreamers, syncTwitchStreamersStatus } from "@/lib/streamers/twitch-sync";
 
 export async function GET(request: Request) {
   const expected = process.env.STREAMERS_CRON_SECRET?.trim();
@@ -10,7 +10,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = await syncTwitchStreamersStatus();
-  const status = result.ok ? 200 : 500;
-  return NextResponse.json(result, { status });
+  const discovery = await discoverMadnessArenaStreamers();
+  const sync = await syncTwitchStreamersStatus();
+  const ok = Boolean(discovery.ok && sync.ok);
+
+  return NextResponse.json(
+    {
+      ok,
+      discovery,
+      sync,
+    },
+    { status: ok ? 200 : 500 },
+  );
 }

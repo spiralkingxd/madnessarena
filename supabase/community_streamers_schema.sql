@@ -234,7 +234,20 @@ as $$
   from base b
   left join public.streamer_tag_links stl on stl.streamer_id = b.id
   left join public.streamer_tags t on t.id = stl.tag_id
-  group by b.id
+  group by
+    b.id,
+    b.display_name,
+    b.username,
+    b.platform,
+    b.channel_url,
+    b.avatar_url,
+    b.bio,
+    b.is_live,
+    b.live_title,
+    b.live_game,
+    b.viewers,
+    b.is_featured,
+    b.last_seen_online
   order by b.is_live desc, b.is_featured desc, coalesce(b.viewers, 0) desc, b.display_name asc;
 $$;
 
