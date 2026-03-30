@@ -62,13 +62,16 @@ export function NavLinks({ dict }: { dict: NavDict }) {
                   {item.label}
                 </Link>
 
-                <div className="pointer-events-none absolute left-1/2 top-full z-50 -translate-x-1/2 pt-1 opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                <div className="pointer-events-none absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 translate-y-1 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-y-0">
+                  <div className="rounded-xl border border-cyan-300/20 bg-slate-950/90 p-1.5 shadow-[0_12px_35px_rgba(0,0,0,0.45)] backdrop-blur-md">
                   <Link
                     href={STREAMERS_LINK.href}
-                    className="inline-flex whitespace-nowrap rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-3.5 py-2 text-sm font-medium text-cyan-100 shadow-lg shadow-cyan-900/20 hover:bg-cyan-300/15"
+                    className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-cyan-300/15 bg-gradient-to-r from-cyan-400/15 to-sky-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 hover:from-cyan-400/25 hover:to-sky-400/20"
                   >
+                    <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
                     {STREAMERS_LINK.label}
                   </Link>
+                  </div>
                 </div>
               </div>
             );
