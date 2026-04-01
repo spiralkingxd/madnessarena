@@ -28,14 +28,19 @@ async function getTwitchAppToken() {
   return data.access_token;
 }
 
-function resolveCallbackUrl() {
+function resolveCallbackUrl(request: Request) {
   const explicit = process.env.TWITCH_EVENTSUB_WEBHOOK_URL?.trim();
   if (explicit) return explicit;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (!appUrl) return null;
+  if (appUrl) return `${appUrl}/api/twitch/eventsub`;
 
-  return `${appUrl}/api/twitch/eventsub`;
+  try {
+    const url = new URL(request.url);
+    return `${url.origin}/api/twitch/eventsub`;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(request: Request) {
@@ -47,10 +52,15 @@ export async function POST(request: Request) {
 
   const clientId = process.env.TWITCH_CLIENT_ID?.trim();
   const secret = process.env.TWITCH_EVENTSUB_SECRET?.trim();
-  const callback = resolveCallbackUrl();
-  if (!clientId || !secret || !callback) {
+  const callback = resolveCallbackUrl(request);
+  const missing: string[] = [];
+  if (!clientId) missing.push("TWITCH_CLIENT_ID");
+  if (!secret) missing.push("TWITCH_EVENTSUB_SECRET");
+  if (!callback) missing.push("TWITCH_EVENTSUB_WEBHOOK_URL or NEXT_PUBLIC_APP_URL");
+
+  if (missing.length > 0) {
     return NextResponse.json(
-      { error: "Missing TWITCH_CLIENT_ID, TWITCH_EVENTSUB_SECRET or callback URL config" },
+      { error: `Missing ${missing.join(", ")}` },
       { status: 500 },
     );
   }
